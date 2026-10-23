@@ -64,3 +64,7 @@ PHOTO=path/to/photo.jpg node tools/e2e.mjs http://127.0.0.1:8091 out --offline-a
 1. Bump `VERSION` in `pb_public/sw.js` and the `?v=` on CSS/JS links, so installed apps pick up new code.
 2. Run both checks.
 3. Restart: `docker compose restart pocketbase`.
+
+## License
+
+MIT. See `LICENSE`. Basecoat UI in `pb_public/vendor/` keeps its own MIT license.
