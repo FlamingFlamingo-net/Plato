@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes. Parked: Online plan.
+**Status:** built (v1) + security fixes. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -173,6 +173,37 @@ Risks:
 Acceptance (online): open the address on a real phone, tap Instalar app, do the v1 demo, refresh; airplane mode opens the app; a backup file exists in the bucket.
 
 Alternatives checked (2026-10-23): PocketHost (managed PocketBase, $9.99/mo or ~$5/mo yearly; 250 MB database cap) — simpler, costs more, less control. Hetzner US VPS — now about $20/mo after its June 2026 price rise. A small VPS (DigitalOcean etc., price not checked) — we would patch and secure the server ourselves.
+
+---
+
+## Legal (parked — no action until before real patients)
+
+Not legal advice. A map of what to ask a lawyer. Checked 2026-10-23.
+**Rule until then:** fake data only. Invite no real patients.
+
+### Must clear before real patients
+
+| # | Topic | What it means for Plato | Ask the lawyer |
+|---|---|---|---|
+| L1 | Data protection law: LFPDPPP 2025 (in force 2025-03-21; authority SABG, ex-INAI) | Health data is sensitive. It needs a privacy notice and express consent. The notice says data is stored in the USA (Fly.io, Dallas). | What form of consent? Is a checkbox at join enough? |
+| L2 | Roles | The nutritionist is the controller (*responsable*). Plato is the processor (*encargado*). | Terms of use and a processing contract with each nutritionist. A privacy notice for nutritionists' own data. |
+| L3 | ARCO rights (access, correction, deletion, objection) | Patients can ask for their data or its deletion. Plato needs export and close-account (features below). | Response deadlines. Who answers: the nutritionist or us? |
+| L4 | Clinical record retention (NOM-004-SSA3-2012) | Records are kept at least 5 years after the last consultation. This conflicts with deletion. | Are a nutritionist's notes and measurements a clinical record? Archive instead of delete? |
+| L5 | Breaches | A leak brings notice duties and fines. | What to do and whom to tell if data leaks. |
+
+### Lower urgency
+
+| # | Topic | Note |
+|---|---|---|
+| L6 | Electronic health record certification (NOM-024-SSA3-2012, DGIS) | Plato is a diet tool, not a full record system. Ask if certification applies, mainly before selling to clinics or government. |
+| L7 | Trademark | Check "Plato" with IMPI before buying a domain. |
+| L8 | Nutrimind | Use features as ideas only. Never copy their text, images, recipes, or food tables. |
+| L9 | Minors | Pediatric patients need a parent or guardian's consent. Keep minors out until then. |
+| L10 | Charging money | Taxes and invoices (SAT, CFDI). PROFECO if selling to consumers. |
+| L11 | AI features | Health advice from AI carries liability. The nutritionist always decides. |
+| L12 | Users in Spain | GDPR applies. Separate project. |
+
+Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ---
 
