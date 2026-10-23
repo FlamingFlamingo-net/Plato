@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1). Acceptance run on 2026-10-19 against a throwaway server: see Acceptance.
+**Status:** built (v1) + security fixes. Parked: Online plan.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -143,6 +143,36 @@ Run on the current release. Mark each step pass or fail. Last run: 2026-10-19, h
 | 5 | Anyone on the same Wi-Fi could open the server over plain HTTP. | Only this PC can open it. For a phone test, open it to the network for that session only. |
 
 Risk to remember when it goes online: limits count per address. Behind a proxy, every user can look like one address. `pb-deploy` must set the trusted proxy header.
+
+---
+
+## Online (plan — not approved, nothing set up)
+
+**Host:** Fly.io, one always-on machine in Dallas (`dfw`, closest to Mexico) with one 3 GB disk.
+**Address:** `https://plato-<name>.fly.dev` (HTTPS included). Own domain later.
+**Cost:** about US$4–5 a month (512 MB machine ≈ $3.70, disk $0.45, traffic cents). Backups free (Cloudflare R2, 10 GB free).
+**Never delete:** the Fly volume `pb_data`. It holds every account, diet, and photo.
+
+| Topic | Decision |
+|---|---|
+| Sleep | Off. The machine never stops (sign-in breaks if it sleeps). |
+| Servers | Exactly one. Never scale out. |
+| Install button | Works: HTTPS is included. |
+| Photos | On the server disk (fine to a few GB). Cloud bucket later. |
+| Backups | Nightly PocketBase backup to a **separate** R2 bucket, keep 7. Keys typed by the owner in the admin screen. |
+| Rate limits | Count the real user address from Fly's `Fly-Client-IP` header, only on Fly. |
+| Admin | Owner creates the admin account over `fly ssh console`. The agent never sees the password. |
+| Email | Not needed in v1 (invites and resets are links). Needed before password-reset or admin 2-step codes. |
+| Data | Starts empty. No demo data online. Fake patients only until the privacy notice exists. |
+
+Risks:
+- Health data is "sensitive" under Mexican law (LFPDPPP). Real patients need a privacy notice and their express consent. The notice must say the data is stored in the USA.
+- One machine: if it restarts, the app is gone for about a minute.
+- A host outage takes the app down until it returns. Backups protect data, not uptime.
+
+Acceptance (online): open the address on a real phone, tap Instalar app, do the v1 demo, refresh; airplane mode opens the app; a backup file exists in the bucket.
+
+Alternatives checked (2026-10-23): PocketHost (managed PocketBase, $9.99/mo or ~$5/mo yearly; 250 MB database cap) — simpler, costs more, less control. Hetzner US VPS — now about $20/mo after its June 2026 price rise. A small VPS (DigitalOcean etc., price not checked) — we would patch and secure the server ourselves.
 
 ---
 
