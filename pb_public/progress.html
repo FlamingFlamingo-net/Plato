@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Progreso — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/progress.js?v=1"></script>
+</head>
+<body>
+  <main id="main" class="plato-main plato-main--phone">
+    <h1 class="plato-page-title" style="margin-bottom:1rem">Tu progreso</h1>
+    <p id="status" class="plato-muted" role="status">Cargando…</p>
+    <div class="plato-stack">
+      <div class="plato-grid-3" id="stats"></div>
+      <section class="card" aria-labelledby="c-title">
+        <header><h2 id="c-title">Peso</h2></header>
+        <section id="chart"></section>
+      </section>
+      <section aria-labelledby="h-title">
+        <h2 id="h-title" style="font-size:1.1rem;margin:0 0 0.5rem">Historial</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th scope="col">Fecha</th><th scope="col" class="num">Peso</th><th scope="col" class="num">Grasa</th><th scope="col" class="num">Cintura</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

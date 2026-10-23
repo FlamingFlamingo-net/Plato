@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Plato — tu dieta, plato a plato</title>
+  <meta name="description" content="Tu nutrióloga o nutriólogo te da tu dieta; tú la sigues desde el teléfono y registras cada comida con una foto.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/index.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
+  </header>
+
+  <main id="main" class="plato-main plato-main--narrow">
+    <section class="plato-hero" aria-labelledby="hero-title">
+      <h1 id="hero-title">Tu dieta, plato a plato</h1>
+      <p>Tu nutrióloga o nutriólogo arma tu plan. Tú lo ves cada día y mandas una foto de cada comida.</p>
+      <div class="plato-install">
+        <button id="install-app" class="btn" data-variant="secondary" type="button" hidden>Instalar app</button>
+        <p id="install-help" hidden>En iPhone o iPad: toca <strong>Compartir</strong> y luego <strong>Agregar a inicio</strong>.</p>
+      </div>
+    </section>
+
+    <div class="tabs" id="who">
+      <nav role="tablist" aria-label="¿Quién eres?">
+        <button type="button" role="tab" id="tab-patient" aria-controls="panel-patient" data-tab="patient" aria-selected="true">Soy paciente</button>
+        <button type="button" role="tab" id="tab-nutri" aria-controls="panel-nutri" data-tab="nutri" aria-selected="false">Soy nutrióloga/o</button>
+      </nav>
+
+      <div role="tabpanel" id="panel-patient" aria-labelledby="tab-patient">
+        <form class="card plato-form" id="patient-signin" novalidate>
+          <header><h2>Entrar a mi plan</h2><p>Usa el correo y la contraseña que elegiste con tu enlace de invitación.</p></header>
+          <section class="plato-form">
+            <div class="field"><label for="p-email">Correo</label><input class="input" id="p-email" name="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label for="p-password">Contraseña</label><input class="input" id="p-password" name="password" type="password" autocomplete="current-password" required></div>
+            <p class="plato-hint">¿Aún no tienes cuenta u olvidaste tu contraseña? Pide a tu nutrióloga o nutriólogo un enlace nuevo.</p>
+          </section>
+          <footer><button class="btn" type="submit">Entrar</button></footer>
+        </form>
+      </div>
+
+      <div role="tabpanel" id="panel-nutri" aria-labelledby="tab-nutri" hidden>
+        <form class="card plato-form" id="nutri-signin" novalidate>
+          <header><h2>Entrar al consultorio</h2><p>Gestiona a tus pacientes, sus dietas y sus fotos.</p></header>
+          <section class="plato-form">
+            <div class="field"><label for="n-email">Correo</label><input class="input" id="n-email" name="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label for="n-password">Contraseña</label><input class="input" id="n-password" name="password" type="password" autocomplete="current-password" required></div>
+          </section>
+          <footer class="plato-row plato-row--between">
+            <button class="btn" type="submit">Entrar</button>
+            <button class="btn" data-variant="link" type="button" id="to-signup">Crear cuenta</button>
+          </footer>
+        </form>
+
+        <form class="card plato-form" id="nutri-signup" novalidate hidden>
+          <header><h2>Crear cuenta de nutrióloga/o</h2><p>Gratis durante la prueba. Usa datos de prueba, no de pacientes reales.</p></header>
+          <section class="plato-form">
+            <div class="field"><label for="s-name">Tu nombre</label><input class="input" id="s-name" name="name" autocomplete="name" required maxlength="120"></div>
+            <div class="field"><label for="s-clinic">Consultorio <span class="plato-muted">(opcional)</span></label><input class="input" id="s-clinic" name="clinic_name" autocomplete="organization" maxlength="120"></div>
+            <div class="field"><label for="s-email">Correo</label><input class="input" id="s-email" name="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label for="s-password">Contraseña</label><input class="input" id="s-password" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="s-password-hint"><p class="plato-hint" id="s-password-hint">Al menos 8 caracteres.</p></div>
+          </section>
+          <footer class="plato-row plato-row--between">
+            <button class="btn" type="submit">Crear cuenta</button>
+            <button class="btn" data-variant="link" type="button" id="to-signin">Ya tengo cuenta</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

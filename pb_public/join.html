@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tu invitación — Plato</title>
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/join.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
+  </header>
+  <main id="main" class="plato-main plato-main--narrow">
+    <section class="plato-hero" aria-labelledby="j-title">
+      <h1 id="j-title">Tu invitación</h1>
+      <p id="j-sub" role="status">Revisando tu enlace…</p>
+    </section>
+
+    <form class="card" id="join-form" novalidate hidden aria-labelledby="jf-title">
+      <header><h2 id="jf-title">Crea tu acceso</h2><p>Con este correo y contraseña entrarás a tu app.</p></header>
+      <section class="plato-form">
+        <div class="field"><label for="j-email">Tu correo</label><input class="input" id="j-email" name="email" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="j-password">Elige una contraseña</label><input class="input" id="j-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="71" required aria-describedby="j-pw-hint"><p class="plato-hint" id="j-pw-hint">Al menos 8 caracteres.</p></div>
+        <div class="field"><label for="j-password2">Repite la contraseña</label><input class="input" id="j-password2" name="password2" type="password" autocomplete="new-password" required></div>
+      </section>
+      <footer><button class="btn" type="submit" style="width:100%">Entrar a mi plan</button></footer>
+    </form>
+
+    <div class="alert" data-variant="destructive" id="j-bad" hidden>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <h2 id="j-bad-title">No pudimos abrir tu invitación</h2>
+      <section id="j-bad-text"></section>
+    </div>
+    <p class="plato-hint" style="text-align:center;margin-top:1.5rem">¿Ya tienes cuenta? <a href="/">Entra aquí</a>.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+/* theme.css — Plato's personality on top of Basecoat 1.0.2. Values only; no component rewrites.
+   Fresh, warm, encouraging. Leaf green for actions, warm food colours for the plate. */
+
+:root {
+  --background: oklch(0.985 0.008 85);      /* warm off-white, like a napkin */
+  --foreground: oklch(0.24 0.02 150);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.5 0.12 152);           /* leaf green — manifest theme_color #2f7d52 */
+  --primary-foreground: oklch(0.99 0.01 150);
+  --secondary: oklch(0.95 0.025 150);
+  --secondary-foreground: oklch(0.3 0.06 152);
+  --accent: oklch(0.95 0.03 75);
+  --accent-foreground: var(--foreground);
+  --muted: oklch(0.955 0.01 85);
+  --muted-foreground: oklch(0.46 0.02 150);  /* ≥ 4.5:1 on --background */
+  --destructive: oklch(0.55 0.2 27);
+
+  --border: oklch(0.9 0.015 85);
+  --input: oklch(0.86 0.015 85);
+  --ring: var(--primary);
+
+  --radius: 0.75rem;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --chart-1: var(--primary);
+
+  /* Plate: one warm colour per meal of the day */
+  --slot-breakfast: oklch(0.82 0.13 85);    /* yolk */
+  --slot-snack_am: oklch(0.8 0.12 135);     /* apple */
+  --slot-lunch: oklch(0.7 0.16 45);         /* tomato */
+  --slot-snack_pm: oklch(0.78 0.11 20);     /* berry */
+  --slot-dinner: oklch(0.62 0.1 160);       /* herbs */
+  --plate-rim: oklch(0.97 0.006 85);
+  --plate-empty: oklch(0.93 0.01 85);
+}
+
+.btn { min-height: 2.5rem; }
+.card { box-shadow: none; border: 1px solid var(--border); }

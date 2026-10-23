@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hoy — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/today.js?v=1"></script>
+</head>
+<body>
+  <main id="main" class="plato-main plato-main--phone">
+    <h1 class="plato-page-title plato-greet" id="greet">Hoy</h1>
+    <p class="plato-muted" id="date" style="margin:0"></p>
+    <div id="welcome" class="alert" hidden style="margin-top:1rem">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      <h2>¡Listo! Ya tienes tu plan.</h2>
+      <section>Toca <strong>Instalar app</strong> arriba para tenerla en tu pantalla de inicio. En iPhone: Compartir → Agregar a inicio.</section>
+    </div>
+    <div class="plato-plate-wrap" id="plate"></div>
+    <p id="status" class="plato-muted" role="status">Cargando…</p>
+    <ol class="plato-meals" id="meals" aria-label="Comidas de hoy"></ol>
+  </main>
+</body>
+</html>

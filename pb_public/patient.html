@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Paciente — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/patient.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/patients.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato <small id="clinic"></small></a>
+    <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+  </header>
+
+  <main id="main" class="plato-main">
+    <a class="plato-back" href="/patients.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Mis pacientes</a>
+    <p id="status" class="plato-muted" role="status">Cargando…</p>
+
+    <div id="content" hidden>
+      <div class="plato-patient-head">
+        <span class="plato-avatar" id="p-initials" aria-hidden="true"></span>
+        <div>
+          <h1 class="plato-page-title" id="p-name"></h1>
+          <p class="plato-muted plato-small" id="p-meta" style="margin:0"></p>
+        </div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <nav role="tablist" aria-label="Secciones del paciente">
+          <button type="button" role="tab" id="t-overview" aria-controls="overview" data-tab="overview">Resumen</button>
+          <button type="button" role="tab" id="t-diet" aria-controls="diet" data-tab="diet">Dieta</button>
+          <button type="button" role="tab" id="t-log" aria-controls="log" data-tab="log">Comidas <span class="badge plato-badge-new" id="log-count" hidden></span></button>
+          <button type="button" role="tab" id="t-notes" aria-controls="notes" data-tab="notes">Notas</button>
+          <button type="button" role="tab" id="t-access" aria-controls="access" data-tab="access">Acceso</button>
+        </nav>
+
+        <!-- Overview: measurements + weight chart -->
+        <div role="tabpanel" id="overview" aria-labelledby="t-overview" hidden>
+          <div class="plato-stack">
+            <div class="plato-grid-3" id="stats"></div>
+            <div class="plato-grid-2">
+              <section class="card" aria-labelledby="chart-title">
+                <header><h2 id="chart-title">Peso</h2></header>
+                <section id="chart"></section>
+              </section>
+              <form class="card" id="m-form" novalidate aria-labelledby="m-title">
+                <header><h2 id="m-title">Nueva medición</h2></header>
+                <section class="plato-form">
+                  <div class="field"><label for="m-date">Fecha</label><input class="input" id="m-date" name="date" type="date" required></div>
+                  <div class="plato-grid-3">
+                    <div class="field"><label for="m-weight">Peso (kg)</label><input class="input" id="m-weight" name="weight_kg" type="number" step="0.1" min="1" max="400" inputmode="decimal" required></div>
+                    <div class="field"><label for="m-fat">Grasa (%)</label><input class="input" id="m-fat" name="body_fat_pct" type="number" step="0.1" min="1" max="80" inputmode="decimal"></div>
+                    <div class="field"><label for="m-waist">Cintura (cm)</label><input class="input" id="m-waist" name="waist_cm" type="number" step="0.1" min="20" max="300" inputmode="decimal"></div>
+                  </div>
+                </section>
+                <footer class="plato-actions"><button class="btn" type="submit">Guardar medición</button></footer>
+              </form>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <caption class="sr-only">Mediciones</caption>
+                <thead><tr><th scope="col">Fecha</th><th scope="col" class="num">Peso (kg)</th><th scope="col" class="num">Grasa (%)</th><th scope="col" class="num">Cintura (cm)</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+                <tbody id="m-rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diet editor -->
+        <div role="tabpanel" id="diet" aria-labelledby="t-diet" hidden>
+          <form id="diet-form" class="plato-stack" novalidate>
+            <div class="field" style="max-width:24rem"><label for="d-title">Nombre del plan</label><input class="input" id="d-title" name="title" maxlength="120" placeholder="Plan base"></div>
+            <div class="plato-days" role="group" aria-label="Día de la semana" id="days"></div>
+            <section class="card" aria-labelledby="day-title">
+              <header class="plato-row plato-row--between">
+                <h2 id="day-title">Lunes</h2>
+                <button class="btn" data-variant="outline" data-size="sm" type="button" id="copy-day">Copiar a todos los días</button>
+              </header>
+              <section class="plato-stack" id="meal-fields"></section>
+            </section>
+            <div class="plato-save-bar">
+              <span class="plato-muted plato-small" id="diet-state" role="status"></span>
+              <button class="btn" type="submit">Guardar dieta</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Meal photos -->
+        <div role="tabpanel" id="log" aria-labelledby="t-log" hidden>
+          <p class="plato-muted" id="log-status" role="status"></p>
+          <ul class="plato-feed" id="feed" aria-label="Comidas registradas"></ul>
+        </div>
+
+        <!-- Private notes -->
+        <div role="tabpanel" id="notes" aria-labelledby="t-notes" hidden>
+          <div class="plato-stack">
+            <p class="plato-private"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Solo tú ves estas notas. El paciente nunca las ve.</p>
+            <form id="note-form" class="card" novalidate aria-labelledby="note-title">
+              <header><h2 id="note-title">Nueva nota</h2></header>
+              <section><div class="field"><label class="sr-only" for="note-text">Nota</label><textarea class="textarea" id="note-text" name="text" rows="3" maxlength="5000" required placeholder="Ej. Refiere ansiedad por las noches. Revisar cena."></textarea></div></section>
+              <footer class="plato-actions"><button class="btn" type="submit">Guardar nota</button></footer>
+            </form>
+            <ul class="plato-notes" id="note-list" aria-label="Notas"></ul>
+          </div>
+        </div>
+
+        <!-- Access / invite link -->
+        <div role="tabpanel" id="access" aria-labelledby="t-access" hidden>
+          <section class="card" aria-labelledby="access-title" style="max-width:40rem">
+            <header>
+              <h2 id="access-title">App del paciente</h2>
+              <p id="access-state"></p>
+            </header>
+            <section class="plato-stack">
+              <p class="plato-small" id="access-help"></p>
+              <div id="link-area" hidden class="plato-stack-sm">
+                <label for="invite-link" class="plato-small" style="font-weight:600">Enlace de invitación</label>
+                <div class="plato-link-box">
+                  <input class="input" id="invite-link" readonly>
+                  <button class="btn" data-variant="outline" type="button" id="copy-link">Copiar</button>
+                </div>
+                <p class="plato-hint" id="link-expiry"></p>
+              </div>
+            </section>
+            <footer><button class="btn" type="button" id="make-link"></button></footer>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="dialog plato-photo-dialog" id="photo-dialog" aria-labelledby="ph-title">
+    <div>
+      <header><h2 id="ph-title"></h2><p id="ph-sub"></p></header>
+      <section><img id="ph-img" alt=""></section>
+      <button type="button" aria-label="Cerrar" id="ph-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+</body>
+</html>

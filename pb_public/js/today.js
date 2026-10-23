@@ -1,0 +1,73 @@
+// today.js — the patient's day: the plate (one slice per planned meal) and today's meals with a Log button.
+import { list, remove, photoUrl, q, SLOTS, localDate, isoWeekday } from './api.js';
+import { h, icon, longDate, toast } from './ui.js';
+import { plate } from './charts.js';
+import { patientShell } from './shell.js';
+
+const { me, nutritionist } = await patientShell('today');
+const today = localDate();
+const params = new URL(location.href).searchParams;
+
+document.getElementById('greet').textContent = `¡Hola, ${me.name.split(' ')[0]}!`;
+document.getElementById('date').textContent = longDate(today) + (nutritionist ? ` · Plan de ${nutritionist.name}` : '');
+if (params.has('welcome')) document.getElementById('welcome').hidden = false;
+if (params.has('logged')) toast('¡Bien! Comida registrada.');
+if (params.has('logged') || params.has('welcome')) history.replaceState(null, '', '/today.html');
+
+const statusEl = document.getElementById('status');
+const mealsEl = document.getElementById('meals');
+
+try {
+  const [[diet], logs] = await Promise.all([
+    list('diets', { filter: `patient = ${q(me.id)}` }),
+    list('meal_logs', { filter: `patient = ${q(me.id)} && date = ${q(today)}`, sort: 'created' }),
+  ]);
+  const todays = diet?.meals?.[isoWeekday()] || {};
+  const planned = SLOTS.filter(([k]) => todays[k]);
+  const bySlot = {};
+  for (const l of logs) (bySlot[l.slot] ||= []).push(l);
+
+  document.getElementById('plate').replaceChildren(plate(planned.map(([k]) => ({ slot: k, done: !!bySlot[k] }))));
+
+  if (!diet) statusEl.textContent = 'Tu nutrióloga o nutriólogo aún no te asigna una dieta. Puedes registrar tus comidas de todos modos.';
+  else if (!planned.length) statusEl.textContent = 'Hoy no hay comidas en tu plan. Puedes registrar lo que comas.';
+  else statusEl.textContent = '';
+
+  // Planned meals, plus any extra slot the patient logged that is not in the plan.
+  const shown = SLOTS.filter(([k]) => todays[k] || bySlot[k]);
+  for (const [key, label] of shown) {
+    const done = bySlot[key] || [];
+    const seen = done.length && done.every((l) => l.seen_at);
+    const thumbs = h('div', { class: 'plato-meal-thumbs' });
+    for (const l of done) {
+      const img = h('img', { alt: `Tu foto de ${label.toLowerCase()}`, width: 48, height: 48 });
+      photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
+      thumbs.append(img, h('button', {
+        class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': `Borrar esta foto de ${label.toLowerCase()}`,
+        onclick: async () => {
+          if (!confirm('¿Borrar esta foto?')) return;
+          try { await remove('meal_logs', l.id); } catch (e) {
+            toast(e.status === 404 ? 'Solo puedes borrar fotos del mismo día.' : e.message, 'error');
+            return;
+          }
+          location.reload();
+        },
+      }, icon('trash', 14)));
+    }
+    mealsEl.append(h('li', { class: 'plato-meal' },
+      h('span', { class: 'plato-swatch', style: `--swatch: var(--slot-${key})`, 'aria-hidden': 'true' }),
+      h('div', {},
+        h('h3', { text: label }),
+        todays[key] ? h('p', { text: todays[key] }) : h('p', { class: 'plato-muted', text: 'Fuera de tu plan' }),
+        done.length ? h('span', { class: `plato-meal-status${seen ? ' is-seen' : ''}` }, icon(seen ? 'eye' : 'check', 14),
+          seen ? 'Vista por tu nutrióloga/o' : 'Registrada') : null,
+        done.length ? thumbs : null),
+      h('a', {
+        class: 'btn', 'data-variant': done.length ? 'outline' : null, 'data-size': 'sm',
+        href: `/log.html?slot=${key}`, 'aria-label': `${done.length ? 'Otra foto' : 'Registrar'}: ${label}`,
+      }, icon('camera', 16), done.length ? 'Otra' : 'Registrar')));
+  }
+} catch (e) {
+  statusEl.textContent = e.message;
+  document.getElementById('plate').replaceChildren();
+}

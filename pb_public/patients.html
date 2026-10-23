@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mis pacientes — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/patients.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/patients.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato <small id="clinic"></small></a>
+    <div class="plato-row">
+      <span class="plato-muted plato-small plato-hide-sm" id="who"></span>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main">
+    <div class="plato-row plato-row--between" style="margin-bottom:1.25rem">
+      <h1 class="plato-page-title">Mis pacientes</h1>
+      <button class="btn" type="button" id="new-patient">Nuevo paciente</button>
+    </div>
+    <p id="status" class="plato-muted" role="status">Cargando…</p>
+    <ul class="plato-patients" id="list" aria-label="Pacientes"></ul>
+  </main>
+
+  <dialog class="dialog" id="patient-dialog" aria-labelledby="pd-title">
+    <div>
+      <header><h2 id="pd-title">Nuevo paciente</h2><p>Usa datos de prueba hasta tener tu aviso de privacidad.</p></header>
+      <form id="patient-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <div class="field"><label for="pf-name">Nombre completo</label><input class="input" id="pf-name" name="name" required maxlength="120" autocomplete="off"></div>
+          <div class="field">
+            <label for="pf-sex">Sexo</label>
+            <select class="select" id="pf-sex" name="sex" required>
+              <option value="">Elige…</option>
+              <option value="female">Mujer</option>
+              <option value="male">Hombre</option>
+            </select>
+          </div>
+          <div class="plato-grid-2" style="grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))">
+            <div class="field"><label for="pf-birth">Fecha de nacimiento</label><input class="input" id="pf-birth" name="birth_date" type="date"></div>
+            <div class="field"><label for="pf-height">Estatura (cm)</label><input class="input" id="pf-height" name="height_cm" type="number" min="40" max="250" step="0.5" inputmode="decimal"></div>
+          </div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" value="cancel" id="pd-cancel">Cancelar</button>
+          <button class="btn" type="submit">Guardar</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="pd-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+</body>
+</html>
