@@ -8,7 +8,9 @@ services:
     container_name: pocketbase
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      # Only this PC can open the app. To test on a phone on the same Wi-Fi, change to "8090:8090"
+      # for that session and change it back afterwards (plain HTTP on the network is not private).
+      - "127.0.0.1:8090:8090"
     volumes:
       - ./pb_data:/pb/pb_data          # database + uploaded files (persisted)
       - ./pb_public:/pb/pb_public      # static files served at /

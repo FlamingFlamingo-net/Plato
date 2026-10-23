@@ -11,6 +11,7 @@ import io
 import json
 import secrets
 import sys
+import time
 import urllib.error
 import urllib.request
 import uuid
@@ -20,7 +21,16 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8091"
 results = []
 
 
-def call(method, path, body=None, token=None, files=None):
+def call(method, path, body=None, token=None, files=None, retry=True):
+    for attempt in range(8):
+        s, r = _call(method, path, body, token, files)
+        if s != 429 or not retry:
+            return s, r
+        time.sleep(8)  # rate limit hit (real server setting); wait and try again
+    return s, r
+
+
+def _call(method, path, body=None, token=None, files=None):
     headers = {}
     data = None
     if files:
@@ -203,6 +213,23 @@ tp = j2["token"]
 
 s, r = call("DELETE", f"/api/collections/meal_logs/records/{log['id']}", token=tp)
 check("patient deletes own log the same day", s == 204, (s, r))
+
+# ---- security fixes (audit 2026-10-23) ----
+known = pw()
+s, r = call("POST", "/api/collections/patients/records",
+                                {"name": "ZZ Preset", "sex": "male", "nutritionist": a_id, "email": f"zz-preset-{uuid.uuid4().hex[:5]}@test.local",
+                                 "password": known, "passwordConfirm": known}, ta)
+check("nutritionist cannot choose a patient's email (no signing in as the patient)", s >= 400, (s, r))
+for field, value in [("emailVisibility", True), ("verified", False), ("email", "x@test.local")]:
+    s, r = call("PATCH", f"/api/collections/patients/records/{p1['id']}", {field: value}, ta)
+    check(f"nutritionist cannot change the patient's {field}", s == 404, s)
+s, r = call("PATCH", f"/api/collections/patients/records/{p1['id']}", {"height_cm": 161}, ta)
+check("nutritionist can still edit the patient's details", s == 200, (s, r))
+
+codes = [call("POST", "/api/collections/nutritionists/auth-with-password", {"identity": "zz-nobody@test.local", "password": f"wrong{i}"}, retry=False)[0] for i in range(15)]
+check("15 wrong sign-ins in a minute get slowed down (429)", 429 in codes, sorted(set(codes)))
+codes = [call("GET", f"/api/plato/invite/{secrets.token_hex(20)}", retry=False)[0] for i in range(25)]
+check("25 guessed invite links in a minute get slowed down (429)", 429 in codes, sorted(set(codes)))
 
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")

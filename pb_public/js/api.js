@@ -47,6 +47,7 @@ function friendly(status, body) {
   const first = Object.values(fields)[0];
   if (first?.code && FIELD_MSG[first.code]) return FIELD_MSG[first.code];
   if (status === 404) return 'No encontrado.';
+  if (status === 429) return 'Demasiados intentos. Espera un minuto e inténtalo otra vez.';
   if (status === 401 || status === 403) return 'Tu sesión terminó. Vuelve a entrar.';
   if (status === 400 && body?.message && !/^Failed|^Something/i.test(body.message)) {
     // Hook messages are already Spanish; PocketBase's generic ones are not.

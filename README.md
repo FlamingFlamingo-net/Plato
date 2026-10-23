@@ -26,8 +26,10 @@ docker compose logs -f    # see what the server is doing
 On the start page, tap **Instalar app** (Chrome, Edge, Android). On iPhone: Share → Add to Home Screen.
 The installed app opens with no signal. Saving needs a connection.
 
-To install on a **real phone**, the site must be on HTTPS (a tunnel or a real server). A phone on the same Wi-Fi
-can open `http://<this-PC's-IP>:8090` and use the app, but it cannot install it without HTTPS.
+To install on a **real phone**, the site must be on HTTPS (a tunnel or a real server). By default only this
+computer can open the app. For a phone on the same Wi-Fi, change the port line in `docker-compose.yml` to
+`"8090:8090"`, run `docker compose up -d`, open `http://<this-PC's-IP>:8090` on the phone, and change it back
+afterwards. Without HTTPS the phone can use the app but not install it.
 
 ## Data
 
@@ -53,7 +55,7 @@ docker run -d --rm --name pb-check -p 127.0.0.1:8091:8090 \
   -v "$PWD/pb_hooks:/pb/pb_hooks" \
   -v "$PWD/pb_migrations:/pb/pb_migrations" \
   -v "$PWD/pb_public:/pb/pb_public" pocketbase-local:0.40.5
-python tools/api_check.py http://127.0.0.1:8091                       # 42 permission + invite checks
+python tools/api_check.py http://127.0.0.1:8091                       # 49 permission, invite and rate-limit checks
 PHOTO=path/to/photo.jpg node tools/e2e.mjs http://127.0.0.1:8091 out --offline-after "docker stop pb-check"   # 22 screen checks
 ```
 

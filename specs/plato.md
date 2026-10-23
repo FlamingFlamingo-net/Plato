@@ -130,6 +130,22 @@ Run on the current release. Mark each step pass or fail. Last run: 2026-10-19, h
 
 ---
 
+## Security (audit 2026-10-23, fixed)
+
+`pb-audit` found five things. All are fixed in `pb_migrations/1761264000_plato_security.js` and `docker-compose.yml`. Checks: `tools/api_check.py` 49/49.
+
+| # | Was | Now |
+|---|---|---|
+| 1 | A nutritionist could pick a patient's email and password, then sign in as that patient. | Only the invite link sets a patient's email. The patient picks it. |
+| 2 | No limit on wrong passwords. | 10 sign-in tries per minute per address. Then: "Demasiados intentos. Espera un minuto." |
+| 3 | A nutritionist could switch on "show email" for a patient. | Blocked. The nutritionist never sees the patient's email. |
+| 4 | Invite links could be guessed without limit (very hard anyway: 40 random characters). | 20 invite-link requests per minute per address. |
+| 5 | Anyone on the same Wi-Fi could open the server over plain HTTP. | Only this PC can open it. For a phone test, open it to the network for that session only. |
+
+Risk to remember when it goes online: limits count per address. Behind a proxy, every user can look like one address. `pb-deploy` must set the trusted proxy header.
+
+---
+
 ## Build notes
 
 - **Collections** (PocketBase):
