@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes. Specced, not approved: patient export, close account. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -204,6 +204,89 @@ Not legal advice. A map of what to ask a lawyer. Checked 2026-10-23.
 | L12 | Users in Spain | GDPR applies. Separate project. |
 
 Already fine: MIT license for our code; Basecoat keeps its own MIT license.
+
+---
+
+## Feature: Export a patient's data (SPEC — not approved)
+
+**What:** the nutritionist downloads everything Plato holds about one patient. Use it when the patient asks for their data (L3), or when the patient moves to another nutritionist.
+
+**Who:** the nutritionist of that patient only. Patients do not export by themselves in this version (the nutritionist is the controller, L2).
+
+**Demo loop (2 minutes):**
+1. Open a patient. Open the **Acceso** tab.
+2. Click **Exportar datos**.
+3. A printable page opens: profile, measurements with the weight chart, the weekly diet, and every meal log with its photo, date, meal and note.
+4. Click **Guardar PDF**. The browser saves an A4 PDF.
+5. Click **Descargar datos (JSON)**. The browser saves one `.json` file with the same data, readable by other software.
+
+**Rules:**
+- The export uses the same access rules as the patient page. Another nutritionist gets "No encontrado".
+- Private notes are left out by default. A checkbox **Incluir notas privadas** adds them in their own section, "Notas privadas de la nutrióloga/o". The nutritionist decides per export (open question 1).
+- The patient's email is in the export. Passwords and invite links never are.
+- Photos are in the PDF. The JSON lists each photo by date, meal and file name; the photos stay in the PDF.
+- Nothing is changed by an export.
+
+**Screens and files:** `pb_public/export.html` + `js/export.js` (A4 print styles, the profile's PDF rules). A button on the Acceso tab. No new collection, no hook: the page reads the APIs the nutritionist can already read.
+
+**Acceptance:**
+1. Export the demo patient Ana. Expect 4 measurements, the chart, 7 days of diet, 2 photos and no private notes. Tick **Incluir notas privadas**: expect 1 note. Expect the same counts in the JSON.
+2. The PDF is A4 (595 × 842 pt), and no photo is cut across two pages.
+3. As a second nutritionist, open Ana's export address. Expect "No encontrado".
+4. Signed in as Ana, open the export address. Expect to be sent back to Today.
+
+**Later:** the patient exports from their own app; one ZIP with full-size photos; a log of who exported and when.
+
+**Not now:** automatic emails with the file (no email in v1).
+
+---
+
+## Feature: Close a patient's account (SPEC — not approved)
+
+**What:** the nutritionist closes a patient's account when the patient asks (L3) or stops treatment. Default is **archive**, not delete, because clinical records may need to stay 5 years (L4). Permanent deletion is a second, separate step.
+
+**Who:** the nutritionist of that patient only.
+
+**Demo loop (3 minutes):**
+1. Open a patient. Open the **Acceso** tab. Click **Cerrar cuenta**.
+2. A dialog explains in one paragraph: the patient can no longer sign in; the data is kept, read-only, for the retention period; nothing is deleted.
+3. Type the patient's first name to confirm. Click **Cerrar cuenta**.
+4. The patient leaves the main list. A **Archivados** filter shows them, with the closing date.
+5. On the phone, the patient's app shows "Tu cuenta está cerrada. Habla con tu nutrióloga o nutriólogo." Sign-in fails with the same message.
+6. To undo: open the archived patient, click **Reactivar**, then make a new invite link. The old password does not come back.
+7. To delete for good: open the archived patient, click **Borrar definitivamente**, read the 5-year warning, type the full name. All data and photos are deleted. This cannot be undone.
+
+**Rules:**
+- Closing: the server clears the patient's email, sets a random password, ends every session (new token key), and voids open invite links. A hook does this; rules cannot.
+- Archived patient: nobody can add measurements, diet changes, meal logs or notes. The nutritionist can still read and export.
+- No invite link for an archived patient.
+- Permanent delete works only on an archived patient. It removes the patient, measurements, diet, meal logs, photos, notes and invites (they already delete together).
+- Closing and deleting need the typed name, so one wrong click does nothing.
+
+**Data:** `patients` gets `archived_at` (date, empty = active). Write rules on measurements, diets, meal_logs and patient_notes add `patient.archived_at = ""`. Patient delete rule adds `archived_at != ""`.
+
+**Screens and files:** dialogs on the Acceso tab; an Archivados filter on the patient list; a closed-account message in the patient app; `pb_hooks/plato.pb.js` gets `POST /api/plato/patients/{id}/close` and `/reopen`; one new migration.
+
+**Acceptance:**
+1. Close Carlos. Expect him gone from the list and present under Archivados.
+2. Try his old session and his old password. Expect both to fail.
+3. Try to add a measurement to him (screen and API). Expect refusal.
+4. Try to make an invite link for him. Expect refusal.
+5. Reactivate him, make a link, join again. Expect it to work.
+6. Archive and delete permanently. Expect his photos' addresses to return "not found".
+7. As a second nutritionist, try close, reopen and delete on Carlos. Expect "No encontrado".
+8. Try to delete an active patient directly through the API. Expect refusal.
+
+**Later:** the patient asks to close from their own app (the nutritionist approves); automatic deletion 5 years after the last consultation; a log of closings and deletions.
+
+**Not now:** closing a nutritionist's own account.
+
+### Decisions (both features, accepted 2026-10-23)
+
+1. Private notes in the export: the nutritionist decides per export (checkbox, off by default). Confirm with the lawyer later (L3, L4).
+2. Retention: warn about 5 years; do not block permanent deletion. Confirm with the lawyer later (L4).
+3. Closing needs no reason. One confirm step: type the patient's name.
+4. Reactivation keeps old meal logs. Nothing is deleted on close.
 
 ---
 
