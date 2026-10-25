@@ -107,6 +107,11 @@ export async function launch({ port = 9333, profileDir }) {
       async offline(on) {
         await s('Network.emulateNetworkConditions', { offline: on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
       },
+      async pdf(path) {
+        const { data } = await s('Page.printToPDF', { preferCSSPageSize: true, printBackground: true, displayHeaderFooter: false });
+        writeFileSync(path, Buffer.from(data, 'base64'));
+        return path;
+      },
       async screenshot(path, { full = true } = {}) {
         let clip;
         if (full) {

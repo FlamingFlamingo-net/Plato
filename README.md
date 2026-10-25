@@ -57,7 +57,11 @@ docker run -d --rm --name pb-check -p 127.0.0.1:8091:8090 \
   -v "$PWD/pb_public:/pb/pb_public" pocketbase-local:0.40.5
 python tools/api_check.py http://127.0.0.1:8091                       # 49 permission, invite and rate-limit checks
 PHOTO=path/to/photo.jpg node tools/e2e.mjs http://127.0.0.1:8091 out --offline-after "docker stop pb-check"   # 22 screen checks
+python tools/seed.py http://127.0.0.1:8091 out/seed                   # demo data + session tokens (fresh server)
+PDF_PYTHON=python node tools/docs_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out   # 25 print + export checks
 ```
+
+`docs_check.mjs` reads the PDFs with `tools/pdf_info.py`, which needs PyMuPDF (`pip install pymupdf`); point `PDF_PYTHON` at that Python.
 
 `api_check.py` needs Python with Pillow. `e2e.mjs` needs Node 22+ and Chrome; it is a test tool only.
 
