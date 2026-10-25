@@ -80,8 +80,10 @@ const dfLong = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric
 const dfShort = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 const tf = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
 const fromYmd = (s) => { const [y, m, d] = s.slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
-export const longDate = (ymd) => { const s = dfLong.format(fromYmd(ymd)); return s[0].toUpperCase() + s.slice(1); };
-export const shortDate = (ymd) => dfShort.format(fromYmd(ymd));
+// "2026-10-19" is a calendar date (kept as is). "2026-10-25 01:45:00.000Z" is a moment: show its LOCAL date.
+const toLocalDay = (s) => (s.length > 10 ? new Date(s.replace(' ', 'T')) : fromYmd(s));
+export const longDate = (ymd) => { const s = dfLong.format(toLocalDay(ymd)); return s[0].toUpperCase() + s.slice(1); };
+export const shortDate = (ymd) => dfShort.format(toLocalDay(ymd));
 export const timeOf = (pbDateTime) => tf.format(new Date(pbDateTime.replace(' ', 'T')));
 export const num = (n, digits = 1) => new Intl.NumberFormat('es-MX', { maximumFractionDigits: digits }).format(n);
 

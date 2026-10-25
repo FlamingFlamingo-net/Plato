@@ -121,7 +121,7 @@ const filledSlots = (d) => SLOTS.filter(([k]) => (meals[d]?.[k] || '').trim()).l
 
 function setDirty(v) {
   dirty = v;
-  dietState.textContent = v ? 'Cambios sin guardar' : diet ? `Guardada ${shortDate(dateOnly(diet.updated))}` : 'Aún no hay dieta';
+  dietState.textContent = v ? 'Cambios sin guardar' : diet ? `Guardada ${shortDate(diet.updated)}` : 'Aún no hay dieta';
 }
 addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
 
