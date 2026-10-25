@@ -1,4 +1,4 @@
-/* print.css — A4 documents: the weekly diet sheet (landscape).
+/* print.css — A4 documents: the weekly diet sheet (landscape) and the patient export (portrait).
    Screen: a paper preview with a toolbar. Print: the paper only. Sizes in pt/mm for print. */
 
 @page { size: A4; margin: 16mm 15mm; }
@@ -27,6 +27,7 @@ body.doc { background: var(--muted); }
   font-family: var(--font-sans); font-size: 9.5pt; line-height: 1.35;
 }
 .sheet--week { width: 297mm; min-height: 210mm; padding: 12mm; page: week; }
+.sheet--portrait { width: 210mm; min-height: 297mm; padding: 16mm 15mm; }
 
 /* Header shared by both documents */
 .sheet-head { display: flex; align-items: center; gap: 4mm; padding-bottom: 3mm; margin-bottom: 4mm; border-bottom: 0.6pt solid #d9d4c8; }
@@ -48,6 +49,47 @@ body.doc { background: var(--muted); }
 .week-table td.is-empty { color: #9aa29d; text-align: center; }
 .week-table tr { break-inside: avoid; }
 .week-table thead { display: table-header-group; }
+
+/* ---------- Week as a list (portrait export) ---------- */
+.week-list { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 6mm; }
+.week-day { break-inside: avoid; }
+.week-day h3 { margin: 0 0 1mm; font: 700 10pt var(--font-heading); }
+.week-day dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.8mm 2mm; }
+.week-day dt { display: flex; align-items: center; gap: 1.5mm; font-weight: 600; white-space: nowrap; }
+.week-day dd { margin: 0; white-space: pre-wrap; }
+.week-day p { margin: 0; }
+
+/* ---------- Export sections ---------- */
+.doc-section { margin-top: 6mm; }
+.doc-section > h2 { margin: 0 0 2.5mm; font: 700 11.5pt var(--font-heading); padding-bottom: 1mm; border-bottom: 0.6pt solid #e6e1d6; break-after: avoid; }
+.doc-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm 6mm; margin: 0; }
+.doc-facts div { break-inside: avoid; }
+.doc-facts dt { font-size: 7.5pt; color: #55605a; text-transform: uppercase; letter-spacing: 0.04em; }
+.doc-facts dd { margin: 0; font-weight: 600; }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.doc-table th, .doc-table td { border-bottom: 0.6pt solid #e6e1d6; padding: 1.4mm 2mm; text-align: left; }
+.doc-table th { font-size: 7.5pt; color: #55605a; text-transform: uppercase; letter-spacing: 0.04em; }
+.doc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.doc-table tr { break-inside: avoid; }
+.doc-table thead { display: table-header-group; }
+.doc-chart { margin: 3mm 0; break-inside: avoid; }
+.doc-chart svg { width: 100%; height: auto; max-height: 55mm; }
+.doc-chart figcaption { font-size: 8pt; color: #55605a; }
+.doc-logs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+.doc-log { break-inside: avoid; border: 0.6pt solid #e6e1d6; border-radius: 2mm; overflow: hidden; }
+.doc-log img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #f3f0e8; }
+.doc-log div { padding: 1.6mm 2mm; font-size: 8pt; }
+.doc-log strong { display: block; font-size: 8.5pt; }
+.doc-log p { margin: 0.5mm 0 0; white-space: pre-wrap; }
+.doc-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 2mm; }
+.doc-notes li { break-inside: avoid; padding: 2mm 2.5mm; border-left: 1.2mm solid #e6e1d6; background: #faf8f3; }
+.doc-notes p { margin: 0.5mm 0 0; white-space: pre-wrap; }
+.doc-foot { margin-top: 8mm; font-size: 7.5pt; color: #7a827d; }
+.doc-empty { color: #55605a; font-style: italic; margin: 0; }
+.chart-grid { stroke: #e6e1d6; stroke-width: 1; }
+.chart-line { fill: none; stroke: var(--chart-1); stroke-width: 2.5; stroke-linejoin: round; }
+.chart-dot { fill: #fff; stroke: var(--chart-1); stroke-width: 2.5; }
+.chart-label { font: 500 11px var(--font-sans); fill: #55605a; }
 
 @media (max-width: 40rem) {
   .doc-bar { font-size: 0.9rem; }

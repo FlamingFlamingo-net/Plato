@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Exportar datos — Plato</title>
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <link rel="stylesheet" href="/css/print.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/export.js?v=1"></script>
+</head>
+<body class="doc">
+  <div class="doc-bar no-print">
+    <a class="btn" data-variant="ghost" data-size="sm" id="back" href="/patients.html">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Volver
+    </a>
+    <div class="plato-row">
+      <label class="label plato-small" for="with-notes"><input type="checkbox" class="input" id="with-notes"> Incluir notas privadas</label>
+      <button class="btn" data-variant="outline" data-size="sm" type="button" id="json" disabled>Descargar datos (JSON)</button>
+      <button class="btn" data-size="sm" type="button" id="print" disabled>Guardar PDF</button>
+    </div>
+  </div>
+  <main id="main">
+    <p class="doc-status plato-muted" id="status" role="status">Cargando…</p>
+    <div class="doc-scroll"><article class="sheet sheet--portrait" id="sheet" hidden aria-labelledby="sheet-title"></article></div>
+  </main>
+</body>
+</html>

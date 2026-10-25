@@ -22,3 +22,15 @@ export function weekTable(meals) {
       })))));
   return table;
 }
+
+// Portrait list: one block per day, planned meals only.
+export function weekList(meals) {
+  return h('div', { class: 'week-list' }, ...WEEKDAYS.map((d, i) => {
+    const rows = SLOTS.filter(([k]) => text(meals, i + 1, k));
+    return h('section', { class: 'week-day' },
+      h('h3', { text: d }),
+      rows.length
+        ? h('dl', {}, ...rows.flatMap(([k, label]) => [h('dt', {}, swatch(k), label), h('dd', { text: text(meals, i + 1, k) })]))
+        : h('p', { class: 'plato-muted', text: 'Sin comidas en el plan.' }));
+  }));
+}

@@ -317,6 +317,7 @@ document.getElementById('copy-link').addEventListener('click', async () => {
 });
 
 // ---------- Boot ----------
+document.getElementById('export-link').href = `/export.html?id=${encodeURIComponent(patient.id)}`;
 document.getElementById('print-week').addEventListener('click', () => {
   if (dirty) { toast('Guarda la dieta antes de imprimir.', 'error'); return; }
   location.href = `/diet-print.html?id=${encodeURIComponent(patient.id)}`;
