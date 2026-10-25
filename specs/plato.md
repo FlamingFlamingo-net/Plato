@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes. Approved, building: patient export, print weekly diet. Specced, not approved: close account. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet. Specced, not approved: close account. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -207,7 +207,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ---
 
-## Feature: Export a patient's data (approved — building)
+## Feature: Export a patient's data (built)
 
 **What:** the nutritionist downloads everything Plato holds about one patient. Use it when the patient asks for their data (L3), or when the patient moves to another nutritionist.
 
@@ -223,7 +223,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 **Rules:**
 - The export uses the same access rules as the patient page. Another nutritionist gets "No encontrado".
 - Private notes are left out by default. A checkbox **Incluir notas privadas** adds them in their own section, "Notas privadas de la nutrióloga/o". The nutritionist decides per export (open question 1).
-- The patient's email is in the export. Passwords and invite links never are.
+- The patient's email is **not** in the export. Since the security fix the nutritionist cannot see it, and the patient already knows it. Passwords and invite links are never in it. (Changed during build.)
 - Photos are in the PDF. The JSON lists each photo by date, meal and file name; the photos stay in the PDF.
 - Nothing is changed by an export.
 
@@ -234,6 +234,8 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 2. The PDF is A4 (595 × 842 pt), and no photo is cut across two pages.
 3. As a second nutritionist, open Ana's export address. Expect "No encontrado".
 4. Signed in as Ana, open the export address. Expect to be sent back to Today.
+
+**Result (2026-10-24, `tools/docs_check.mjs`, throwaway server):** acceptance 1–4 pass. PDF: A4 portrait on every page; each photo whole on one page; no notes unless ticked; no email in PDF or JSON.
 
 **Later:** the patient exports from their own app; one ZIP with full-size photos; a log of who exported and when.
 
@@ -290,7 +292,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ---
 
-## Feature: Print the weekly diet (approved — building)
+## Feature: Print the weekly diet (built)
 
 **What:** one A4 sheet with the whole week's diet, to print or save as PDF. Patients put it on the fridge. Nutritionists hand it over at the visit. From the Later list (P1).
 
@@ -322,6 +324,8 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 4. A patient with no diet. Expect "Aún no hay dieta" and no print button.
 5. As a second nutritionist, open Ana's print address. Expect "No encontrado".
 6. Black-and-white check: print preview in grey still shows every meal name.
+
+**Result (2026-10-24, `tools/docs_check.mjs`, throwaway server):** acceptance 1–6 pass, plus "save before printing". Normal diet: 1 page, A4 landscape. Long diet: 2 pages, day names on both, no meal split. On a phone the sheet scrolls sideways with a hint. Real printer and real phone print dialog: not checked yet.
 
 **Later:** clinic logo on the sheet; the nutritionist's phone and next appointment; a portrait "one day per page" option; a shopping list from the week.
 
