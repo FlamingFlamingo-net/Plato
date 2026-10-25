@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes. Specced, not approved: patient export, close account. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes. Approved, building: patient export, print weekly diet. Specced, not approved: close account. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -41,7 +41,7 @@ A photo is not lost: the patient can retake it when the connection is back. v1 d
 
 | Item | Why it can wait | What v1 must not block |
 |---|---|---|
-| Print / PDF of the weekly diet (P1) | Patients can read it in the app. | Keep diet meals as structured rows, not one text blob. |
+| Print / PDF of the weekly diet (P1) | Patients can read it in the app. | Keep diet meals as structured rows, not one text blob. **Now specced:** see "Feature: Print the weekly diet". |
 | Exercise log (P1) | Not in the core loop. | Logs are per patient and per date. A second log type fits the same shape. |
 | Goals and mood check-in (P1) | Nice for motivation. Not needed to demo. | Patient owns their own records. |
 | Patient rates the day (P1) | Photos already show compliance. | Logs have a date field. |
@@ -207,7 +207,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ---
 
-## Feature: Export a patient's data (SPEC — not approved)
+## Feature: Export a patient's data (approved — building)
 
 **What:** the nutritionist downloads everything Plato holds about one patient. Use it when the patient asks for their data (L3), or when the patient moves to another nutritionist.
 
@@ -287,6 +287,52 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 2. Retention: warn about 5 years; do not block permanent deletion. Confirm with the lawyer later (L4).
 3. Closing needs no reason. One confirm step: type the patient's name.
 4. Reactivation keeps old meal logs. Nothing is deleted on close.
+
+---
+
+## Feature: Print the weekly diet (approved — building)
+
+**What:** one A4 sheet with the whole week's diet, to print or save as PDF. Patients put it on the fridge. Nutritionists hand it over at the visit. From the Later list (P1).
+
+**Who:** the nutritionist (for their patient) and the patient (their own diet). Same read rules as today: nobody else.
+
+**Demo loop (2 minutes):**
+1. Nutritionist: open Ana. Open the **Dieta** tab. Click **Imprimir semana**.
+2. A print page opens: one A4 sheet, landscape. Days are columns (Lunes … Domingo). Meals are rows (Desayuno … Cena), each with its plate colour.
+3. The top shows: plan name, patient name, "Plan de Laura Méndez · Consultorio Demo", and the date printed.
+4. Click **Imprimir / Guardar PDF**. The browser print dialog opens.
+5. Patient: on the phone, open **Hoy**. Tap **Imprimir mi semana**. The same sheet opens. On the phone it shows as a scrollable preview with the same print button.
+
+**Rules:**
+- Landscape A4, 12 mm margins. One sheet for a normal diet.
+- A very long diet flows to a second sheet. The day names repeat at the top of each sheet. A meal cell never splits across sheets.
+- An empty meal shows "—". A day with no meals still shows its column.
+- No diet yet: the page says "Aún no hay dieta" and the print button is off.
+- Only the diet. No measurements, no photos, no private notes.
+- Unsaved changes in the Diet tab: the button asks "Guarda la dieta antes de imprimir" and does not open the page.
+- Colours print (print-color-adjust: exact). The sheet stays readable in black and white: meal names are text, not only colour.
+- Needs a connection (Offline: off). Offline, the page shows the no-connection message.
+
+**Screens and files:** `pb_public/diet-print.html` + `js/diet-print.js` (`?id=` for the nutritionist; the patient's own id when signed in as a patient). A button on the Diet tab and on Hoy. The weekly-diet block is written once and reused later by the patient export.
+
+**Acceptance:**
+1. Print Ana's diet as the nutritionist. Expect 1 page, A4 landscape (842 × 595 pt), 7 columns, 5 rows, her plan name and the nutritionist's name.
+2. Print the same diet as Ana from the phone. Expect the same content.
+3. A test diet with long text in every meal. Expect 2 pages, day names on both, no meal cut across pages.
+4. A patient with no diet. Expect "Aún no hay dieta" and no print button.
+5. As a second nutritionist, open Ana's print address. Expect "No encontrado".
+6. Black-and-white check: print preview in grey still shows every meal name.
+
+**Later:** clinic logo on the sheet; the nutritionist's phone and next appointment; a portrait "one day per page" option; a shopping list from the week.
+
+**Not now:** sending the PDF by email or WhatsApp from the app.
+
+### Decisions (accepted 2026-10-23 with "build export + print")
+
+1. Landscape: 7 days side by side on one sheet.
+2. Both the nutritionist and the patient can print.
+3. No week dates. Show only "Impreso el …" (the diet repeats every week).
+4. A small plate drawing in the top corner as the sheet's signature.
 
 ---
 
