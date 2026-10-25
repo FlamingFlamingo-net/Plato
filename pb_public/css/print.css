@@ -1,0 +1,62 @@
+/* print.css — A4 documents: the weekly diet sheet (landscape).
+   Screen: a paper preview with a toolbar. Print: the paper only. Sizes in pt/mm for print. */
+
+@page { size: A4; margin: 16mm 15mm; }
+@page week { size: A4 landscape; margin: 12mm; }
+
+html, body { margin: 0; }
+body.doc { background: var(--muted); }
+
+/* ---------- Toolbar (screen only) ---------- */
+.doc-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between;
+  padding: 0.625rem clamp(0.75rem, 3vw, 1.5rem);
+  background: var(--card); border-bottom: 1px solid var(--border);
+}
+.doc-bar .plato-row { gap: 0.5rem; }
+.doc-hint { margin: 0.75rem 1rem 0; font-size: 0.875rem; color: var(--muted-foreground); text-align: center; }
+@media (min-width: 70rem) { .doc-hint { display: none; } }
+.doc-status { margin: 1rem auto; max-width: 40rem; padding: 0 1rem; text-align: center; }
+
+/* ---------- Paper preview ---------- */
+.doc-scroll { overflow-x: auto; padding: 1.25rem 0.75rem 3rem; -webkit-overflow-scrolling: touch; }
+.sheet {
+  box-sizing: border-box; margin: 0 auto; background: #fff; color: #1d2621;
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.08), 0 8px 24px oklch(0 0 0 / 0.08);
+  font-family: var(--font-sans); font-size: 9.5pt; line-height: 1.35;
+}
+.sheet--week { width: 297mm; min-height: 210mm; padding: 12mm; page: week; }
+
+/* Header shared by both documents */
+.sheet-head { display: flex; align-items: center; gap: 4mm; padding-bottom: 3mm; margin-bottom: 4mm; border-bottom: 0.6pt solid #d9d4c8; }
+.sheet-head > div { flex: 1; min-width: 0; }
+.sheet-head h1 { margin: 0; font: 700 15pt/1.15 var(--font-heading); }
+.sheet-head p { margin: 0.6mm 0 0; font-size: 9pt; color: #55605a; }
+.sheet-head .sheet-meta { text-align: right; font-size: 8.5pt; color: #55605a; white-space: nowrap; }
+.sheet-plate svg { display: block; width: 12mm; height: 12mm; }
+.plato-swatch { display: inline-block; width: 7pt; height: 7pt; border-radius: 50%; background: var(--swatch); flex-shrink: 0; }
+
+/* ---------- Weekly table (landscape) ---------- */
+.week-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8.5pt; }
+.week-col-slot { width: 24mm; }
+.week-table th, .week-table td { border: 0.6pt solid #d9d4c8; padding: 2mm 2.2mm; vertical-align: top; text-align: left; }
+.week-table thead th { background: #f3f0e8; font: 700 9pt var(--font-heading); }
+.week-table tbody th { font-weight: 700; font-size: 8.5pt; background: #faf8f3; }
+.week-table tbody th span:last-child { display: block; margin-top: 1mm; }
+.week-table td { white-space: pre-wrap; overflow-wrap: anywhere; hyphens: auto; }
+.week-table td.is-empty { color: #9aa29d; text-align: center; }
+.week-table tr { break-inside: avoid; }
+.week-table thead { display: table-header-group; }
+
+@media (max-width: 40rem) {
+  .doc-bar { font-size: 0.9rem; }
+}
+
+@media print {
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.doc { background: #fff; }
+  .no-print, .plato-offline, .plato-toasts, .skip-link { display: none !important; }
+  .doc-scroll { padding: 0; overflow: visible; }
+  .sheet { width: auto; min-height: 0; padding: 0; margin: 0; box-shadow: none; }
+}

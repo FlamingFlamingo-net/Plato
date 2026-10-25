@@ -317,6 +317,10 @@ document.getElementById('copy-link').addEventListener('click', async () => {
 });
 
 // ---------- Boot ----------
+document.getElementById('print-week').addEventListener('click', () => {
+  if (dirty) { toast('Guarda la dieta antes de imprimir.', 'error'); return; }
+  location.href = `/diet-print.html?id=${encodeURIComponent(patient.id)}`;
+});
 renderAccess();
 const loaders = { overview: loadMeasurements, diet: loadDiet, log: loadLogs, notes: loadNotes };
 const loaded = new Set();
