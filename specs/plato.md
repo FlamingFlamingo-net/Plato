@@ -484,7 +484,7 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 
 ---
 
-## Feature: Saved diet templates (approved 2026-10-25)
+## Feature: Saved diet templates (built)
 
 **What:** the nutritionist saves a weekly diet as a **template** ("Bajar de peso — fase 1", "Deportista 2,500 kcal") and starts a patient's diet from it in one click, instead of typing the same week again.
 
@@ -530,6 +530,8 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 1. **Plantillas page** in the top bar now; it moves under **Catálogo** when the home screen and catalogue exist.
 2. **Editing in v1 goes through a patient:** apply, adjust, **Guardar como plantilla** → replace. A direct template editor comes later.
 3. **Using a template on a patient with a diet replaces the whole week**, after asking first. "Only fill empty meals" can come later.
+
+**Result (2026-10-26, throwaway server):** acceptance 1-8 pass: API 135/135 (15 template checks), screens `tools/templates_check.mjs` 14/14; all earlier suites still pass. Built as specced; the duplicate-name check happens before saving ("Ya tienes una plantilla llamada …" → Reemplazar / Guardar como copia), and the main button hides while that choice is open.
 
 ---
 
