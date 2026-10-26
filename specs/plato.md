@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Approved, building in 3 slices: patient activity dashboard (1 activity log, 2 progress photos, 3 home with feeds). Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: slice 1 (activity log) built; slices 2 (progress photos) and 3 (home with feeds) approved, not built. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -426,14 +426,41 @@ It replaces opening each patient one by one to look for new photos. It absorbs t
 - **Big banner** at the top with a picture submitted by the user.
 - **A grid of buttons**, each opening a "feed": **Catálogo**, **Agenda**, **Actividades**, **Fotos**, **Recientes**, and **"Pending dashboard"** (untitled for now).
 - **Below the grid:** card items, loaded by the feed selected.
+- **Banner picture:** the nutritionist's own (owner, 2026-10-25).
+- **Agenda:** shown but disabled until appointments exist. It must look disabled without relying on text: greyed out, a lock icon, not clickable, `aria-disabled="true"` (owner, 2026-10-25).
+- **Catálogo:** to be defined with the client.
 - Suggested refinements and open details are in the next section; settle them before slice 3.
+
+### Upgrades over Nutrimind's home (owner approved all 8, 2026-10-25)
+
+Reference: Nutrimind's home (banner image + 6 menu buttons + a "Tip Nutrimind" card). Plato does not copy it 1:1:
+1. **Banner = photo only.** Name, clinic and contact are live text from the nutritionist's profile on top of the photo (readable on phones and by screen readers; no redesign when a phone number changes; logo shown once).
+2. **Short banner**: about a quarter of the laptop screen.
+3. **Buttons show live counts** ("Actividades · 3 nuevas", "Fotos · 2 sin ver").
+4. **Buttons are tabs** that switch the cards below (selected one highlighted); **Recientes** is open by default.
+5. **No marketing card.** That space holds a **"Hoy" summary**: unseen logs, today's appointments (once Agenda exists), patients who went quiet.
+6. **One accent colour** (Plato green). Colour only means state: a badge for new, grey + lock for disabled.
+7. **Labels say what is behind them** (e.g. "Lo último de tus pacientes" instead of "Recientes"/"Dashboard"); final wording at build.
+8. **Accessible controls**: solid bordered buttons, visible keyboard focus, the selected tab announced to screen readers.
+
+Ideas offered, not decided: Nutrimind's "Mis catálogos" is probably the nutritionist's libraries (foods, recipes, diet templates), not the patient list (ask the client). "Pending dashboard" could become **Pendientes**: unseen logs, patients without the app or with an expired link, no diet, no log in 3+ days.
+
+A throwaway clickable mockup (fake data, outside the app) is shown to the client before slice 3.
 
 ### Open questions (slice 3 only; slices 1 and 2 do not depend on them)
 
-1. Whose picture is the banner: the nutritionist's own (clinic or cover photo), or the latest photo a patient sent?
-2. **Catálogo** = the patient list as cards? **Fotos** = progress photos only, or meal photos too?
-3. **Agenda** needs appointments, which are not built (Later). Show the button as "Próximamente" or hide it until then?
+1. ~~Banner picture~~ → the nutritionist's own.
+2. **Catálogo:** owner will ask the client what it should show. **Fotos** = progress photos only, or meal photos too? (still open)
+3. ~~Agenda~~ → disabled look (grey + lock), not hidden.
 4. Suggested: keep the banner short on a laptop (about 1/4 of the screen) with a greeting and the "sin ver" counters, and make the grid a compact row of buttons, so the cards stay visible without scrolling. On the phone the grid becomes 2 or 3 columns.
+
+### Slice 1 — activity log (built 2026-10-25)
+
+- Patient: **Registrar** has a **Comida | Actividad** switch; the activity form is its own page (`activity.html`). Details (intensity, terrain, distance) sit under **Más detalles**; terrain and distance appear only for activities where they apply. Speed and pace are shown while typing.
+- Patient **Hoy**: "Actividad de hoy" list with seen status and same-day delete.
+- Nutritionist: the patient page's **Comidas** tab is now **Registros** (meals and activity in one feed, newest first; "Marcar vista" on each). The patient list adds an "N actividades nuevas" badge. Export (PDF and JSON) adds an "Actividad física" section.
+- Server: the date window, the "Otra" name and dropping details that don't apply are checked by a hook (`pb_hooks/activity.pb.js`), not only on screen.
+- **Result (throwaway server):** API 96/96 (23 new activity checks: acceptance 1, 3-6, 8 for activity), screens `tools/activity_check.mjs` 17/17, and all earlier suites still pass (demo 22/22, print + export 25/25, close account 12/12, security probe 0 findings).
 
 ### Reminders for the owner
 
