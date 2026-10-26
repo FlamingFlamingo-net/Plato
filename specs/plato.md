@@ -447,6 +447,13 @@ Ideas offered, not decided: Nutrimind's "Mis catálogos" is probably the nutriti
 
 A throwaway clickable mockup (fake data, outside the app) is shown to the client before slice 3.
 
+**Layout decisions from the mockup review (owner, 2026-10-25):**
+- The tab grid (left) and the right column line up as one block: same top edge, same bottom edge. The tabs stretch to fill the height.
+- The right column is the **Hoy** panel with a separate **Marcar todo como visto** button under it (a small gap between them), exactly as wide as Hoy. The bottom of the button lines up with the bottom of the tab grid.
+- The button is always in that spot (the layout does not jump between tabs). It marks as seen only what the selected tab shows, shows how many ("(6)"), and is greyed out when there is nothing to mark (e.g. Pendientes, Catálogo).
+- On a phone: tabs (2 columns), then Hoy, then the button.
+- Mockup file (not in the repo): `../Plato-mockups/home-dashboard.html (next to the repo)`.
+
 ### Open questions (slice 3 only; slices 1 and 2 do not depend on them)
 
 1. ~~Banner picture~~ → the nutritionist's own.
