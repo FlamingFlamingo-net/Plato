@@ -112,6 +112,9 @@ call("POST", "/api/collections/meal_logs/records",
 call("POST", "/api/collections/meal_logs/records",
      {"patient": ana["id"], "date": yesterday, "slot": "lunch", "note": ""}, token_a,
      files={"photo": ("comida.jpg", food_photo([(240, 230, 210), (120, 170, 90), (230, 120, 70)]), "image/jpeg")})
+call("POST", "/api/collections/activity_logs/records",
+     {"patient": ana["id"], "date": yesterday, "kind": "walk", "minutes": 40, "terrain": "flat", "distance_km": 3.2,
+      "intensity": "moderate", "note": "Con mi perro"}, token_a)
 
 (OUT / "DEMO-LOGINS.txt").write_text(
     "Plato demo logins (fictional people). Keep this file private.\n\n"

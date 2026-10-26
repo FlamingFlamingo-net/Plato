@@ -298,6 +298,74 @@ check("C6 after delete the photo address returns not found", s == 404, s)
 s, r = call("GET", f"/api/collections/meal_logs/records/{mlog['id']}", token=ta)
 check("C6 after delete the meal log is gone", s == 404, s)
 
+# ---- activity log (spec "Feature: Patient activity dashboard", slice 1) ----
+from datetime import timedelta
+
+
+def joined_patient(tok, nid, name):
+    s, p = new_patient(tok, nid, name)
+    s, inv = call("POST", "/api/plato/invite", {"patient": p["id"]}, tok)
+    s, j = call("POST", "/api/plato/join", {"token": inv["token"], "email": f"zz-{uuid.uuid4().hex[:8]}@test.local", "password": pw()})
+    assert s == 200, j
+    return p, j["token"]
+
+
+pa, tpa = joined_patient(ta, a_id, "ZZ Paciente Actividad")
+pz, tpz = joined_patient(tb, b_id, "ZZ Paciente Ajena")
+d0 = str(date.today())
+run = {"patient": pa["id"], "date": d0, "kind": "run", "minutes": 30, "terrain": "flat", "distance_km": 5, "note": "Parque"}
+s, act = call("POST", "/api/collections/activity_logs/records", run, tpa)
+check("A1 patient logs a run (30 min, flat, 5 km)", s == 200 and act.get("distance_km") == 5 and act.get("terrain") == "flat", (s, act))
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "patient": pz["id"]}, tpa)
+check("A6 a patient cannot log activity for someone else", s >= 400, s)
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "seen_at": f"{d0} 10:00:00.000Z"}, tpa)
+check("A6 a patient cannot mark their own activity seen", s >= 400, s)
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "patient": pa["id"]}, ta)
+check("A6 a nutritionist cannot log activity for a patient", s >= 400, s)
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "date": str(date.today() - timedelta(days=6))}, tpa)
+check("A7 6 days back is allowed", s == 200, (s, r))
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "date": str(date.today() - timedelta(days=12))}, tpa)
+check("A7 12 days back is refused", s == 400, (s, r))
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "date": str(date.today() + timedelta(days=3))}, tpa)
+check("A7 a future date is refused", s == 400, (s, r))
+s, r = call("POST", "/api/collections/activity_logs/records", {**run, "minutes": 0}, tpa)
+check("A7 minutes must be 1-600", s == 400, s)
+s, r = call("POST", "/api/collections/activity_logs/records", {"patient": pa["id"], "date": d0, "kind": "other", "minutes": 20}, tpa)
+check("A7 'Otra' without a name is refused", s == 400, (s, r))
+s, oth = call("POST", "/api/collections/activity_logs/records",
+              {"patient": pa["id"], "date": d0, "kind": "other", "kind_other": "  Escalar  ", "minutes": 45}, tpa)
+check("A7 'Otra' with a name is saved (trimmed)", s == 200 and oth.get("kind_other") == "Escalar", (s, oth))
+s, gym = call("POST", "/api/collections/activity_logs/records",
+              {"patient": pa["id"], "date": d0, "kind": "gym", "kind_other": "x", "minutes": 50, "terrain": "hills", "distance_km": 3, "intensity": "vigorous"}, tpa)
+check("A7 details that do not apply (gym: terrain, distance, name) are dropped",
+      s == 200 and gym.get("terrain") == "" and not gym.get("distance_km") and gym.get("kind_other") == "" and gym.get("intensity") == "vigorous", (s, gym))
+s, r = call("GET", "/api/collections/activity_logs/records?filter=" + urllib.parse.quote(f'patient = "{pa["id"]}"'), token=ta)
+check("A3 the nutritionist lists the patient's activity", s == 200 and r["totalItems"] == 4, (s, r.get("totalItems")))
+s, r = call("GET", "/api/collections/activity_logs/records", token=tb)
+check("A5 another nutritionist sees none of it", s == 200 and all(x["patient"] != pa["id"] for x in r["items"]), r)
+s, r = call("GET", f"/api/collections/activity_logs/records/{act['id']}", token=tpz)
+check("A5 another patient cannot open it", s == 404, s)
+s, r = call("PATCH", f"/api/collections/activity_logs/records/{act['id']}", {"minutes": 90}, ta)
+check("A4 the nutritionist cannot change the activity", s == 404, s)
+s, r = call("PATCH", f"/api/collections/activity_logs/records/{act['id']}", {"seen_at": f"{d0} 18:00:00.000Z"}, tb)
+check("A5 another nutritionist cannot mark it seen", s == 404, s)
+s, r = call("PATCH", f"/api/collections/activity_logs/records/{act['id']}", {"seen_at": f"{d0} 18:00:00.000Z"}, ta)
+check("A4 the nutritionist marks it seen", s == 200 and r.get("seen_at"), (s, r))
+s, r = call("PATCH", f"/api/collections/activity_logs/records/{act['id']}", {"seen_at": ""}, tpa)
+check("A6 the patient cannot change seen", s >= 400, s)
+s, r = call("DELETE", f"/api/collections/activity_logs/records/{oth['id']}", token=ta)
+check("A8 the nutritionist cannot delete the patient's activity", s == 404, s)
+s, r = call("DELETE", f"/api/collections/activity_logs/records/{oth['id']}", token=tpa)
+check("A8 the patient deletes their own activity the same day", s == 204, s)
+s, r = call("POST", f"/api/plato/patients/{pa['id']}/close", {}, ta)
+s, r = call("GET", f"/api/collections/activity_logs/records/{act['id']}", token=ta)
+check("A9 a closed account's activity stays readable", s == 200, s)
+s, r = call("PATCH", f"/api/collections/activity_logs/records/{gym['id']}", {"seen_at": f"{d0} 18:00:00.000Z"}, ta)
+check("A9 a closed account's activity is read-only", s == 404, s)
+s, r = call("DELETE", f"/api/collections/patients/records/{pa['id']}", token=ta)
+s, r = call("GET", f"/api/collections/activity_logs/records/{act['id']}", token=ta)
+check("A9 deleting the patient deletes their activity", s == 404, s)
+
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")
 sys.exit(1 if failed else 0)
