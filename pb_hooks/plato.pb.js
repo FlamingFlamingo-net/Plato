@@ -3,26 +3,20 @@
 //   POST /api/plato/invite        {patient}                 nutritionist only → new link, old links stop working
 //   GET  /api/plato/invite/{token}                          → {name, nutritionist} if the link still works
 //   POST /api/plato/join          {token, email, password}  → patient auth response (signed in)
+//   POST /api/plato/patients/{id}/close                     nutritionist → account closed (archived, read-only)
+//   POST /api/plato/patients/{id}/reopen                    nutritionist → active again; needs a new invite link
 // Helpers live in plato_lib.js (no ".pb." in the name) and are required inside each handler.
 
 routerAdd("POST", "/api/plato/invite", (e) => {
   const lib = require(`${__hooks}/plato_lib.js`);
-  const auth = e.auth;
-  if (!auth || auth.collection().name !== "nutritionists") {
-    throw new UnauthorizedError("Inicia sesión como nutrióloga o nutriólogo.");
-  }
-  const pid = String(e.requestInfo().body.patient || "");
-  let patient = null;
-  try { patient = e.app.findRecordById("patients", pid); } catch (_) { patient = null; }
-  if (!patient || patient.getString("nutritionist") !== auth.id) {
-    throw new NotFoundError("Paciente no encontrado.");
-  }
+  const patient = lib.ownedPatient(e, e.requestInfo().body.patient);
+  if (patient.getString("archived_at")) throw new BadRequestError("Esta cuenta está cerrada. Reactívala antes de crear un enlace.");
+  const pid = patient.id;
 
   const token = $security.randomString(40);
   const expires = lib.isoIn(7);
   e.app.runInTransaction((tx) => {
-    const old = tx.findRecordsByFilter("invites", "patient = {:p} && used = false", "", 0, 0, { p: pid });
-    for (const r of old) { r.set("used", true); tx.save(r); }
+    lib.voidInvites(tx, pid);
     const r = new Record(tx.findCollectionByNameOrId("invites"));
     r.set("patient", pid);
     r.set("token", token);
@@ -31,6 +25,34 @@ routerAdd("POST", "/api/plato/invite", (e) => {
     tx.save(r);
   });
   return e.json(200, { token: token, expires: expires });
+});
+
+// Close: the patient can no longer sign in; the data stays, read-only (spec: archive, not delete).
+routerAdd("POST", "/api/plato/patients/{id}/close", (e) => {
+  const lib = require(`${__hooks}/plato_lib.js`);
+  const patient = lib.ownedPatient(e, e.request.pathValue("id"));
+  if (patient.getString("archived_at")) throw new BadRequestError("Esta cuenta ya está cerrada.");
+  const at = lib.nowIso();
+  e.app.runInTransaction((tx) => {
+    patient.set("archived_at", at);
+    patient.set("joined", false);
+    patient.setEmail("");
+    patient.setVerified(false);
+    patient.setPassword($security.randomString(40));
+    patient.refreshTokenKey(); // ends every open session on every device
+    tx.save(patient);
+    lib.voidInvites(tx, patient.id);
+  });
+  return e.json(200, { archived_at: at });
+});
+
+routerAdd("POST", "/api/plato/patients/{id}/reopen", (e) => {
+  const lib = require(`${__hooks}/plato_lib.js`);
+  const patient = lib.ownedPatient(e, e.request.pathValue("id"));
+  if (!patient.getString("archived_at")) throw new BadRequestError("Esta cuenta no está cerrada.");
+  patient.set("archived_at", "");
+  e.app.save(patient);
+  return e.json(200, { archived_at: "" });
 });
 
 routerAdd("GET", "/api/plato/invite/{token}", (e) => {
