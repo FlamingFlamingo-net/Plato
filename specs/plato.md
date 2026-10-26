@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Approved, building in 3 slices: patient activity dashboard (1 activity log, 2 progress photos, 3 home with feeds). Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -42,7 +42,7 @@ A photo is not lost: the patient can retake it when the connection is back. v1 d
 | Item | Why it can wait | What v1 must not block |
 |---|---|---|
 | Print / PDF of the weekly diet (P1) | Patients can read it in the app. | Keep diet meals as structured rows, not one text blob. **Now specced:** see "Feature: Print the weekly diet". |
-| Exercise log (P1) | Not in the core loop. | Logs are per patient and per date. A second log type fits the same shape. |
+| Exercise log (P1) | Not in the core loop. | Logs are per patient and per date. A second log type fits the same shape. **Now specced** inside "Feature: Patient activity dashboard". |
 | Goals and mood check-in (P1) | Nice for motivation. Not needed to demo. | Patient owns their own records. |
 | Patient rates the day (P1) | Photos already show compliance. | Logs have a date field. |
 | Appointments and "next appointment" (P1) | The nutritionist uses their own calendar today. | None. |
@@ -50,7 +50,7 @@ A photo is not lost: the patient can retake it when the connection is back. v1 d
 | Saved diet templates (P1) | Typing one diet is enough to demo. | Diets are their own records, not fields on the patient. A template is a diet with no patient. |
 | Clinic logo (P1) | Looks are fine without it. | One nutritionist record holds clinic details. |
 | Recipes, macros, food exchange tables, visual diets (P2) | They need a licensed food database. That is a content project. | Meals stay free text in v1. A later version links a meal to foods. |
-| Clinical, lab, and body-photo records (P2) | Health data needs stricter rules and a privacy notice. | Private notes already live apart from shared data. |
+| Clinical, lab, and body-photo records (P2) | Health data needs stricter rules and a privacy notice. | Private notes already live apart from shared data. **Body (progress) photos now specced** inside "Feature: Patient activity dashboard"; clinical and lab records stay P2. |
 | Sports and pediatric tools (P2) | Specialist users. | Measurements are one row per date. More fields fit later. |
 | AI features (P2) | They cost money per use, and the nutritionist must check every result. | None. |
 
@@ -339,6 +339,105 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 2. Both the nutritionist and the patient can print.
 3. No week dates. Show only "Impreso el …" (the diet repeats every week).
 4. A small plate drawing in the top corner as the sheet's signature.
+
+---
+
+## Feature: Patient activity dashboard (approved 2026-10-25 — 3 slices)
+
+**What:** one screen where the nutritionist sees the latest events from all their patients, newest first. Three event types:
+1. **Meal photo** (exists today).
+2. **Physical activity** (new). Example: "Corrí 30 min en terreno plano", with optional details such as distance and speed.
+3. **Progress photo** (new). A body photo to follow the visual progress over time.
+
+It replaces opening each patient one by one to look for new photos. It absorbs the Later items "Exercise log (P1)" and "body photos (P2)".
+
+**Who:**
+- The patient logs activity and progress photos from the phone, like meal photos.
+- The nutritionist sees the dashboard (all patients) and each patient's own feed. Nobody else sees anything.
+
+**Demo loop (8 minutes, laptop + phone):**
+1. Phone (Ana): **Registrar** now asks "¿Qué quieres registrar?": **Comida · Actividad · Foto de progreso**.
+2. **Actividad:** pick **Correr**, type 30 min, pick terrain **Plano**. Tap **Más detalles**: distance 5 km. The app shows the speed: 10 km/h (6:00 min/km). Add a note. Send.
+3. **Foto de progreso:** pick the pose **Frente**, take the photo, send. A hint says what to wear and to use the same place and light each time.
+4. Laptop: after sign-in, the nutritionist lands on **Actividad**: a list of events from all patients, newest first, grouped by day. Each event shows the patient, the type, the time, and its content: photo, activity summary ("Correr · 30 min · 5 km · 10 km/h · plano"), or progress photo.
+5. Filters: by type (Todo · Comidas · Actividad · Fotos de progreso), by patient, and **Solo sin ver**.
+6. Click **Marcar vista** on one event, or **Marcar todo como visto** for the list on screen. The "sin ver" counter goes down.
+7. Click a patient's name: their page opens on a new **Registros** tab with the same feed for that patient only.
+8. Phone: **Progreso** now shows progress photos side by side by date, next to the weight chart.
+
+**Physical activity — fields:**
+| Field | Required | Values |
+|---|---|---|
+| Activity | yes | Caminar, Correr, Bicicleta, Nadar, Gimnasio / pesas, Yoga / estiramiento, Baile, Deporte en equipo, Otra (type a name) |
+| Duration | yes | minutes, 1–600 |
+| Date | yes | today by default; up to 7 days back |
+| Intensity | no | Ligera · Moderada · Intensa |
+| Terrain | no | Plano · Subidas · Mixto · Caminadora / bici fija (only for walk, run, bike) |
+| Distance | no | km (walk, run, bike, swim) |
+| Speed | shown, not typed | from distance and duration: km/h; for running and walking also pace (min/km) |
+| Note | no | free text, 300 characters |
+
+**Progress photo — fields:** photo (required, 5 MB max, shrunk on the phone like meal photos), pose (Frente · Perfil · Espalda · Otra), date (today), note (optional).
+
+**Rules:**
+- Same lock as meal photos: a patient creates and sees only their own events; the nutritionist sees only their own patients' events; files are private (protected) and open only with a file token.
+- The nutritionist changes nothing in an event except "seen".
+- The patient can delete their own activity on the same day (like meals).
+- Progress photos: by default the patient **cannot** delete them. The nutritionist has a setting **Permitir que mis pacientes borren sus fotos de progreso** (off by default); when on, the patient can delete them at any time. The nutritionist can always delete a progress photo, e.g. when the patient asks or uploads the wrong one.
+- Closed accounts: no new events; existing events stay readable (same as the close-account rules).
+- The dashboard shows the latest 50 events and a **Cargar más** button. It refreshes when the nutritionist comes back to the tab, and with an **Actualizar** button. (Not live; see open question 1.)
+- Export (patient data): adds activity and progress photos. Progress photos have their own checkbox **Incluir fotos de progreso**, off by default (open question 3).
+- The weekly diet print does not change.
+
+**Screens and files:**
+- Patient: `log.html` gets the type picker and the two new forms (or `activity.html` and `progress-photo.html`, decided at build). `progress.html` gets the photo strip. `today.html` shows today's activity under the meals.
+- Nutritionist: new `activity.html` (the dashboard, the new home after sign-in), a **Registros** tab on `patient.html` (replaces **Comidas**), the patient list keeps its "sin ver" badge and counts all types.
+- Data: new collections `activity_logs` and `progress_photos`, same shape and rules as `meal_logs`. One shared feed module merges the three by time.
+
+**Acceptance:**
+1. Ana logs "Correr, 30 min, plano, 5 km". The dashboard shows "Correr · 30 min · 5 km · 10 km/h · 6:00 min/km · plano" under her name.
+2. Ana logs a progress photo (Frente). The dashboard shows it; her **Progreso** screen shows it with its date.
+3. Filters: "Actividad" shows only activity; "Ana" shows only Ana; "Solo sin ver" hides seen events.
+4. "Marcar todo como visto" sets seen on every event on screen; the counters go to 0; Ana's phone shows "Vista por tu nutrióloga/o" on each.
+5. A second nutritionist's dashboard is empty. Opening Ana's progress photo address with their file token: not found.
+6. Carlos cannot see Ana's events. Ana cannot mark her own events seen.
+7. Setting off (default): Ana cannot delete her progress photo (no button; the server refuses). The nutritionist deletes it: it disappears from the dashboard and its file address returns not found. Setting on: Ana deletes one a week later, same result.
+8. Close Ana's account: she can log nothing new; the dashboard still shows her old events.
+9. 60 events: the first page shows 50, **Cargar más** shows the rest, newest first, no duplicates.
+
+**Risks:**
+- Progress photos are the most sensitive data in Plato (bodies, sometimes in underwear). Legal L1 applies before real patients; the join screen should mention them in the privacy notice. Until then: fake photos only.
+- Storage: photos are the main cost driver online (about 0.3–0.6 MB each after shrinking). 100 patients × 3 photos a day ≈ 1–2 GB a month. Fine on a 3 GB disk for a pilot; a cloud bucket later.
+
+**Later:** live updates on the dashboard; comments on any event; weekly activity totals and goals ("150 min de actividad a la semana"); calories burned from activity; side-by-side before/after comparison with the same pose; reminders to log.
+
+**Not now:** step counters, smartwatch or Google Fit / Apple Health import; GPS routes; automatic body measurements from photos.
+
+### Decisions (owner, 2026-10-25)
+
+1. **Not live.** The feeds refresh when the nutritionist comes back to the tab, plus an **Actualizar** button.
+2. **The dashboard is the nutritionist's home** after sign-in, shaped by the owner's vision below.
+3. **Export:** progress photos only when **Incluir fotos de progreso** is ticked (off by default).
+4. **Deleting progress photos:** a nutritionist setting, off by default (patients cannot delete). The client decides per clinic.
+5. **Three slices**, each built, tested and committed on its own: (1) activity log, (2) progress photos, (3) home with feeds.
+
+### Home screen (owner's vision — slice 3)
+
+- **Big banner** at the top with a picture submitted by the user.
+- **A grid of buttons**, each opening a "feed": **Catálogo**, **Agenda**, **Actividades**, **Fotos**, **Recientes**, and **"Pending dashboard"** (untitled for now).
+- **Below the grid:** card items, loaded by the feed selected.
+- Suggested refinements and open details are in the next section; settle them before slice 3.
+
+### Open questions (slice 3 only; slices 1 and 2 do not depend on them)
+
+1. Whose picture is the banner: the nutritionist's own (clinic or cover photo), or the latest photo a patient sent?
+2. **Catálogo** = the patient list as cards? **Fotos** = progress photos only, or meal photos too?
+3. **Agenda** needs appointments, which are not built (Later). Show the button as "Próximamente" or hide it until then?
+4. Suggested: keep the banner short on a laptop (about 1/4 of the screen) with a greeting and the "sin ver" counters, and make the grid a compact row of buttons, so the cards stay visible without scrolling. On the phone the grid becomes 2 or 3 columns.
+
+### Reminders for the owner
+
+- **"Pending dashboard"**: an untitled feature with a placeholder button on the home grid. **Remind the owner to define it** before slice 3 is built, and again at each slice review until it is defined.
 
 ---
 
