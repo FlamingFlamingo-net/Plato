@@ -503,7 +503,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ---
 
-## Feature: Photo feedback (approved 2026-10-26)
+## Feature: Photo feedback (built)
 
 **What:** on a patient's photo (meal or progress), the nutritionist leaves **feedback**: a short **comment** (text) and a **rating of 1 to 3 stars**. The patient sees it on their phone. Replaces the Later item "Comments on a meal photo".
 
@@ -547,6 +547,10 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 3. **The patient sees the stars and the comment.** The nutritionist can leave a comment only.
 4. **Not on activity entries** for now.
 5. **Build now**, as its own feature, before the home screen (slice 3).
+
+**Built (2026-10-26):** feedback lives on the photo record (`feedback_text`, `feedback_stars` on meal photos only, `feedback_at`, `feedback_edited`); a hook stamps the time, marks the photo seen and refuses stars on progress photos. Nutritionist: **Dar retroalimentación** / **Editar** / **Quitar** on each photo in Registros. Patient: feedback under today's meals and progress photos, a **"Retroalimentación de tu nutrióloga/o"** list on Hoy for the last 14 days, **Nuevo** on what this phone has not shown yet, and a dot on Hoy / Progreso in the bottom bar (remembered on the phone, no extra server field). Export (PDF and JSON) carries the feedback.
+
+**Result (throwaway server):** acceptance 1-6 pass: API 153/153 (18 feedback checks), screens `tools/feedback_check.mjs` 16/16; all earlier suites still pass.
 
 ---
 
