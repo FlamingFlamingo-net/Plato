@@ -554,7 +554,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ---
 
-## Feature: Age limits (approved 2026-10-26)
+## Feature: Age limits (built)
 
 **What:** the patient's **age** (from their birth date) **hard-limits** some features. First case: **minors cannot upload progress photos** (meal photos stay allowed). "Hard" means the server refuses, not only a hidden button.
 
@@ -584,6 +584,10 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 4. Meal logging for minors needs no change (meal photos are allowed).
 5. **No guardian-consent unlock.** The owner: "the risk is too high". Progress photos stay off for minors, full stop.
 6. More age-based limits (pediatric charts, teen texts): not now.
+
+**Built (2026-10-26):** the progress-photo hook computes the age (UTC date) at each upload and refuses under 18 or with no birth date. The create rule requires a birth date; the update rule refuses clearing it (not a required field, so older patients without one still save and are treated as minors). Added during build: the patient page gets **Agregar / Cambiar fecha de nacimiento** (there was no way to edit it before), with the badge "Menor de edad: sin fotos de progreso" or "Falta la fecha de nacimiento". Phone: "Progreso" disappears from Registrar, Progreso has no "Agregar foto", and the progress form explains why.
+
+**Result (throwaway server):** acceptance 1-6 pass: API 163/163 (10 age checks, including an older patient without a birth date blanked by the admin), screens `tools/age_check.mjs` 13/13; all earlier suites still pass. Real server: both patients have a birth date (adults), nobody locked.
 
 ---
 
