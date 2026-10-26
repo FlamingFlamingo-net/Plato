@@ -1,4 +1,4 @@
-// week.js — the weekly diet, written once. Used by the print sheet (table) and the patient export (list).
+// week.js — the weekly diet, written once. Used by the print sheet (table), the patient export and template previews (list).
 import { SLOTS, WEEKDAYS } from './api.js';
 import { h } from './ui.js';
 
@@ -6,6 +6,19 @@ const swatch = (slot) => h('span', { class: 'plato-swatch', style: `--swatch: va
 const text = (meals, day, slot) => (meals?.[day]?.[slot] || '').trim();
 
 export const hasDiet = (meals) => WEEKDAYS.some((_, i) => SLOTS.some(([k]) => text(meals, i + 1, k)));
+export const daysFilled = (meals) => WEEKDAYS.filter((_, i) => SLOTS.some(([k]) => text(meals, i + 1, k))).length;
+
+// Trim and drop empty meals (what gets saved, and what a template stores).
+export function cleanMeals(meals) {
+  const clean = {};
+  for (let d = 1; d <= 7; d++) {
+    for (const [k] of SLOTS) {
+      const v = text(meals, d, k);
+      if (v) (clean[d] ||= {})[k] = v;
+    }
+  }
+  return clean;
+}
 
 // Landscape sheet: days are columns, meals are rows. Header repeats on every printed page.
 export function weekTable(meals) {

@@ -5,6 +5,7 @@ import {
 } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
+import { weekList, cleanMeals, daysFilled } from './week.js';
 import { POSE_LABEL } from './progress-photos.js';
 import { weightChart } from './charts.js';
 
@@ -174,13 +175,7 @@ dietForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   formError(dietForm, '');
   // Trim and drop empty slots so the patient app only shows planned meals.
-  const clean = {};
-  for (let d = 1; d <= 7; d++) {
-    for (const [k] of SLOTS) {
-      const v = (meals[d]?.[k] || '').trim();
-      if (v) (clean[d] ||= {})[k] = v;
-    }
-  }
+  const clean = cleanMeals(meals);
   const body = { title: dietForm.title.value.trim(), meals: clean };
   try {
     diet = await busy(dietForm.querySelector('[type=submit]'), () =>
@@ -193,12 +188,131 @@ dietForm.addEventListener('submit', async (e) => {
   toast('Dieta guardada. Tu paciente ya la ve en su app.');
 });
 
+// ---------- Templates (spec "Saved diet templates") ----------
+// Save what is on screen as a private template; or copy a template into the editor (unsaved until "Guardar dieta").
+const stDialog = document.getElementById('st-dialog');
+const stForm = document.getElementById('st-form');
+const stName = document.getElementById('st-name');
+const stConflict = document.getElementById('st-conflict');
+let stExisting = null;
+for (const id of ['st-cancel', 'st-x']) document.getElementById(id).addEventListener('click', () => stDialog.close());
+stDialog.addEventListener('click', (e) => { if (e.target === stDialog) stDialog.close(); });
+// While the name is taken, the choice is Reemplazar or Guardar como copia (the main button hides).
+const showConflict = (on) => { stConflict.hidden = !on; document.getElementById('st-save').hidden = on; };
+stName.addEventListener('input', () => { showConflict(false); stExisting = null; });
+
+document.getElementById('save-template').addEventListener('click', () => {
+  if (!Object.keys(cleanMeals(meals)).length) { toast('La semana está vacía. Escribe al menos una comida.', 'error'); return; }
+  stForm.reset();
+  formError(stForm, '');
+  showConflict(false);
+  stExisting = null;
+  stName.value = dietForm.title.value.trim();
+  stDialog.showModal();
+  stName.focus();
+  stName.select();
+});
+
+async function saveTemplate(mode) {
+  const title = stName.value.trim();
+  const body = { title, meals: cleanMeals(meals) };
+  if (mode === 'replace') return update('diet_templates', stExisting.id, body);
+  if (mode === 'copy') {
+    const taken = new Set((await list('diet_templates', { fields: 'title', perPage: 500 })).map((t) => t.title));
+    let n = 1, name;
+    do { name = `${title} (copia${n > 1 ? ` ${n}` : ''})`; n++; } while (taken.has(name));
+    return create('diet_templates', { ...body, title: name.slice(0, 120), nutritionist: me.id });
+  }
+  return create('diet_templates', { ...body, nutritionist: me.id });
+}
+async function finishSave(mode, button) {
+  formError(stForm, '');
+  try {
+    const t = await busy(button, () => saveTemplate(mode));
+    stDialog.close();
+    toast(`Plantilla guardada: ${t.title}`);
+  } catch (err) { formError(stForm, err.message); }
+}
+stForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  formError(stForm, '');
+  if (!stForm.reportValidity()) return;
+  const title = stName.value.trim();
+  if (!title) { stName.setCustomValidity('Escribe un nombre.'); stForm.reportValidity(); stName.setCustomValidity(''); return; }
+  try {
+    [stExisting] = await list('diet_templates', { filter: `title = ${q(title)}`, perPage: 1 });
+  } catch (err) { formError(stForm, err.message); return; }
+  if (stExisting) {
+    document.getElementById('st-conflict-title').textContent = `Ya tienes una plantilla llamada “${title}”.`;
+    showConflict(true);
+    document.getElementById('st-replace').focus();
+    return;
+  }
+  await finishSave('new', document.getElementById('st-save'));
+});
+document.getElementById('st-replace').addEventListener('click', (e) => finishSave('replace', e.currentTarget));
+document.getElementById('st-copy').addEventListener('click', (e) => finishSave('copy', e.currentTarget));
+
+const utDialog = document.getElementById('ut-dialog');
+const utList = document.getElementById('ut-list');
+const utPreview = document.getElementById('ut-preview');
+const utStatus = document.getElementById('ut-status');
+const utUse = document.getElementById('ut-use');
+let utTemplates = [];
+for (const id of ['ut-cancel', 'ut-x']) document.getElementById(id).addEventListener('click', () => utDialog.close());
+utDialog.addEventListener('click', (e) => { if (e.target === utDialog) utDialog.close(); });
+
+document.getElementById('use-template').addEventListener('click', async () => {
+  utList.querySelectorAll('label').forEach((l) => l.remove());
+  utPreview.replaceChildren();
+  utUse.disabled = true;
+  utStatus.hidden = false;
+  utStatus.textContent = 'Cargando…';
+  utDialog.showModal();
+  try {
+    utTemplates = await list('diet_templates', { sort: 'title', perPage: 200 });
+  } catch (err) { utStatus.textContent = err.message; return; }
+  if (!utTemplates.length) {
+    utStatus.textContent = 'Aún no tienes plantillas. Abre la dieta de un paciente y toca “Guardar como plantilla”.';
+    return;
+  }
+  utStatus.hidden = true;
+  for (const t of utTemplates) {
+    const input = h('input', { type: 'radio', name: 'ut-pick', value: t.id });
+    input.addEventListener('change', () => {
+      utPreview.replaceChildren(weekList(t.meals || {}));
+      utUse.disabled = false;
+    });
+    const n = daysFilled(t.meals);
+    utList.append(h('label', { class: 'plato-template-option' }, input,
+      h('span', { class: 'plato-stack-sm' },
+        h('strong', { text: t.title }),
+        h('span', { class: 'plato-muted plato-small', text: `${n} ${n === 1 ? 'día' : 'días'} con comidas · cambiada ${shortDate(t.updated)}` }))));
+  }
+});
+
+utUse.addEventListener('click', () => {
+  const t = utTemplates.find((x) => x.id === utList.querySelector('input:checked')?.value);
+  if (!t) return;
+  const hasCurrent = !!diet || Object.keys(cleanMeals(meals)).length > 0;
+  if (hasCurrent && !confirm(`¿Reemplazar la dieta actual de ${patient.name} con esta plantilla? Podrás revisarla antes de guardar.`)) return;
+  meals = structuredClone(t.meals || {});
+  dietForm.title.value = t.title;
+  day = 1;
+  setDirty(true);
+  renderDays();
+  renderMeals();
+  utDialog.close();
+  toast('Plantilla copiada. Revísala y toca “Guardar dieta”.');
+});
+
 async function loadDiet() {
   [diet] = await list('diets', { filter: `patient = ${pid}` });
   meals = structuredClone(diet?.meals || {});
   dietForm.title.value = diet?.title || '';
   dietForm.title.readOnly = closed;
   document.getElementById('copy-day').hidden = closed;
+  document.getElementById('use-template').hidden = closed;
   dietForm.querySelector('[type=submit]').hidden = closed;
   setDirty(false);
   renderDays();

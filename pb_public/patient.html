@@ -83,7 +83,13 @@
         <!-- Diet editor -->
         <div role="tabpanel" id="diet" aria-labelledby="t-diet" hidden>
           <form id="diet-form" class="plato-stack" novalidate>
-            <div class="field" style="max-width:24rem"><label for="d-title">Nombre del plan</label><input class="input" id="d-title" name="title" maxlength="120" placeholder="Plan base"></div>
+            <div class="plato-row plato-row--between" style="align-items:flex-end;gap:0.75rem">
+              <div class="field" style="max-width:24rem;flex:1 1 16rem"><label for="d-title">Nombre del plan</label><input class="input" id="d-title" name="title" maxlength="120" placeholder="Plan base"></div>
+              <div class="plato-row">
+                <button class="btn" data-variant="outline" data-size="sm" type="button" id="use-template">Usar plantilla</button>
+                <button class="btn" data-variant="outline" data-size="sm" type="button" id="save-template">Guardar como plantilla</button>
+              </div>
+            </div>
             <div class="plato-days" role="group" aria-label="Día de la semana" id="days"></div>
             <section class="card" aria-labelledby="day-title">
               <header class="plato-row plato-row--between">
@@ -207,6 +213,45 @@
         </footer>
       </form>
       <button type="button" aria-label="Cerrar" id="dd-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="st-dialog" aria-labelledby="st-title">
+    <div>
+      <header><h2 id="st-title">Guardar como plantilla</h2><p>Guarda esta semana para usarla con otros pacientes. Tus pacientes no ven tus plantillas.</p></header>
+      <form id="st-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <div class="field"><label for="st-name">Nombre de la plantilla</label><input class="input" id="st-name" maxlength="120" required placeholder="Ej. Bajar de peso — fase 1"></div>
+          <div class="alert" id="st-conflict" hidden>
+            <h2 id="st-conflict-title"></h2>
+            <section class="plato-row" style="margin-top:0.5rem">
+              <button class="btn" data-size="sm" type="button" id="st-replace">Reemplazar</button>
+              <button class="btn" data-variant="outline" data-size="sm" type="button" id="st-copy">Guardar como copia</button>
+            </section>
+          </div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" id="st-cancel">Cancelar</button>
+          <button class="btn" type="submit" id="st-save">Guardar plantilla</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="st-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog plato-wide-dialog" id="ut-dialog" aria-labelledby="ut-title">
+    <div>
+      <header><h2 id="ut-title">Usar plantilla</h2><p id="ut-sub">La semana se copia a la dieta. Podrás revisarla antes de guardar.</p></header>
+      <section class="plato-template-pick">
+        <p class="plato-muted" id="ut-status" role="status">Cargando…</p>
+        <fieldset id="ut-list" class="plato-template-list"><legend class="sr-only">Tus plantillas</legend></fieldset>
+        <div class="plato-week-preview" id="ut-preview" aria-live="polite"></div>
+      </section>
+      <footer class="plato-actions">
+        <button class="btn" data-variant="outline" type="button" id="ut-cancel">Cancelar</button>
+        <button class="btn" type="button" id="ut-use" disabled>Usar esta</button>
+      </footer>
+      <button type="button" aria-label="Cerrar" id="ut-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
   </dialog>
 

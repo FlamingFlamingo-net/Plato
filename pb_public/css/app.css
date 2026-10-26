@@ -214,6 +214,27 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-hide-sm { display: none; }
 }
 
+/* ---- Diet templates ---- */
+.plato-wide-dialog > div { max-width: min(52rem, calc(100vw - 2rem)); } /* Basecoat caps dialogs at 28rem */
+.plato-template-pick { display: grid; grid-template-columns: minmax(14rem, 18rem) 1fr; gap: 1rem; align-items: start; max-height: 60vh; overflow: auto; }
+.plato-template-list { border: 0; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.plato-template-option { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+.plato-template-option:has(input:checked) { border-color: var(--primary); background: var(--secondary); }
+.plato-template-option:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+.plato-template-option input { margin-top: 0.2rem; accent-color: var(--primary); }
+.plato-week-preview .week-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.75rem; }
+.plato-week-preview .week-day { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.75rem; background: var(--card); }
+.plato-week-preview .week-day h3 { margin: 0 0 0.35rem; font-family: var(--font-heading); font-size: 0.95rem; }
+.plato-week-preview .week-day dl { margin: 0; display: grid; gap: 0.1rem; font-size: 0.85rem; } /* label above the food: no squeezed column */
+.plato-week-preview .week-day dt { display: flex; align-items: center; gap: 0.35rem; font-weight: 600; white-space: nowrap; }
+.plato-week-preview .week-day dd { margin: 0 0 0.35rem 1rem; white-space: pre-wrap; color: var(--muted-foreground); }
+.plato-week-preview .week-day dd:last-child { margin-bottom: 0; }
+.plato-week-preview .week-day p { margin: 0; font-size: 0.85rem; }
+.plato-templates { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+.plato-templates h2 { margin: 0; font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; }
+.plato-templates header p { margin: 0.15rem 0 0; color: var(--muted-foreground); font-size: 0.875rem; }
+@media (max-width: 640px) { .plato-template-pick { grid-template-columns: 1fr; } }
+
 /* ---- Progress photos (slice 2) ---- */
 .plato-photo-pick--tall { aspect-ratio: 3 / 4; max-height: 60vh; }
 .plato-progress-grid { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.625rem; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); }

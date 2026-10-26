@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Plantillas — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/templates.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/patients.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
+    <div class="plato-row">
+      <span class="plato-muted plato-small plato-hide-sm" id="who"></span>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/templates.html" aria-current="page">Plantillas</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html">Ajustes</a>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main" style="max-width:60rem">
+    <a class="plato-back" href="/patients.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Mis pacientes</a>
+    <h1 class="plato-page-title" style="margin-bottom:0.25rem">Plantillas de dieta</h1>
+    <p class="plato-muted" style="margin:0 0 1.25rem">Semanas que guardaste para empezar la dieta de un paciente más rápido. Solo tú las ves.</p>
+    <p id="status" class="plato-muted" role="status">Cargando…</p>
+    <ul class="plato-templates" id="list" aria-label="Tus plantillas"></ul>
+  </main>
+
+  <dialog class="dialog" id="rn-dialog" aria-labelledby="rn-title">
+    <div>
+      <header><h2 id="rn-title">Cambiar nombre</h2></header>
+      <form id="rn-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <div class="field"><label for="rn-name">Nombre de la plantilla</label><input class="input" id="rn-name" maxlength="120" required></div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" id="rn-cancel">Cancelar</button>
+          <button class="btn" type="submit" id="rn-save">Guardar</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="rn-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+</body>
+</html>
