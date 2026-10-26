@@ -4,6 +4,7 @@
 //   auth collections: nutritionists (public sign-up), patients (created by their nutritionist; join via invite link)
 //   base collections: measurements, diets (one per patient, meals JSON), meal_logs (protected photo), patient_notes
 //   hooks: POST /api/plato/invite {patient} · GET /api/plato/invite/{token} · POST /api/plato/join {token,email,password}
+//          POST /api/plato/patients/{id}/close · POST /api/plato/patients/{id}/reopen (nutritionist; archive / un-archive)
 //   PocketBase answers 404 (not 403) when a rule refuses a view/update/delete.
 
 const KEY = 'plato.auth';
@@ -144,7 +145,8 @@ export async function requireRole(collection) {
   const s = session();
   if (!s || s.collection !== collection) { location.replace('/'); return new Promise(() => {}); }
   const rec = await refresh();
-  if (!rec) { location.replace('/'); return new Promise(() => {}); }
+  // A patient whose session stopped working (account closed or access reset) gets a short explanation.
+  if (!rec) { location.replace(collection === 'patients' ? '/?ended=1' : '/'); return new Promise(() => {}); }
   return rec;
 }
 
@@ -159,6 +161,8 @@ export function createPatient({ name, sex, birth_date, height_cm }) {
 }
 
 export const newInvite = (patient) => request('/api/plato/invite', { method: 'POST', body: { patient } });
+export const closeAccount = (id) => request(`/api/plato/patients/${enc(id)}/close`, { method: 'POST', body: {} });
+export const reopenAccount = (id) => request(`/api/plato/patients/${enc(id)}/reopen`, { method: 'POST', body: {} });
 export const checkInvite = (token) => request(`/api/plato/invite/${enc(token)}`, { auth: false });
 export async function join(token, email, password) {
   const r = await request('/api/plato/join', { method: 'POST', auth: false, body: { token, email, password } });

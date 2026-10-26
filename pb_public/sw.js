@@ -1,6 +1,6 @@
 // sw.js — app shell cache only. Data is never cached (Offline: off): screens talk to PocketBase.
 // Bump VERSION on every release, and the ?v= on CSS/JS links, so open tabs move to the new code.
-const VERSION = 'plato-v4';
+const VERSION = 'plato-v5';
 const PAGES = ['/', '/index.html', '/patients.html', '/patient.html', '/join.html', '/today.html', '/log.html', '/progress.html', '/diet-print.html', '/export.html'];
 const SHELL = [
   ...PAGES,

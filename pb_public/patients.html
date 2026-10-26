@@ -28,6 +28,10 @@
       <h1 class="plato-page-title">Mis pacientes</h1>
       <button class="btn" type="button" id="new-patient">Nuevo paciente</button>
     </div>
+    <div class="plato-row" role="group" aria-label="Mostrar" id="views" style="margin-bottom:0.75rem">
+      <a class="btn" data-variant="outline" data-size="sm" href="/patients.html" id="view-active">Activos</a>
+      <a class="btn" data-variant="outline" data-size="sm" href="/patients.html?view=archived" id="view-archived">Archivados</a>
+    </div>
     <p id="status" class="plato-muted" role="status">Cargando…</p>
     <ul class="plato-patients" id="list" aria-label="Pacientes"></ul>
   </main>

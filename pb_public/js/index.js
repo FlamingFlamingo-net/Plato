@@ -7,6 +7,10 @@ if (s?.collection === 'nutritionists') location.replace('/patients.html');
 else if (s?.collection === 'patients') location.replace('/today.html');
 
 offlineBanner();
+if (new URL(location.href).searchParams.has('ended')) {
+  document.getElementById('ended').hidden = false;
+  history.replaceState(null, '', '/');
+}
 wireTabs(document.getElementById('who'));
 
 const signinForm = document.getElementById('nutri-signin');

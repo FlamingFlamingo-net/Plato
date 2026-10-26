@@ -33,6 +33,12 @@
         </div>
       </div>
 
+      <div class="alert" id="closed-banner" hidden style="margin-bottom:1rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h2 id="closed-title">Cuenta cerrada</h2>
+        <section>Solo lectura. Tu paciente ya no puede entrar. Puedes consultar y exportar sus datos, reactivar la cuenta o borrarla en la pestaña Acceso.</section>
+      </div>
+
       <div class="tabs" id="tabs">
         <nav role="tablist" aria-label="Secciones del paciente">
           <button type="button" role="tab" id="t-overview" aria-controls="overview" data-tab="overview">Resumen</button>
@@ -115,7 +121,7 @@
 
         <!-- Access / invite link -->
         <div role="tabpanel" id="access" aria-labelledby="t-access" hidden>
-          <section class="card" aria-labelledby="access-title" style="max-width:40rem">
+          <section class="card" aria-labelledby="access-title" style="max-width:40rem" id="invite-card">
             <header>
               <h2 id="access-title">App del paciente</h2>
               <p id="access-state"></p>
@@ -140,10 +146,69 @@
             </header>
             <footer><a class="btn" data-variant="outline" id="export-link" href="#">Exportar datos</a></footer>
           </section>
+          <section class="card" aria-labelledby="close-title" style="max-width:40rem;margin-top:1rem" id="close-card" hidden>
+            <header>
+              <h2 id="close-title">Cerrar cuenta</h2>
+              <p>Si tu paciente lo pide o termina su tratamiento. No se borra nada: sus datos quedan guardados, solo de lectura.</p>
+            </header>
+            <footer><button class="btn" data-variant="outline" type="button" id="close-open">Cerrar cuenta</button></footer>
+          </section>
+          <section class="card" aria-labelledby="archived-title" style="max-width:40rem;margin-top:1rem" id="archived-card" hidden>
+            <header>
+              <h2 id="archived-title">Cuenta cerrada</h2>
+              <p id="archived-when"></p>
+            </header>
+            <section class="plato-stack-sm">
+              <p class="plato-small" style="margin:0"><strong>Reactivar</strong> vuelve a abrir la cuenta. Después crea un enlace nuevo para tu paciente; su contraseña anterior no regresa.</p>
+              <p class="plato-small" style="margin:0"><strong>Borrar definitivamente</strong> elimina al paciente y todos sus datos y fotos. No se puede deshacer.</p>
+            </section>
+            <footer class="plato-row">
+              <button class="btn" type="button" id="reopen">Reactivar</button>
+              <button class="btn" data-variant="destructive" type="button" id="delete-open">Borrar definitivamente</button>
+            </footer>
+          </section>
         </div>
       </div>
     </div>
   </main>
+
+  <dialog class="dialog" id="close-dialog" aria-labelledby="cd-title" aria-describedby="cd-text">
+    <div>
+      <header><h2 id="cd-title">¿Cerrar la cuenta?</h2></header>
+      <form id="close-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <p id="cd-text" style="margin:0">Tu paciente ya no podrá entrar a su app. Sus datos se guardan, solo de lectura, durante el tiempo que debas conservarlos. No se borra nada, y puedes reactivar la cuenta después.</p>
+          <div class="field"><label for="cd-name" id="cd-label"></label><input class="input" id="cd-name" autocomplete="off" spellcheck="false" required></div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" id="cd-cancel">Cancelar</button>
+          <button class="btn" type="submit" id="cd-confirm" disabled>Cerrar cuenta</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="cd-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="delete-dialog" aria-labelledby="dd-title" aria-describedby="dd-text">
+    <div>
+      <header><h2 id="dd-title">¿Borrar definitivamente?</h2></header>
+      <form id="delete-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <div class="alert" data-variant="destructive">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <h2>No se puede deshacer</h2>
+            <section id="dd-text">Se borran el paciente, sus mediciones, su dieta, sus comidas con fotos y tus notas. Los expedientes clínicos suelen conservarse al menos 5 años después de la última consulta. Bórralo solo si ya no debes guardarlo.</section>
+          </div>
+          <div class="field"><label for="dd-name" id="dd-label"></label><input class="input" id="dd-name" autocomplete="off" spellcheck="false" required></div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" id="dd-cancel">Cancelar</button>
+          <button class="btn" data-variant="destructive" type="submit" id="dd-confirm" disabled>Borrar definitivamente</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="dd-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
 
   <dialog class="dialog plato-photo-dialog" id="photo-dialog" aria-labelledby="ph-title">
     <div>

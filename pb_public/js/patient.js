@@ -1,6 +1,6 @@
 // patient.js — one patient, seen by their nutritionist: measurements, diet, meal photos, private notes, access link.
 import {
-  requireRole, view, list, create, update, remove, newInvite, photoUrl, signOut, q,
+  requireRole, view, list, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
   SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly,
 } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, longDate, shortDate, timeOf, num } from './ui.js';
@@ -25,6 +25,8 @@ document.getElementById('content').hidden = false;
 document.title = `${patient.name} — Plato`;
 
 const pid = q(patient.id);
+// A closed (archived) account is read-only: no edit controls anywhere. The server rules enforce it too.
+const closed = !!patient.archived_at;
 
 // ---------- Header ----------
 function renderHead() {
@@ -35,8 +37,10 @@ function renderHead() {
     patient.sex === 'female' ? 'Mujer' : 'Hombre',
     a != null ? `${a} años` : null,
     patient.height_cm ? `${num(patient.height_cm)} cm` : null,
-    patient.joined ? 'Usa la app' : 'Aún sin app',
+    closed ? `Cuenta cerrada el ${shortDate(patient.archived_at)}` : patient.joined ? 'Usa la app' : 'Aún sin app',
   ].filter(Boolean).join(' · ');
+  document.getElementById('closed-banner').hidden = !closed;
+  if (closed) document.getElementById('closed-title').textContent = `Cuenta cerrada el ${longDate(patient.archived_at).toLowerCase()}`;
 }
 renderHead();
 
@@ -44,6 +48,7 @@ renderHead();
 let measurements = [];
 const mForm = document.getElementById('m-form');
 mForm.date.value = localDate();
+mForm.hidden = closed;
 
 async function loadMeasurements() {
   measurements = await list('measurements', { filter: `patient = ${pid}`, sort: 'date,created' });
@@ -67,7 +72,7 @@ function renderMeasurements() {
   const rows = document.getElementById('m-rows');
   rows.replaceChildren();
   if (!measurements.length) {
-    rows.append(h('tr', {}, h('td', { colspan: 5, class: 'plato-muted', text: 'Aún no hay mediciones. Agrega la primera arriba.' })));
+    rows.append(h('tr', {}, h('td', { colspan: 5, class: 'plato-muted', text: closed ? 'Sin mediciones.' : 'Aún no hay mediciones. Agrega la primera arriba.' })));
   }
   for (const m of [...measurements].reverse()) {
     const d = dateOnly(m.date);
@@ -76,7 +81,7 @@ function renderMeasurements() {
       h('td', { class: 'num', text: num(m.weight_kg) }),
       h('td', { class: 'num', text: m.body_fat_pct ? num(m.body_fat_pct) : '—' }),
       h('td', { class: 'num', text: m.waist_cm ? num(m.waist_cm) : '—' }),
-      h('td', { class: 'num' }, h('button', {
+      h('td', { class: 'num' }, closed ? null : h('button', {
         class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button',
         'aria-label': `Borrar medición del ${shortDate(d)}`,
         onclick: async () => {
@@ -143,6 +148,7 @@ function renderMeals() {
     const fid = `meal-${key}`;
     const ta = h('textarea', { class: 'textarea', id: fid, rows: 2, maxlength: 600, placeholder: key.startsWith('snack') ? 'Ej. 1 manzana y 10 almendras' : 'Ej. 2 huevos a la mexicana, 2 tortillas, 1 taza de papaya' });
     ta.value = dayMeals(day)[key] || '';
+    ta.readOnly = closed;
     ta.addEventListener('input', () => {
       dayMeals(day)[key] = ta.value;
       setDirty(true);
@@ -189,6 +195,9 @@ async function loadDiet() {
   [diet] = await list('diets', { filter: `patient = ${pid}` });
   meals = structuredClone(diet?.meals || {});
   dietForm.title.value = diet?.title || '';
+  dietForm.title.readOnly = closed;
+  document.getElementById('copy-day').hidden = closed;
+  dietForm.querySelector('[type=submit]').hidden = closed;
   setDirty(false);
   renderDays();
   renderMeals();
@@ -227,6 +236,7 @@ async function renderLogs() {
     photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
     const seenBtn = l.seen_at
       ? h('span', { class: 'badge', 'data-variant': 'secondary' }, icon('check', 14), 'Vista')
+      : closed ? h('span', { class: 'badge', 'data-variant': 'outline', text: 'Sin ver' })
       : h('button', {
         class: 'btn', 'data-size': 'sm', type: 'button',
         onclick: async (ev) => {
@@ -260,13 +270,14 @@ async function renderLogs() {
 
 // ---------- Notes ----------
 const noteForm = document.getElementById('note-form');
+noteForm.hidden = closed;
 const noteList = document.getElementById('note-list');
 async function loadNotes() {
   const notes = await list('patient_notes', { filter: `patient = ${pid}`, sort: '-created' });
   noteList.replaceChildren(...notes.map((n) => h('li', { class: 'plato-note' },
     h('div', { class: 'plato-row plato-row--between' },
       h('span', { class: 'plato-muted plato-small', text: `${shortDate(n.created)} · ${timeOf(n.created)}` }),
-      h('button', {
+      closed ? null : h('button', {
         class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': 'Borrar nota',
         onclick: async () => {
           if (!confirm('¿Borrar esta nota?')) return;
@@ -292,6 +303,10 @@ noteForm.addEventListener('submit', async (e) => {
 // ---------- Access ----------
 const makeLink = document.getElementById('make-link');
 function renderAccess() {
+  document.getElementById('invite-card').hidden = closed;
+  document.getElementById('close-card').hidden = closed;
+  document.getElementById('archived-card').hidden = !closed;
+  if (closed) document.getElementById('archived-when').textContent = `Cerrada el ${longDate(patient.archived_at).toLowerCase()}. Tu paciente ya no puede entrar.`;
   document.getElementById('access-state').textContent = patient.joined
     ? 'Tu paciente ya entró a su app.'
     : 'Tu paciente aún no tiene acceso.';
@@ -315,6 +330,58 @@ document.getElementById('copy-link').addEventListener('click', async () => {
     input.select(); toast('Selecciona y copia el enlace.', 'error');
   }
 });
+
+// ---------- Close / reopen / delete (typed-name confirmation) ----------
+const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+const firstName = patient.name.trim().split(/\s+/)[0];
+
+function confirmDialog({ dialog, form, input, label, confirm, cancel, x, expected, text, action }) {
+  const [d, f, i, b] = [dialog, form, input, confirm].map((el) => document.getElementById(el));
+  document.getElementById(label).textContent = text;
+  i.addEventListener('input', () => { b.disabled = norm(i.value) !== norm(expected); });
+  for (const el of [cancel, x]) document.getElementById(el).addEventListener('click', () => d.close());
+  d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError(f, '');
+    if (norm(i.value) !== norm(expected)) return;
+    try { await busy(b, action); } catch (err) { formError(f, err.message); }
+  });
+  return () => { f.reset(); b.disabled = true; formError(f, ''); d.showModal(); i.focus(); };
+}
+
+const openClose = confirmDialog({
+  dialog: 'close-dialog', form: 'close-form', input: 'cd-name', label: 'cd-label', confirm: 'cd-confirm', cancel: 'cd-cancel', x: 'cd-x',
+  expected: firstName, text: `Para confirmar, escribe el nombre: ${firstName}`,
+  action: async () => {
+    await closeAccount(patient.id);
+    location.href = `/patient.html?id=${encodeURIComponent(patient.id)}&tab=access&closed=1`;
+  },
+});
+const openDelete = confirmDialog({
+  dialog: 'delete-dialog', form: 'delete-form', input: 'dd-name', label: 'dd-label', confirm: 'dd-confirm', cancel: 'dd-cancel', x: 'dd-x',
+  expected: patient.name, text: `Para confirmar, escribe el nombre completo: ${patient.name}`,
+  action: async () => {
+    await remove('patients', patient.id);
+    location.href = '/patients.html?view=archived&deleted=1';
+  },
+});
+document.getElementById('close-open').addEventListener('click', openClose);
+document.getElementById('delete-open').addEventListener('click', openDelete);
+document.getElementById('reopen').addEventListener('click', async (ev) => {
+  if (!confirm(`¿Reactivar la cuenta de ${patient.name}? Después crea un enlace nuevo para tu paciente.`)) return;
+  try { await busy(ev.currentTarget, () => reopenAccount(patient.id)); } catch (e) { toast(e.message, 'error'); return; }
+  location.href = `/patient.html?id=${encodeURIComponent(patient.id)}&tab=access&reopened=1`;
+});
+const params = new URL(location.href).searchParams;
+if (params.has('closed')) toast('Cuenta cerrada. Sus datos quedan guardados.');
+if (params.has('reopened')) toast('Cuenta reactivada. Crea un enlace nuevo para tu paciente.');
+if (params.has('closed') || params.has('reopened')) {
+  const u = new URL(location.href);
+  u.searchParams.delete('closed');
+  u.searchParams.delete('reopened');
+  history.replaceState(null, '', u);
+}
 
 // ---------- Boot ----------
 document.getElementById('export-link').href = `/export.html?id=${encodeURIComponent(patient.id)}`;
