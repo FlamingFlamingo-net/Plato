@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: slice 1 (activity log) built; slices 2 (progress photos) and 3 (home with feeds) approved, not built. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: slices 1 (activity log) and 2 (progress photos) built; slice 3 (home with feeds) approved, not built. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -468,6 +468,15 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 - Nutritionist: the patient page's **Comidas** tab is now **Registros** (meals and activity in one feed, newest first; "Marcar vista" on each). The patient list adds an "N actividades nuevas" badge. Export (PDF and JSON) adds an "Actividad física" section.
 - Server: the date window, the "Otra" name and dropping details that don't apply are checked by a hook (`pb_hooks/activity.pb.js`), not only on screen.
 - **Result (throwaway server):** API 96/96 (23 new activity checks: acceptance 1, 3-6, 8 for activity), screens `tools/activity_check.mjs` 17/17, and all earlier suites still pass (demo 22/22, print + export 25/25, close account 12/12, security probe 0 findings).
+
+### Slice 2 — progress photos (built 2026-10-25)
+
+- Patient: **Registrar** switch is now **Comida | Actividad | Progreso**. The progress form (`progress-photo.html`) has the pose (Frente, Perfil, Espalda, Otra; Frente picked), the tip about clothes, place and light, and "Solo tú y tu nutrióloga o nutriólogo pueden ver esta foto". Always dated today (server checks).
+- Patient **Progreso**: "Fotos de progreso" grid by date with **Agregar foto**. Delete button only when the nutritionist allows it; otherwise "¿Quieres borrar una foto? Pídeselo a tu nutrióloga o nutriólogo."
+- Nutritionist: progress photos in **Registros** ("Foto de progreso · Frente", portrait crop) with Marcar vista and a delete button (always allowed). Patient list badge "N fotos de progreso". New **Ajustes** page (link in the header) with the switch **Permitir que mis pacientes borren sus fotos de progreso** (off by default; saved on change).
+- Export: **Incluir fotos de progreso** (off by default). When off, the photos are not even downloaded.
+- Decision taken during build: the nutritionist can also delete a progress photo of a **closed** account (a deletion request can come after closing). Everything else on a closed account stays read-only.
+- **Result (throwaway server):** API 120/120 (24 new: acceptance 2, 4-8 for progress photos), screens `tools/progress_check.mjs` 15/15, and all earlier suites still pass (see the commit plan run).
 
 ### Reminders for the owner
 
