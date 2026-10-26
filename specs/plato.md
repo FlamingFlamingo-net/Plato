@@ -484,6 +484,55 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 
 ---
 
+## Feature: Saved diet templates (approved 2026-10-25)
+
+**What:** the nutritionist saves a weekly diet as a **template** ("Bajar de peso — fase 1", "Deportista 2,500 kcal") and starts a patient's diet from it in one click, instead of typing the same week again.
+
+**Why:** typing a 7-day × 5-meal week is the slowest task in Plato. Most patients start from one of a few standard plans and get adjusted.
+
+**Who:** nutritionist only. Templates are **private to the nutritionist** who made them. Patients never see templates, only their own diet.
+
+**How it fits the future catalogue:** a template is a diet with no patient (the same `meals` shape: days 1–7 × the 5 meal slots, free text). When the food catalogue arrives, templates can hold catalogue dishes too (the hybrid diet structure); nothing here blocks that.
+
+### Demo loop (laptop, 3 minutes)
+
+1. Ana's **Dieta** tab: **Guardar como plantilla** → name "Bajar de peso — fase 1" → saved. Toast: "Plantilla guardada."
+2. Carlos's **Dieta** tab (empty): **Usar plantilla** → a list of my templates (name, days filled, last change) with a preview of the week → **Usar esta**.
+3. The week fills the editor **without saving yet** ("Cambios sin guardar"). I adjust Tuesday's dinner, then **Guardar**. Carlos's diet is saved; the template is unchanged.
+4. If Carlos already had a diet: "¿Reemplazar la dieta actual de Carlos con esta plantilla? Podrás revisarla antes de guardar." Cancel leaves everything as it was.
+5. **Plantillas** page (link in the top bar, next to Ajustes): rename, delete (with confirmation), preview. A template saved again with the same name asks: replace or save as a copy.
+
+### Rules
+
+- A template belongs to one nutritionist: only they can list, view, change or delete it.
+- Using a template **copies** it into the patient's diet. Later changes to the template do not touch patients who already used it, and the other way round.
+- Not available for closed accounts ("Usar plantilla" hidden, as the rest of the diet is read-only). Saving a closed patient's diet as a template is allowed (it only reads).
+- The diet title comes along (editable before saving).
+- Empty days and meals copy as empty.
+
+### Acceptance
+
+1. Save Ana's week as a template: the template has the same 7 days × meals and the title.
+2. Use it on Carlos: his editor shows the week as unsaved; nothing is stored until **Guardar**; after saving, his diet equals the template plus my edits.
+3. Change the template later: Carlos's diet does not change.
+4. Replacing an existing diet asks first; Cancel keeps it.
+5. Another nutritionist cannot list, open, use or delete my templates (API refuses).
+6. A patient cannot list templates (API refuses).
+7. Rename and delete work; deleting a template leaves the patients' diets intact.
+8. Closed account: no "Usar plantilla".
+
+**Later:** edit a template directly in its own week editor (v1: apply to a patient, adjust, save as template again with "replace"); share templates with the global catalogue (catalogue decision 2); print a template; templates built from catalogue dishes with totals.
+
+**Not now:** automatic diet generation.
+
+### Decisions (owner, 2026-10-25: all as recommended)
+
+1. **Plantillas page** in the top bar now; it moves under **Catálogo** when the home screen and catalogue exist.
+2. **Editing in v1 goes through a patient:** apply, adjust, **Guardar como plantilla** → replace. A direct template editor comes later.
+3. **Using a template on a patient with a diet replaces the whole week**, after asking first. "Only fill empty meals" can come later.
+
+---
+
 ## Feature: Food catalogue and import (FUTURE — parked until the data source is chosen)
 
 **Status (owner, 2026-10-25):** long-term feature. Direction agreed (decisions below); not scheduled. Blocked on the choice of official data source.
