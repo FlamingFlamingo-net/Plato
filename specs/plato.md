@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes + patient export + print weekly diet. Specced, not approved: close account. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -187,7 +187,7 @@ Not legal advice. A map of what to ask a lawyer. Checked 2026-10-23.
 |---|---|---|---|
 | L1 | Data protection law: LFPDPPP 2025 (in force 2025-03-21; authority SABG, ex-INAI) | Health data is sensitive. It needs a privacy notice and express consent. The notice says data is stored in the USA (Fly.io, Dallas). | What form of consent? Is a checkbox at join enough? |
 | L2 | Roles | The nutritionist is the controller (*responsable*). Plato is the processor (*encargado*). | Terms of use and a processing contract with each nutritionist. A privacy notice for nutritionists' own data. |
-| L3 | ARCO rights (access, correction, deletion, objection) | Patients can ask for their data or its deletion. Plato needs export and close-account (features below). | Response deadlines. Who answers: the nutritionist or us? |
+| L3 | ARCO rights (access, correction, deletion, objection) | Patients can ask for their data or its deletion. Plato needs export and close-account (features below). | Response deadlines. Who answers: the nutritionist or us? How does the nutritionist check the requester's identity before handing over data? How should the file be delivered securely (in person, paper, WhatsApp, email)? |
 | L4 | Clinical record retention (NOM-004-SSA3-2012) | Records are kept at least 5 years after the last consultation. This conflicts with deletion. | Are a nutritionist's notes and measurements a clinical record? Archive instead of delete? |
 | L5 | Breaches | A leak brings notice duties and fines. | What to do and whom to tell if data leaks. |
 
@@ -243,7 +243,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ---
 
-## Feature: Close a patient's account (SPEC — not approved)
+## Feature: Close a patient's account (built)
 
 **What:** the nutritionist closes a patient's account when the patient asks (L3) or stops treatment. Default is **archive**, not delete, because clinical records may need to stay 5 years (L4). Permanent deletion is a second, separate step.
 
@@ -254,7 +254,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 2. A dialog explains in one paragraph: the patient can no longer sign in; the data is kept, read-only, for the retention period; nothing is deleted.
 3. Type the patient's first name to confirm. Click **Cerrar cuenta**.
 4. The patient leaves the main list. A **Archivados** filter shows them, with the closing date.
-5. On the phone, the patient's app shows "Tu cuenta está cerrada. Habla con tu nutrióloga o nutriólogo." Sign-in fails with the same message.
+5. On the phone, the patient's app goes to the sign-in page with "Tu sesión terminó. … Si tu cuenta se cerró o cambiaste de teléfono, habla con tu nutrióloga o nutriólogo." The old email and password no longer work. (Changed during build: closing clears the email, so the server cannot tell a closed account from a wrong password at sign-in.)
 6. To undo: open the archived patient, click **Reactivar**, then make a new invite link. The old password does not come back.
 7. To delete for good: open the archived patient, click **Borrar definitivamente**, read the 5-year warning, type the full name. All data and photos are deleted. This cannot be undone.
 
@@ -278,6 +278,8 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 6. Archive and delete permanently. Expect his photos' addresses to return "not found".
 7. As a second nutritionist, try close, reopen and delete on Carlos. Expect "No encontrado".
 8. Try to delete an active patient directly through the API. Expect refusal.
+
+**Result (2026-10-25, throwaway server):** acceptance 1–8 pass at the API (`tools/api_check.py`, 24 checks) and on screen (`tools/close_check.mjs`, 12 checks). Archived patients: own list (**Archivados**), every tab read-only, export still works.
 
 **Later:** the patient asks to close from their own app (the nutritionist approves); automatic deletion 5 years after the last consultation; a log of closings and deletions.
 
@@ -325,7 +327,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 5. As a second nutritionist, open Ana's print address. Expect "No encontrado".
 6. Black-and-white check: print preview in grey still shows every meal name.
 
-**Result (2026-10-24, `tools/docs_check.mjs`, throwaway server):** acceptance 1–6 pass, plus "save before printing". Normal diet: 1 page, A4 landscape. Long diet: 2 pages, day names on both, no meal split. On a phone the sheet scrolls sideways with a hint. Real printer and real phone print dialog: not checked yet.
+**Result (2026-10-24, `tools/docs_check.mjs`, throwaway server):** acceptance 1–6 pass, plus "save before printing". Normal diet: 1 page, A4 landscape. Long diet: 2 pages, day names on both, no meal split. On a phone the sheet scrolls sideways with a hint. Owner tested print preview in the browser (2026-10-24): looks fine. Real printer: not available. Real phone print dialog: not checked yet.
 
 **Later:** clinic logo on the sheet; the nutritionist's phone and next appointment; a portrait "one day per page" option; a shopping list from the week.
 
