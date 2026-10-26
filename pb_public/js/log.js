@@ -3,13 +3,12 @@
 import { create, list, q, SLOTS, localDate, isoWeekday } from './api.js';
 import { h, formError, busy } from './ui.js';
 import { patientShell } from './shell.js';
+import { photoPicker } from './photo.js';
 
 const { me } = await patientShell('log');
 const form = document.getElementById('log-form');
 const slotsEl = document.getElementById('slots');
 const photo = document.getElementById('photo');
-const preview = document.getElementById('preview');
-const pickLabel = document.getElementById('pick-label');
 const planned = document.getElementById('planned');
 
 let todays = {};
@@ -35,40 +34,19 @@ function showPlanned() {
 }
 showPlanned();
 
-let blob = null;
-photo.addEventListener('change', async () => {
-  const file = photo.files[0];
-  blob = null;
-  if (!file) return;
-  try { blob = await shrink(file); } catch { blob = file; }
-  preview.src = URL.createObjectURL(blob);
-  preview.hidden = false;
-  pickLabel.hidden = true;
-  photo.setCustomValidity('');
-});
-
-async function shrink(file, max = 1600) {
-  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(bmp.width * scale);
-  canvas.height = Math.round(bmp.height * scale);
-  canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  bmp.close?.();
-  return new Promise((ok, fail) => canvas.toBlob((b) => (b ? ok(b) : fail(new Error('toBlob'))), 'image/jpeg', 0.82));
-}
+const getBlob = photoPicker({ input: photo, preview: document.getElementById('preview'), label: document.getElementById('pick-label') });
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   formError(form, '');
-  photo.setCustomValidity(blob ? '' : 'Toma o elige una foto de tu comida.');
+  photo.setCustomValidity(getBlob() ? '' : 'Toma o elige una foto de tu comida.');
   if (!form.reportValidity()) return;
   const fd = new FormData();
   fd.set('patient', me.id);
   fd.set('date', localDate());
   fd.set('slot', form.slot.value);
   fd.set('note', form.note.value.trim());
-  fd.set('photo', blob, 'comida.jpg');
+  fd.set('photo', getBlob(), 'comida.jpg');
   try {
     await busy(form.querySelector('[type=submit]'), () => create('meal_logs', fd));
   } catch (err) {

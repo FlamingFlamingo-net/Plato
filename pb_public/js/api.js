@@ -170,16 +170,16 @@ export async function join(token, email, password) {
   return r.record;
 }
 
-// ---- files (meal photos are protected) ----
+// ---- files (meal and progress photos are protected) ----
 let fileToken = null;
 let fileTokenAt = 0;
-export async function photoUrl(log, thumb = '400x400') {
+export async function photoUrl(rec, thumb = '400x400') {
   if (!fileToken || Date.now() - fileTokenAt > 90_000) {
     fileToken = (await request('/api/files/token', { method: 'POST' })).token;
     fileTokenAt = Date.now();
   }
   const t = thumb ? `&thumb=${thumb}` : '';
-  return `/api/files/meal_logs/${enc(log.id)}/${enc(log.photo)}?token=${enc(fileToken)}${t}`;
+  return `/api/files/${enc(rec.collectionName || 'meal_logs')}/${enc(rec.id)}/${enc(rec.photo)}?token=${enc(fileToken)}${t}`;
 }
 
 // ---- helpers ----
