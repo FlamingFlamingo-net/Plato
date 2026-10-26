@@ -428,7 +428,7 @@ It replaces opening each patient one by one to look for new photos. It absorbs t
 - **Below the grid:** card items, loaded by the feed selected.
 - **Banner picture:** the nutritionist's own (owner, 2026-10-25).
 - **Agenda:** shown but disabled until appointments exist. It must look disabled without relying on text: greyed out, a lock icon, not clickable, `aria-disabled="true"` (owner, 2026-10-25).
-- **Catálogo:** to be defined with the client.
+- **Catálogo:** defined by the client (2026-10-26), see "Catálogo contents" below.
 - Suggested refinements and open details are in the next section; settle them before slice 3.
 
 ### Upgrades over Nutrimind's home (owner approved all 8, 2026-10-25)
@@ -457,7 +457,7 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 ### Open questions (slice 3 only; slices 1 and 2 do not depend on them)
 
 1. ~~Banner picture~~ → the nutritionist's own.
-2. **Catálogo:** owner will ask the client what it should show. **Fotos** = progress photos only, or meal photos too? (still open)
+2. ~~Catálogo~~ → defined (see "Catálogo contents"). ~~Fotos~~ → progress and meal photos, with nutritionist feedback.
 3. ~~Agenda~~ → disabled look (grey + lock), not hidden.
 4. Suggested: keep the banner short on a laptop (about 1/4 of the screen) with a greeting and the "sin ver" counters, and make the grid a compact row of buttons, so the cards stay visible without scrolling. On the phone the grid becomes 2 or 3 columns.
 
@@ -477,6 +477,25 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 - Export: **Incluir fotos de progreso** (off by default). When off, the photos are not even downloaded.
 - Decision taken during build: the nutritionist can also delete a progress photo of a **closed** account (a deletion request can come after closing). Everything else on a closed account stays read-only.
 - **Result (throwaway server):** API 120/120 (24 new: acceptance 2, 4-8 for progress photos), screens `tools/progress_check.mjs` 15/15, and all earlier suites still pass (see the commit plan run).
+
+### Catálogo contents (client, 2026-10-26)
+
+The **Catálogo** tab is the nutritionist's library: one card per list, each with a count. Lists that exist open their page; lists not built yet show the same disabled look as Agenda (grey + lock, no text-only cue).
+
+| # | List (client's words) | In Plato | Status |
+|---|---|---|---|
+| 1 | Pacientes | patient list (`patients.html`) | built |
+| 2 | Ingredientes | ingredient database (Feature: Food catalogue) | future, waiting on the data source |
+| 3 | Recetas | dishes / platillos (Feature: Food catalogue) | future |
+| 4 | Planes de comidas (**meal plan** = one day) | a day of meals (5 slots), reusable in diets | future (with the food catalogue) |
+| 5 | Dietas (**diet** = one week) | diet templates (Feature: Saved diet templates) | built (Plantillas page) |
+| 6 | Cuestionarios | Google Forms integration (Feature: Questionnaires) | spec later; needs the client's forms |
+| 7 | Planes de ejercicio | exercise plans prescribed by the nutritionist (Feature: Exercise plans) | waiting on the client's Excel sheet |
+
+- **Terms (owner, 2026-10-26):** **meal plan** ("Plan de comidas") = one day of meals; **diet** ("Dieta") = one week. A diet can be built from meal plans (e.g. Monday-Friday = plan A, weekend = plan B). Today's diet editor and templates are weekly diets.
+- **Naming (owner, 2026-10-26):** the home tab **Actividades** is what patients *did* (activity log, built); Catálogo #7 is **Planes de ejercicio** (what the nutritionist *prescribes*).
+- **Fotos tab (owner, 2026-10-26):** progress photos **and** meal photos (filters Todas / Progreso / Comidas, as in the mockup). The nutritionist gives feedback on them: see "Feature: Photo feedback".
+- When the catalogue lands, the **Plantillas** page moves under Catálogo → Planes semanales (templates decision 1).
 
 ### Reminders for the owner
 
@@ -535,6 +554,30 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 
 ---
 
+## Feature: Questionnaires (FUTURE — needs the client's Google Forms)
+
+**What:** the nutritionist's questionnaires (intake, habits, follow-up) in Catálogo → Cuestionarios, built on the client's existing **Google Forms**.
+
+**Decision (owner, 2026-10-26):** start with **level 1 (links)**; level 2 later if the client needs answers inside Plato. The owner will send form links when the client replies.
+
+**Two levels:**
+1. **Link (small, no Google setup):** the nutritionist saves each form's link in Plato and sends it to a patient. The patient's app shows "Cuestionario pendiente" and opens the form in a new tab, pre-filled with the patient's code (Google Forms pre-filled link) so answers can be matched. Answers stay in the client's Google Sheet; the nutritionist marks it "Respondido" in Plato (or Plato checks, level 2).
+2. **Answers inside Plato (bigger):** Plato reads the answers through the Google Forms API and shows them on the patient's page. Needs a Google Cloud project, the client's Google sign-in (OAuth) and a server job; health answers then flow Google → Plato.
+
+**Constraints:** Plato's pages load no third-party code, so forms open in a new tab rather than embedded (an embedded Google page needs an explicit OK). Health answers stored in Google = a third-party processor: goes to the legal list (L1/L2: privacy notice, processing agreement).
+
+**Needs from the client:** one or two real form links (or copies with fake data), and whether answers must be visible inside Plato (level 2) or Google Sheets is enough (level 1).
+
+---
+
+## Feature: Exercise plans (FUTURE — needs the client's Excel sheet)
+
+**What:** exercise plans the nutritionist prescribes (Catálogo → Planes de ejercicio), assigned to patients like diets. Required for the full version.
+
+**Waiting on:** the client's Excel sheet (the owner will provide it). It decides the shape: per-day routines vs. a list of exercises, sets/reps/time, intensity, video links. Then: import the sheet once (like the food catalogue), templates per nutritionist, assign to a patient, show on the patient's phone, and link with the patient's activity log ("planned vs. done") later.
+
+---
+
 ## Feature: Food catalogue and import (FUTURE — parked until the data source is chosen)
 
 **Status (owner, 2026-10-25):** long-term feature. Direction agreed (decisions below); not scheduled. Blocked on the choice of official data source.
@@ -554,7 +597,8 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 |---|---|---|
 | **Platillo** (dish) | Taco de lomo en salsa verde, **1 taco** | ingredients with quantity **per serving**, a **serving unit** |
 | **Comida** (meal) | Tacos × 3 + frijoles × 1 taza | dishes × servings |
-| **Dieta** (diet) | the week | meals per day and slot (today's free text keeps working) |
+| **Plan de comidas** (meal plan) | one day: a meal per slot | meals per slot, daily totals |
+| **Dieta** (diet) | the week | a meal plan or meals per day and slot (today's free text keeps working) |
 
 **Multi-serving dishes:** a dish has a serving unit (`taco`, `pieza`, `taza`, `porción`) and the label **"Se sirve por piezas"** when it is naturally multiplied. The catalogue keeps **1 taco**; a meal or diet says **"× 3"** and Plato multiplies. "5 tacos" is never saved as its own dish.
 
