@@ -213,3 +213,27 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-top { padding-inline: 1rem; }
   .plato-hide-sm { display: none; }
 }
+
+/* ---- Activity log (slice 1) ---- */
+.plato-log-type { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.25rem; padding: 0.25rem; margin-bottom: 1rem;
+  background: var(--muted); border-radius: var(--radius); }
+.plato-log-type a { text-align: center; padding: 0.5rem; border-radius: calc(var(--radius) - 2px); font-weight: 600; font-size: 0.925rem;
+  color: var(--muted-foreground); text-decoration: none; }
+.plato-log-type a[aria-current="page"] { background: var(--background); color: var(--foreground); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.plato-log-type a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.plato-row--fields { align-items: start; flex-wrap: nowrap; gap: 0.75rem; }
+.plato-row--fields > .field { flex: 1 1 0; min-width: 0; }
+.plato-more { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.625rem 0.875rem; }
+.plato-more > summary { cursor: pointer; font-weight: 600; font-size: 0.925rem; gap: 0.3em; } /* Basecoat makes summary flex: spaces collapse */
+.plato-more > summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+.plato-speed { margin: 0; padding: 0.5rem 0.75rem; border-radius: var(--radius); background: var(--secondary); color: var(--secondary-foreground); font-weight: 600; font-size: 0.925rem; }
+.plato-activity { display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: start; }
+.plato-activity-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 999px; background: var(--secondary); color: var(--primary); }
+.plato-activity h3, .plato-activity strong { margin: 0; font-size: 0.975rem; }
+.plato-activity p { margin: 0.125rem 0 0; }
+.plato-activities { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.75rem; }
+.plato-activities > li { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); padding: 0.75rem; }
+.plato-log-card--activity { padding: 0.875rem; align-content: start; gap: 0.5rem; }
+.plato-log-card--activity .plato-activity-icon { width: 2rem; height: 2rem; }
+.plato-activity-summary { margin: 0; font-weight: 600; line-height: 1.4; }
+.plato-section-title { font-family: var(--font-heading); font-size: 1.05rem; margin: 1.5rem 0 0; }

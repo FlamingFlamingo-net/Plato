@@ -5,6 +5,7 @@ import { h, offlineBanner, age, shortDate, timeOf, num } from './ui.js';
 import { weightChart } from './charts.js';
 import { weekList, hasDiet } from './week.js';
 import { printDocument, miniPlate, printedOn } from './printing.js';
+import { activitySummary, activityName } from './activity.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -24,13 +25,14 @@ let data;
 try {
   const patient = await view('patients', id);
   const pid = q(patient.id);
-  const [measurements, [diet], logs, notes] = await Promise.all([
+  const [measurements, [diet], logs, notes, acts] = await Promise.all([
     list('measurements', { filter: `patient = ${pid}`, sort: 'date,created' }),
     list('diets', { filter: `patient = ${pid}` }),
     list('meal_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
     list('patient_notes', { filter: `patient = ${pid}`, sort: 'created' }),
+    list('activity_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
   ]);
-  data = { patient, measurements, diet, logs, notes };
+  data = { patient, measurements, diet, logs, notes, acts };
   document.title = `Datos de ${patient.name} — Plato`;
   await render();
   statusEl.hidden = true;
@@ -42,7 +44,7 @@ try {
 }
 
 async function render() {
-  const { patient, measurements, diet, logs, notes } = data;
+  const { patient, measurements, diet, logs, notes, acts } = data;
   const birth = dateOnly(patient.birth_date);
   const a = age(birth);
 
@@ -98,6 +100,16 @@ async function render() {
     section(`Comidas registradas (${logs.length})`,
       logs.length ? h('div', { class: 'doc-logs' }, ...photoCards) : h('p', { class: 'doc-empty', text: 'Sin comidas registradas.' })),
 
+    section(`Actividad física (${acts.length})`,
+      acts.length
+        ? h('table', { class: 'doc-table' },
+          h('thead', {}, h('tr', {}, ...['Fecha', 'Actividad', 'Nota'].map((t) => h('th', { scope: 'col', text: t })))),
+          h('tbody', {}, ...acts.map((a) => h('tr', {},
+            h('td', { text: shortDate(a.date) }),
+            h('td', { text: activitySummary(a) }),
+            h('td', { text: a.note || '—' })))))
+        : h('p', { class: 'doc-empty', text: 'Sin actividad registrada.' })),
+
     notesSection,
 
     h('p', { class: 'doc-foot', text: 'Contiene datos personales y de salud. Entrégalo solo al paciente o a quien él autorice.' }));
@@ -112,7 +124,7 @@ withNotes.addEventListener('change', () => {
 printBtn.addEventListener('click', printDocument);
 
 jsonBtn.addEventListener('click', () => {
-  const { patient, measurements, diet, logs, notes } = data;
+  const { patient, measurements, diet, logs, notes, acts } = data;
   const out = {
     format: 'plato-patient-export',
     version: 1,
@@ -129,6 +141,11 @@ jsonBtn.addEventListener('click', () => {
     meal_logs: logs.map((l) => ({
       date: l.date, meal: l.slot, meal_label: SLOT_LABEL[l.slot], note: l.note || '',
       sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo,
+    })),
+    activity_logs: acts.map((a) => ({
+      date: a.date, activity: a.kind, activity_label: activityName(a), minutes: a.minutes,
+      intensity: a.intensity || null, terrain: a.terrain || null, distance_km: a.distance_km || null,
+      summary: activitySummary(a), note: a.note || '', sent_at: a.created, seen_at: a.seen_at || null,
     })),
     ...(withNotes.checked ? { private_notes: notes.map((n) => ({ created: n.created, text: n.text })) } : {}),
   };

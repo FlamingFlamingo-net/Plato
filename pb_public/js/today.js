@@ -2,6 +2,7 @@
 import { list, remove, photoUrl, q, SLOTS, localDate, isoWeekday } from './api.js';
 import { h, icon, longDate, toast } from './ui.js';
 import { plate } from './charts.js';
+import { activitySummary } from './activity.js';
 import { patientShell } from './shell.js';
 
 const { me, nutritionist } = await patientShell('today');
@@ -12,7 +13,8 @@ document.getElementById('greet').textContent = `¡Hola, ${me.name.split(' ')[0]}
 document.getElementById('date').textContent = longDate(today) + (nutritionist ? ` · Plan de ${nutritionist.name}` : '');
 if (params.has('welcome')) document.getElementById('welcome').hidden = false;
 if (params.has('logged')) toast('¡Bien! Comida registrada.');
-if (params.has('logged') || params.has('welcome')) history.replaceState(null, '', '/today.html');
+if (params.has('activity')) toast('¡Bien! Actividad registrada.');
+if (params.has('logged') || params.has('welcome') || params.has('activity')) history.replaceState(null, '', '/today.html');
 
 const statusEl = document.getElementById('status');
 const mealsEl = document.getElementById('meals');
@@ -70,4 +72,34 @@ try {
 } catch (e) {
   statusEl.textContent = e.message;
   document.getElementById('plate').replaceChildren();
+}
+
+// Today's physical activity (same-day delete, like meals).
+const actEl = document.getElementById('activities');
+const actStatus = document.getElementById('act-status');
+try {
+  const acts = await list('activity_logs', { filter: `patient = ${q(me.id)} && date = ${q(today)}`, sort: 'created' });
+  actStatus.textContent = acts.length ? '' : 'Aún no registras actividad hoy.';
+  for (const a of acts) {
+    actEl.append(h('li', { class: 'plato-activity' },
+      h('span', { class: 'plato-activity-icon' }, icon('activity', 20)),
+      h('div', {},
+        h('h3', { text: activitySummary(a) }),
+        a.note ? h('p', { class: 'plato-muted plato-small', text: a.note }) : null,
+        h('span', { class: `plato-meal-status${a.seen_at ? ' is-seen' : ''}` }, icon(a.seen_at ? 'eye' : 'check', 14),
+          a.seen_at ? 'Vista por tu nutrióloga/o' : 'Registrada')),
+      h('button', {
+        class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': `Borrar actividad: ${activitySummary(a)}`,
+        onclick: async () => {
+          if (!confirm('¿Borrar esta actividad?')) return;
+          try { await remove('activity_logs', a.id); } catch (e) {
+            toast(e.status === 404 ? 'Solo puedes borrar actividad del mismo día.' : e.message, 'error');
+            return;
+          }
+          location.reload();
+        },
+      }, icon('trash', 14))));
+  }
+} catch (e) {
+  actStatus.textContent = e.message;
 }

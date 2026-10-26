@@ -4,6 +4,7 @@ import {
   SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly,
 } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, longDate, shortDate, timeOf, num } from './ui.js';
+import { activitySummary } from './activity.js';
 import { weightChart } from './charts.js';
 
 offlineBanner();
@@ -211,9 +212,15 @@ const photoDialog = document.getElementById('photo-dialog');
 document.getElementById('ph-close').addEventListener('click', () => photoDialog.close());
 photoDialog.addEventListener('click', (e) => { if (e.target === photoDialog) photoDialog.close(); });
 
+// Meals and physical activity in one feed, newest first (date, then time sent).
 let logs = [];
 async function loadLogs() {
-  logs = await list('meal_logs', { filter: `patient = ${pid}`, sort: '-date,-created', perPage: 120 });
+  const [meals, acts] = await Promise.all([
+    list('meal_logs', { filter: `patient = ${pid}`, sort: '-date,-created', perPage: 120 }),
+    list('activity_logs', { filter: `patient = ${pid}`, sort: '-date,-created', perPage: 120 }),
+  ]);
+  logs = [...meals.map((l) => ({ ...l, type: 'meal' })), ...acts.map((a) => ({ ...a, type: 'activity' }))]
+    .sort((x, y) => (y.date + y.created).localeCompare(x.date + x.created));
   const unseen = logs.filter((l) => !l.seen_at).length;
   logCount.hidden = !unseen;
   logCount.textContent = String(unseen);
@@ -224,7 +231,7 @@ async function loadLogs() {
 async function renderLogs() {
   feed.replaceChildren();
   logStatus.textContent = logs.length ? '' : (patient.joined
-    ? 'Tu paciente aún no ha registrado comidas.'
+    ? 'Tu paciente aún no ha registrado comidas ni actividad.'
     : 'Tu paciente aún no tiene la app. Mándale su enlace desde la pestaña Acceso.');
   let lastDay = '';
   for (const l of logs) {
@@ -232,21 +239,20 @@ async function renderLogs() {
       lastDay = l.date;
       feed.append(h('li', { class: 'plato-feed-day', text: longDate(l.date) }));
     }
+    const coll = l.type === 'meal' ? 'meal_logs' : 'activity_logs';
+    const seenBtn = seenControl(l, coll);
+    if (l.type === 'activity') {
+      feed.append(h('li', { class: 'plato-log-card plato-log-card--activity' },
+        h('div', { class: 'plato-row plato-row--between' },
+          h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon('activity', 18)), h('strong', { text: 'Actividad física' })),
+          h('span', { class: 'plato-muted plato-small', text: timeOf(l.created) })),
+        h('p', { class: 'plato-activity-summary', text: activitySummary(l) }),
+        l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
+        h('div', {}, seenBtn)));
+      continue;
+    }
     const img = h('img', { alt: `Foto de ${SLOT_LABEL[l.slot].toLowerCase()}`, loading: 'lazy', width: 400, height: 300 });
     photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
-    const seenBtn = l.seen_at
-      ? h('span', { class: 'badge', 'data-variant': 'secondary' }, icon('check', 14), 'Vista')
-      : closed ? h('span', { class: 'badge', 'data-variant': 'outline', text: 'Sin ver' })
-      : h('button', {
-        class: 'btn', 'data-size': 'sm', type: 'button',
-        onclick: async (ev) => {
-          try {
-            await busy(ev.currentTarget, () => update('meal_logs', l.id, { seen_at: new Date().toISOString().replace('T', ' ') }));
-          } catch (e) { toast(e.message, 'error'); return; }
-          await loadLogs();
-          toast('Marcada como vista. Tu paciente lo verá.');
-        },
-      }, icon('eye', 16), 'Marcar vista');
     feed.append(h('li', { class: 'plato-log-card' },
       h('button', {
         class: 'plato-photo-btn', type: 'button', 'aria-label': `Ver foto grande: ${SLOT_LABEL[l.slot]}`,
@@ -266,6 +272,22 @@ async function renderLogs() {
         l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
         h('div', {}, seenBtn))));
   }
+}
+
+function seenControl(l, coll) {
+  if (l.seen_at) return h('span', { class: 'badge', 'data-variant': 'secondary' }, icon('check', 14), 'Vista');
+  if (closed) return h('span', { class: 'badge', 'data-variant': 'outline', text: 'Sin ver' });
+  return h('button', {
+    class: 'btn', 'data-size': 'sm', type: 'button',
+    'aria-label': l.type === 'meal' ? `Marcar vista: ${SLOT_LABEL[l.slot]}` : `Marcar vista: ${activitySummary(l)}`,
+    onclick: async (ev) => {
+      try {
+        await busy(ev.currentTarget, () => update(coll, l.id, { seen_at: new Date().toISOString().replace('T', ' ') }));
+      } catch (e) { toast(e.message, 'error'); return; }
+      await loadLogs();
+      toast('Marcada como vista. Tu paciente lo verá.');
+    },
+  }, icon('eye', 16), 'Marcar vista');
 }
 
 // ---------- Notes ----------

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Registrar actividad — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/activity-log.js?v=1"></script>
+</head>
+<body>
+  <main id="main" class="plato-main plato-main--phone">
+    <h1 class="plato-page-title" style="margin-bottom:0.75rem">Registrar actividad</h1>
+    <nav class="plato-log-type" aria-label="¿Qué quieres registrar?">
+      <a href="/log.html">Comida</a>
+      <a href="/activity.html" aria-current="page">Actividad</a>
+    </nav>
+    <form id="act-form" class="plato-form" novalidate>
+      <fieldset class="plato-slot-pick" id="kinds"><legend>¿Qué hiciste?</legend></fieldset>
+      <div class="field" id="other-field" hidden>
+        <label for="kind_other">¿Qué actividad?</label>
+        <input class="input" id="kind_other" name="kind_other" maxlength="60" placeholder="Ej. Escalar">
+      </div>
+
+      <div class="plato-row plato-row--fields">
+        <div class="field">
+          <label for="minutes">Minutos</label>
+          <input class="input" id="minutes" name="minutes" type="number" inputmode="numeric" min="1" max="600" step="1" required placeholder="30">
+        </div>
+        <div class="field">
+          <label for="date">Fecha</label>
+          <input class="input" id="date" name="date" type="date" required>
+        </div>
+      </div>
+
+      <details class="plato-more" id="more">
+        <summary>Más detalles <span class="plato-muted">(opcional)</span></summary>
+        <div class="plato-form" style="margin-top:0.75rem">
+          <fieldset class="plato-slot-pick" id="intensity"><legend>Intensidad</legend></fieldset>
+          <fieldset class="plato-slot-pick" id="terrain"><legend>Terreno</legend></fieldset>
+          <div class="field" id="distance-field">
+            <label for="distance_km">Distancia (km)</label>
+            <input class="input" id="distance_km" name="distance_km" type="number" inputmode="decimal" min="0.01" max="300" step="0.01" placeholder="5">
+          </div>
+          <p class="plato-speed" id="speed" aria-live="polite" hidden></p>
+        </div>
+      </details>
+
+      <div class="field">
+        <label for="note">Nota <span class="plato-muted">(opcional)</span></label>
+        <textarea class="textarea" id="note" name="note" rows="2" maxlength="300" placeholder="Ej. Me sentí con mucha energía."></textarea>
+      </div>
+      <button class="btn" data-size="lg" type="submit" style="width:100%">Enviar</button>
+    </form>
+  </main>
+</body>
+</html>

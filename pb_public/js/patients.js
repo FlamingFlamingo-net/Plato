@@ -25,20 +25,23 @@ const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w)
 
 async function load() {
   try {
-    const [patients, unseen] = await Promise.all([
+    const [patients, unseen, unseenActs] = await Promise.all([
       list('patients', { sort: archivedView ? '-archived_at' : 'name', fields: 'id,name,sex,birth_date,joined,archived_at',
         filter: archivedView ? 'archived_at != ""' : 'archived_at = ""' }),
       archivedView ? [] : list('meal_logs', { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'patient', perPage: 500 }),
+      archivedView ? [] : list('activity_logs', { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'patient', perPage: 500 }),
     ]);
     const counts = {};
     for (const l of unseen) counts[l.patient] = (counts[l.patient] || 0) + 1;
-    render(patients, counts);
+    const actCounts = {};
+    for (const a of unseenActs) actCounts[a.patient] = (actCounts[a.patient] || 0) + 1;
+    render(patients, counts, actCounts);
   } catch (e) {
     statusEl.textContent = e.message;
   }
 }
 
-function render(patients, counts) {
+function render(patients, counts, actCounts = {}) {
   listEl.replaceChildren();
   statusEl.textContent = patients.length ? `${patients.length} ${patients.length === 1 ? 'paciente' : 'pacientes'}` : '';
   if (!patients.length && archivedView) {
@@ -56,6 +59,7 @@ function render(patients, counts) {
   }
   for (const p of patients) {
     const n = counts[p.id] || 0;
+    const na = actCounts[p.id] || 0;
     const a = age(p.birth_date);
     const bits = [p.sex === 'female' ? 'Mujer' : 'Hombre', a != null ? `${a} años` : null].filter(Boolean).join(' · ');
     listEl.append(h('li', {},
@@ -64,7 +68,8 @@ function render(patients, counts) {
         h('span', { class: 'plato-patient-meta' }, h('strong', { text: p.name }), h('span', { class: 'plato-muted plato-small', text: bits })),
         p.archived_at ? h('span', { class: 'badge', 'data-variant': 'outline', text: `Cerrada el ${shortDate(p.archived_at)}` })
           : p.joined ? null : h('span', { class: 'badge', 'data-variant': 'outline', text: 'Sin app' }),
-        n ? h('span', { class: 'badge plato-badge-new' }, icon('camera', 14), `${n} ${n === 1 ? 'foto nueva' : 'fotos nuevas'}`) : null)));
+        n ? h('span', { class: 'badge plato-badge-new' }, icon('camera', 14), `${n} ${n === 1 ? 'foto nueva' : 'fotos nuevas'}`) : null,
+        na ? h('span', { class: 'badge plato-badge-new' }, icon('activity', 14), `${na} ${na === 1 ? 'actividad nueva' : 'actividades nuevas'}`) : null)));
   }
 }
 

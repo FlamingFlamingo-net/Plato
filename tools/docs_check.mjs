@@ -153,7 +153,7 @@ await step('E1', async () => {
   await nutri.waitFor(`!document.getElementById('sheet').hidden`);
   await nutri.waitFor(`[...document.querySelectorAll('.doc-log img')].every(i => i.complete && i.naturalWidth > 0)`, 15000);
   const counts = await nutri.eval(`({
-    m: document.querySelectorAll('.doc-table tbody tr').length,
+    m: document.querySelector('.doc-table').querySelectorAll('tbody tr').length,
     dots: document.querySelectorAll('.doc-chart .chart-dot').length,
     days: document.querySelectorAll('.week-day').length,
     photos: document.querySelectorAll('.doc-log img').length,
