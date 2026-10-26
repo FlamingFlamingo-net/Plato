@@ -46,7 +46,7 @@ A photo is not lost: the patient can retake it when the connection is back. v1 d
 | Goals and mood check-in (P1) | Nice for motivation. Not needed to demo. | Patient owns their own records. |
 | Patient rates the day (P1) | Photos already show compliance. | Logs have a date field. |
 | Appointments and "next appointment" (P1) | The nutritionist uses their own calendar today. | None. |
-| Comments on a meal photo (P1) | "Seen" closes the loop in v1. | Each log has an id. Comments attach to it later. |
+| Comments on a meal photo (P1) | "Seen" closes the loop in v1. | Each log has an id. Comments attach to it later. **Now specced** as "Feature: Photo feedback" (comment + 1-3 stars, meal and progress photos). |
 | Saved diet templates (P1) | Typing one diet is enough to demo. | Diets are their own records, not fields on the patient. A template is a diet with no patient. |
 | Clinic logo (P1) | Looks are fine without it. | One nutritionist record holds clinic details. |
 | Recipes, macros, food exchange tables, visual diets (P2) | They need a licensed food database. That is a content project. | Meals stay free text in v1. A later version links a meal to foods. |
@@ -198,7 +198,7 @@ Not legal advice. A map of what to ask a lawyer. Checked 2026-10-23.
 | L6 | Electronic health record certification (NOM-024-SSA3-2012, DGIS) | Plato is a diet tool, not a full record system. Ask if certification applies, mainly before selling to clinics or government. |
 | L7 | Trademark | Check "Plato" with IMPI before buying a domain. |
 | L8 | Nutrimind | Use features as ideas only. Never copy their text, images, recipes, or food tables. |
-| L9 | Minors | Pediatric patients need a parent or guardian's consent. Keep minors out until then. |
+| L9 | Minors | Pediatric patients need a parent or guardian's consent. Keep minors out until then. **Specced:** "Feature: Age limits" (no progress photos under 18, enforced by the server; no guardian unlock). |
 | L10 | Charging money | Taxes and invoices (SAT, CFDI). PROFECO if selling to consumers. |
 | L11 | AI features | Health advice from AI carries liability. The nutritionist always decides. |
 | L12 | Users in Spain | GDPR applies. Separate project. |
@@ -500,6 +500,86 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 ### Reminders for the owner
 
 - **"Pending dashboard"**: an untitled feature with a placeholder button on the home grid. **Remind the owner to define it** before slice 3 is built, and again at each slice review until it is defined.
+
+---
+
+## Feature: Photo feedback (approved 2026-10-26)
+
+**What:** on a patient's photo (meal or progress), the nutritionist leaves **feedback**: a short **comment** (text) and a **rating of 1 to 3 stars**. The patient sees it on their phone. Replaces the Later item "Comments on a meal photo".
+
+**Why:** "Vista" says *I looked*; feedback says *what I think*. It is the main motivation loop between visits.
+
+**Who:** the nutritionist of that patient writes, edits or removes it. The patient only reads it. Nobody else sees it.
+
+### Demo loop
+
+1. Laptop, **Registros** (or the home **Fotos** tab later): on Ana's lunch photo, click **Dar retroalimentación** → pick ★★★ → type "¡Muy buen plato! Agrega más verdura en la cena." → **Enviar**.
+2. The card now shows the stars and the comment, and it counts as **seen** (no separate "Marcar vista" needed).
+3. Ana's phone, **Hoy**: the lunch shows "Tu nutrióloga/o: ★★★ ¡Muy buen plato! …". New feedback shows a dot on Hoy / Progreso until she opens it.
+4. Click **Editar** on the feedback to change it, or **Quitar** to remove it.
+
+### Rules
+
+- One feedback per photo (comment and/or stars; at least one of them). Editable; the patient sees the latest version and "editada".
+- Comment: plain text, up to 500 characters. Stars: 1, 2 or 3 (no half stars, no 0).
+- Saving feedback sets `seen_at` if it was empty.
+- Closed accounts: read-only, like the rest (no new feedback).
+- Export (PDF/JSON): the feedback goes with each photo.
+- The patient cannot reply in this version.
+
+### Acceptance
+
+1. Nutritionist rates a meal photo ★★ with a comment: the patient sees both; the card counts as seen. A progress photo takes a comment but no stars (API refuses stars there).
+2. Comment only, or stars only: both allowed; neither: refused.
+3. Edit and remove work; the patient sees the change.
+4. The patient cannot write, change or remove feedback (API refuses). Another nutritionist cannot either.
+5. Stars outside 1-3 and comments over 500 characters are refused.
+6. Closed account: no feedback buttons; existing feedback stays readable.
+
+### Risks
+
+- **Rating progress photos (bodies) can hurt.** A star score on a body photo can feel like a grade on the person. See Q1.
+
+### Decisions (owner, 2026-10-26: all as recommended)
+
+1. **Comments on both kinds of photo; stars only on meal photos** (the stars rate the plate, not the body).
+2. **Fixed meaning, shown to both sides:** ★ "Puede mejorar", ★★ "Bien", ★★★ "¡Excelente!".
+3. **The patient sees the stars and the comment.** The nutritionist can leave a comment only.
+4. **Not on activity entries** for now.
+5. **Build now**, as its own feature, before the home screen (slice 3).
+
+---
+
+## Feature: Age limits (approved 2026-10-26)
+
+**What:** the patient's **age** (from their birth date) **hard-limits** some features. First case: **minors cannot upload progress photos** (meal photos stay allowed). "Hard" means the server refuses, not only a hidden button.
+
+**Why:** photos of minors (bodies especially) are the most sensitive data Plato could hold, and minors need a parent's or guardian's consent (Legal L9). Until that is solved with the lawyer, Plato keeps those features away from minors.
+
+**How it works:**
+- Age is computed **on the server at the moment of each upload** from `patients.birth_date`, so a patient turning 18 is unlocked automatically on their birthday.
+- The nutritionist sets the birth date (as today). Changing it re-evaluates the limits immediately.
+- A hook checks every progress photo upload (`progress_photos`) and refuses with a plain message: "Por tu edad, Plato no guarda fotos de progreso." Meal photos are not limited.
+- The patient's app hides what is limited and explains why (no dead buttons). The nutritionist's patient page shows a badge: "Menor de edad: sin fotos de progreso".
+- Progress photos uploaded before a birth date was corrected stay; the nutritionist can delete them (always allowed).
+
+### Acceptance
+
+1. A patient aged 17 cannot upload a progress photo (API refuses with the message); their app hides "Progreso" in Registrar and "Agregar foto", and explains why. Meal photos still work.
+2. The same patient turns 18 (birth date 18 years ago today): uploads work.
+3. Changing a patient's birth date to make them 17 locks uploads at once; changing it back unlocks them.
+4. A new patient cannot be created without a birth date. An existing patient with no birth date is treated as a minor (no progress photos) until it is filled in.
+5. Adults are not affected (every earlier test still passes).
+6. The nutritionist sees "Menor de edad: sin fotos de progreso" on the patient's page, and "Falta la fecha de nacimiento" when it is empty.
+
+### Decisions (owner, 2026-10-26)
+
+1. **18**, one platform-wide rule (not a clinic setting).
+2. **Only progress photos are limited.** Meal photos, the activity log and the diet stay available to minors.
+3. **Birth date required** for new patients; existing patients without one are treated as minors until it is filled in.
+4. Meal logging for minors needs no change (meal photos are allowed).
+5. **No guardian-consent unlock.** The owner: "the risk is too high". Progress photos stay off for minors, full stop.
+6. More age-based limits (pediatric charts, teen texts): not now.
 
 ---
 
