@@ -13,6 +13,7 @@ import secrets
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from datetime import date
@@ -230,6 +231,72 @@ codes = [call("POST", "/api/collections/nutritionists/auth-with-password", {"ide
 check("15 wrong sign-ins in a minute get slowed down (429)", 429 in codes, sorted(set(codes)))
 codes = [call("GET", f"/api/plato/invite/{secrets.token_hex(20)}", retry=False)[0] for i in range(25)]
 check("25 guessed invite links in a minute get slowed down (429)", 429 in codes, sorted(set(codes)))
+
+# ---- close a patient's account (spec "Feature: Close a patient's account") ----
+time.sleep(61)  # let the invite-link rate limit from the check above reset
+s, pc = new_patient(ta, a_id, "ZZ Paciente Cierre")
+s, inv = call("POST", "/api/plato/invite", {"patient": pc["id"]}, ta)
+pc_email, pc_pw = f"zz-cierre-{uuid.uuid4().hex[:6]}@test.local", pw()
+s, jc = call("POST", "/api/plato/join", {"token": inv["token"], "email": pc_email, "password": pc_pw})
+tpc = jc["token"]
+s, mlog = call("POST", "/api/collections/meal_logs/records", {"patient": pc["id"], "date": today, "slot": "dinner"},
+               tpc, files={"photo": ("d.jpg", img, "image/jpeg")})
+s, inv_open = call("POST", "/api/plato/invite", {"patient": pc["id"]}, ta)  # an open link that closing must void
+
+s, r = call("POST", f"/api/plato/patients/{pc['id']}/close", {}, tb)
+check("C7 another nutritionist cannot close the patient", s == 404, s)
+s, r = call("DELETE", f"/api/collections/patients/records/{pc['id']}", token=ta)
+check("C8 an active patient cannot be deleted directly", s == 404, s)
+s, r = call("POST", f"/api/plato/patients/{pc['id']}/close", {}, ta)
+check("C1 nutritionist closes the account", s == 200 and r.get("archived_at"), (s, r))
+s, r = call("POST", f"/api/plato/patients/{pc['id']}/close", {}, ta)
+check("C1 closing twice is refused", s == 400, s)
+s, r = call("GET", "/api/collections/patients/records?filter=" + urllib.parse.quote('archived_at != ""'), token=ta)
+check("C1 patient shows up as archived", s == 200 and [x["id"] for x in r["items"]] == [pc["id"]], r)
+s, r = call("GET", "/api/collections/patients/records", token=tpc)
+check("C2 the patient's old session stops working", s == 401 or (s == 200 and r["items"] == []), (s, r))
+s, r = call("POST", "/api/collections/patients/auth-with-password", {"identity": pc_email, "password": pc_pw})
+check("C2 the patient's old password stops working", s == 400, s)
+s, r = call("GET", f"/api/plato/invite/{inv_open['token']}")
+check("C2 an invite link made before closing stops working", s == 400, (s, r))
+s, r = call("POST", "/api/collections/measurements/records",
+            {"patient": pc["id"], "date": f"{today} 12:00:00.000Z", "weight_kg": 70}, ta)
+check("C3 no new measurement for a closed account", s >= 400, s)
+s, r = call("PATCH", f"/api/collections/patients/records/{pc['id']}", {"height_cm": 170}, ta)
+check("C3 a closed account's details are read-only", s == 404, s)
+s, r = call("PATCH", f"/api/collections/meal_logs/records/{mlog['id']}", {"seen_at": f"{today} 18:00:00.000Z"}, ta)
+check("C3 a closed account's meal logs are read-only", s == 404, s)
+s, r = call("POST", "/api/collections/patient_notes/records", {"patient": pc["id"], "text": "x"}, ta)
+check("C3 no new note for a closed account", s >= 400, s)
+s, r = call("GET", f"/api/collections/meal_logs/records/{mlog['id']}", token=ta)
+check("C3 the nutritionist can still read a closed account's data", s == 200, s)
+s, r = call("PATCH", f"/api/collections/patients/records/{pc['id']}", {"archived_at": ""}, ta)
+check("C3 reopening is not possible by editing the record", s == 404, s)
+s, r = call("POST", "/api/plato/invite", {"patient": pc["id"]}, ta)
+check("C4 no invite link for a closed account", s == 400, (s, r))
+s, r = call("POST", f"/api/plato/patients/{pc['id']}/reopen", {}, tb)
+check("C7 another nutritionist cannot reopen", s == 404, s)
+s, r = call("POST", f"/api/plato/patients/{pc['id']}/reopen", {}, ta)
+check("C5 nutritionist reopens the account", s == 200, (s, r))
+s, inv2 = call("POST", "/api/plato/invite", {"patient": pc["id"]}, ta)
+pc_pw2 = pw()
+s, j2 = call("POST", "/api/plato/join", {"token": inv2["token"], "email": pc_email, "password": pc_pw2})
+check("C5 after reopening, a new link works and the patient is back in", s == 200 and j2.get("token"), (s, j2))
+s, r = call("GET", f"/api/collections/meal_logs/records/{mlog['id']}", token=j2["token"])
+check("C5 reopening keeps the old meal logs", s == 200, s)
+s, r = call("POST", f"/api/plato/patients/{pc['id']}/close", {}, ta)
+s, r = call("DELETE", f"/api/collections/patients/records/{pc['id']}", token=tb)
+check("C7 another nutritionist cannot delete", s == 404, s)
+s, ft = call("POST", "/api/files/token", {}, ta)
+s, r = call("GET", f"/api/files/meal_logs/{mlog['id']}/{mlog['photo']}?token={ft['token']}")
+check("C6 (before delete) the photo still opens for the nutritionist", s == 200, s)
+s, r = call("DELETE", f"/api/collections/patients/records/{pc['id']}", token=ta)
+check("C6 nutritionist deletes the closed account for good", s == 204, (s, r))
+s, ft = call("POST", "/api/files/token", {}, ta)
+s, r = call("GET", f"/api/files/meal_logs/{mlog['id']}/{mlog['photo']}?token={ft['token']}")
+check("C6 after delete the photo address returns not found", s == 404, s)
+s, r = call("GET", f"/api/collections/meal_logs/records/{mlog['id']}", token=ta)
+check("C6 after delete the meal log is gone", s == 404, s)
 
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")
