@@ -43,7 +43,22 @@ function voidInvites(tx, patientId) {
   for (const r of open) { r.set("used", true); tx.save(r); }
 }
 
+// Age limits (spec "Feature: Age limits"): one platform-wide rule.
+const ADULT_AGE = 18;
+// Whole years on today's date (UTC) from a PocketBase date "YYYY-MM-DD hh:mm:ss.sssZ". null when empty.
+function ageYears(birth) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(birth || ""));
+  if (!m) return null;
+  const now = new Date();
+  const y = now.getUTCFullYear(), mo = now.getUTCMonth() + 1, d = now.getUTCDate();
+  const by = +m[1], bm = +m[2], bd = +m[3];
+  return y - by - (mo < bm || (mo === bm && d < bd) ? 1 : 0);
+}
+// No birth date counts as a minor (safe by default).
+const isMinor = (birth) => { const a = ageYears(birth); return a === null || a < ADULT_AGE; };
+
 module.exports = {
   CLOSED_MSG: CLOSED_MSG, isoIn: isoIn, nowIso: nowIso,
   usableInvite: usableInvite, ownedPatient: ownedPatient, voidInvites: voidInvites,
+  ADULT_AGE: ADULT_AGE, ageYears: ageYears, isMinor: isMinor,
 };

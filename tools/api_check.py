@@ -97,7 +97,7 @@ tb, b_id = nutri("ZZ Test Beto")
 def new_patient(tok, nid, name):
     p = pw()
     return call("POST", "/api/collections/patients/records",
-                {"name": name, "sex": "female", "height_cm": 160, "nutritionist": nid, "password": p, "passwordConfirm": p}, tok)
+                {"name": name, "sex": "female", "birth_date": "1990-01-01 12:00:00.000Z", "height_cm": 160, "nutritionist": nid, "password": p, "passwordConfirm": p}, tok)
 
 
 s, p1 = new_patient(ta, a_id, "ZZ Paciente Uno")
@@ -218,7 +218,7 @@ check("patient deletes own log the same day", s == 204, (s, r))
 # ---- security fixes (audit 2026-10-23) ----
 known = pw()
 s, r = call("POST", "/api/collections/patients/records",
-                                {"name": "ZZ Preset", "sex": "male", "nutritionist": a_id, "email": f"zz-preset-{uuid.uuid4().hex[:5]}@test.local",
+                                {"name": "ZZ Preset", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id, "email": f"zz-preset-{uuid.uuid4().hex[:5]}@test.local",
                                  "password": known, "passwordConfirm": known}, ta)
 check("nutritionist cannot choose a patient's email (no signing in as the patient)", s >= 400, (s, r))
 for field, value in [("emailVisibility", True), ("verified", False), ("email", "x@test.local")]:

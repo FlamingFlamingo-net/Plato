@@ -76,7 +76,7 @@ await step('P2', async () => {
 // ---------- Print: acceptance 3 (long diet → 2 pages, header repeats, no split meal) ----------
 await step('P3', async () => {
   const pw = randomBytes(16).toString('hex');
-  const p = await api(nutri, 'POST', '/api/collections/patients/records', { name: 'ZZ Dieta Larga', sex: 'female', nutritionist: t.nutritionist.record.id, password: pw, passwordConfirm: pw });
+  const p = await api(nutri, 'POST', '/api/collections/patients/records', { name: 'ZZ Dieta Larga', sex: 'female', birth_date: '1990-01-01 12:00:00.000Z', nutritionist: t.nutritionist.record.id, password: pw, passwordConfirm: pw });
   const long = 'Pechuga de pollo a la plancha con verduras al vapor, arroz integral y ensalada verde con aguacate. ';
   const slots = ['breakfast', 'snack_am', 'lunch', 'snack_pm', 'dinner'];
   const meals = {};
