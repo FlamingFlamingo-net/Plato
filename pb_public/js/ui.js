@@ -99,6 +99,11 @@ export function age(birthYmd) {
   return a;
 }
 
+// Age limits (spec "Feature: Age limits"): the server decides; screens mirror it so nothing looks broken.
+// No birth date counts as a minor (safe by default).
+export const ADULT_AGE = 18;
+export function isMinor(birthYmd) { const a = age(birthYmd); return a == null || a < ADULT_AGE; }
+
 // Banner when the device is offline. The installed app still opens; saving waits for a connection.
 export function offlineBanner() {
   const bar = h('div', { class: 'plato-offline', role: 'status', hidden: navigator.onLine },

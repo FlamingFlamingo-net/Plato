@@ -6,7 +6,8 @@ import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { weightChart } from './charts.js';
 import { patientShell } from './shell.js';
 
-const { me, nutritionist } = await patientShell('progress');
+const { me, nutritionist, minor } = await patientShell('progress');
+if (minor) document.getElementById('add-photo').remove();
 if (new URL(location.href).searchParams.has('photo')) {
   toast('¡Bien! Foto de progreso guardada.');
   history.replaceState(null, '', '/progress.html');
@@ -41,7 +42,9 @@ const grid = document.getElementById('pp-grid');
 const ppStatus = document.getElementById('pp-status');
 try {
   const photos = await list('progress_photos', { filter: `patient = ${q(me.id)}`, sort: '-date,-created', perPage: 200 });
-  ppStatus.textContent = photos.length ? '' : 'Aún no tienes fotos de progreso. Toma una hoy y compárala en unas semanas.';
+  ppStatus.textContent = minor
+    ? (dateOnly(me.birth_date) ? 'Por tu edad, Plato no guarda fotos de progreso.' : 'Las fotos de progreso se activan cuando tu nutrióloga o nutriólogo registre tu fecha de nacimiento.')
+    : photos.length ? '' : 'Aún no tienes fotos de progreso. Toma una hoy y compárala en unas semanas.';
   let last = '';
   for (const p of photos) {
     if (p.date !== last) { last = p.date; grid.append(h('li', { class: 'plato-progress-day', text: shortDate(p.date) })); }

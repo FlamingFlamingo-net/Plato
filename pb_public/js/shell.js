@@ -1,7 +1,7 @@
 // shell.js — shared chrome for the patient app: top bar with the nutritionist's name, bottom nav, offline banner.
-import { requireRole, view, list, q, signOut } from './api.js';
+import { requireRole, view, list, q, signOut, dateOnly } from './api.js';
 import { lastSeen } from './feedback.js';
-import { h, icon, offlineBanner } from './ui.js';
+import { h, icon, offlineBanner, isMinor } from './ui.js';
 
 export async function patientShell(current) {
   offlineBanner();
@@ -32,10 +32,14 @@ export async function patientShell(current) {
   if (current !== 'today') newer('meal_logs', 'meal').then((r) => { if (r.length) dot('today', 'Retroalimentación nueva'); });
   if (current !== 'progress') newer('progress_photos', 'progress').then((r) => { if (r.length) dot('progress', 'Retroalimentación nueva'); });
 
+  // Age limits: no progress photos under 18 (the server refuses too). Hide the way in.
+  const minor = isMinor(dateOnly(me.birth_date));
+  if (minor) document.querySelectorAll('.plato-log-type a[href="/progress-photo.html"]').forEach((a) => a.remove());
+
   // The install script runs on load; it finds the button we just added.
   document.dispatchEvent(new Event('plato:install-ready'));
 
   let nutritionist = null;
   try { nutritionist = await view('nutritionists', me.nutritionist); } catch { /* offline or removed */ }
-  return { me, nutritionist };
+  return { me, nutritionist, minor };
 }

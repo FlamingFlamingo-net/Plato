@@ -30,6 +30,7 @@
         <div>
           <h1 class="plato-page-title" id="p-name"></h1>
           <p class="plato-muted plato-small" id="p-meta" style="margin:0"></p>
+          <div class="plato-row" id="p-age" style="margin-top:0.35rem" hidden></div>
         </div>
       </div>
 
@@ -252,6 +253,22 @@
         <button class="btn" type="button" id="ut-use" disabled>Usar esta</button>
       </footer>
       <button type="button" aria-label="Cerrar" id="ut-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="bd-dialog" aria-labelledby="bd-title">
+    <div>
+      <header><h2 id="bd-title">Fecha de nacimiento</h2><p>Plato la usa para calcular la edad. Menores de 18 años no pueden subir fotos de progreso.</p></header>
+      <form id="bd-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <div class="field"><label for="bd-date">Fecha de nacimiento</label><input class="input" id="bd-date" type="date" required></div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" id="bd-cancel">Cancelar</button>
+          <button class="btn" type="submit" id="bd-save">Guardar</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="bd-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
   </dialog>
 

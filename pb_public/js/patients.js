@@ -21,6 +21,9 @@ for (const [id, on] of [['view-active', !archivedView], ['view-archived', archiv
 document.getElementById('new-patient').hidden = archivedView;
 if (params.has('deleted')) { toast('Paciente borrado definitivamente.'); history.replaceState(null, '', '/patients.html?view=archived'); }
 
+// The birth date is required (age limits) and cannot be in the future.
+document.getElementById('pf-birth').max = new Date().toLocaleDateString('en-CA');
+
 const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
 async function load() {

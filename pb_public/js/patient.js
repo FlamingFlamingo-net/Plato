@@ -3,7 +3,7 @@ import {
   requireRole, view, list, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
   SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly,
 } from './api.js';
-import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, longDate, shortDate, timeOf, num } from './ui.js';
+import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, isMinor, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
 import { weekList, cleanMeals, daysFilled } from './week.js';
 import { POSE_LABEL } from './progress-photos.js';
@@ -43,6 +43,7 @@ function renderHead() {
     patient.height_cm ? `${num(patient.height_cm)} cm` : null,
     closed ? `Cuenta cerrada el ${shortDate(patient.archived_at)}` : patient.joined ? 'Usa la app' : 'Aún sin app',
   ].filter(Boolean).join(' · ');
+  renderAge();
   document.getElementById('closed-banner').hidden = !closed;
   if (closed) document.getElementById('closed-title').textContent = `Cuenta cerrada el ${longDate(patient.archived_at).toLowerCase()}`;
 }
@@ -187,6 +188,45 @@ dietForm.addEventListener('submit', async (e) => {
   renderDays();
   renderMeals();
   toast('Dieta guardada. Tu paciente ya la ve en su app.');
+});
+
+// ---------- Age (spec "Age limits"): badge + birth date edit ----------
+const bdDialog = document.getElementById('bd-dialog');
+const bdForm = document.getElementById('bd-form');
+const bdDate = document.getElementById('bd-date');
+for (const id of ['bd-cancel', 'bd-x']) document.getElementById(id).addEventListener('click', () => bdDialog.close());
+bdDialog.addEventListener('click', (e) => { if (e.target === bdDialog) bdDialog.close(); });
+function openBirth() {
+  formError(bdForm, '');
+  bdDate.max = new Date().toLocaleDateString('en-CA');
+  bdDate.value = dateOnly(patient.birth_date);
+  bdDialog.showModal();
+  bdDate.focus();
+}
+function renderAge() {
+  const el = document.getElementById('p-age');
+  const birth = dateOnly(patient.birth_date);
+  const parts = [];
+  if (!birth) parts.push(h('span', { class: 'badge', 'data-variant': 'destructive' }, icon('alert', 14), 'Falta la fecha de nacimiento'));
+  else if (isMinor(birth)) parts.push(h('span', { class: 'badge', 'data-variant': 'secondary' }, icon('user', 14), 'Menor de edad: sin fotos de progreso'));
+  if (!closed) {
+    parts.push(h('button', { class: 'btn', 'data-variant': birth ? 'link' : 'outline', 'data-size': 'sm', type: 'button', id: 'edit-birth', onclick: openBirth },
+      birth ? 'Cambiar fecha de nacimiento' : 'Agregar fecha de nacimiento'));
+  }
+  el.replaceChildren(...parts);
+  el.hidden = !parts.length;
+}
+bdForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  formError(bdForm, '');
+  if (!bdDate.value) { formError(bdForm, 'Elige la fecha de nacimiento.'); return; }
+  if (bdDate.value > bdDate.max) { formError(bdForm, 'La fecha no puede ser en el futuro.'); return; }
+  try {
+    patient = await busy(document.getElementById('bd-save'), () => update('patients', patient.id, { birth_date: `${bdDate.value} 12:00:00.000Z` }));
+  } catch (err) { formError(bdForm, err.message); return; }
+  bdDialog.close();
+  renderHead();
+  toast('Fecha de nacimiento guardada.');
 });
 
 // ---------- Templates (spec "Saved diet templates") ----------

@@ -1,15 +1,24 @@
 // progress-photo.js — the patient sends a progress photo: pose, photo, optional note. Always dated today.
-import { create, localDate } from './api.js';
+import { create, localDate, dateOnly } from './api.js';
 import { h, formError, busy } from './ui.js';
 import { patientShell } from './shell.js';
 import { photoPicker } from './photo.js';
 import { POSES } from './progress-photos.js';
 
-const { me } = await patientShell('log');
+const { me, minor } = await patientShell('log');
 const form = document.getElementById('pp-form');
 const posesEl = document.getElementById('poses');
 const photo = document.getElementById('photo');
 const getBlob = photoPicker({ input: photo, preview: document.getElementById('preview'), label: document.getElementById('pick-label') });
+
+// Age limits: explain instead of showing a form the server would refuse.
+if (minor) {
+  form.hidden = true;
+  document.getElementById('pp-minor').hidden = false;
+  document.getElementById('pp-minor-text').textContent = dateOnly(me.birth_date)
+    ? 'Por tu edad, Plato no guarda fotos de progreso. Puedes seguir registrando tus comidas y tu actividad.'
+    : 'Tu nutrióloga o nutriólogo aún no registra tu fecha de nacimiento. Las fotos de progreso se activan cuando la agregue.';
+}
 
 posesEl.append(...POSES.map(([k, l], i) => h('label', {}, h('input', { type: 'radio', name: 'pose', value: k, required: true, checked: i === 0 }), l)));
 
