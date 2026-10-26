@@ -1,8 +1,9 @@
 // today.js — the patient's day: the plate (one slice per planned meal) and today's meals with a Log button.
-import { list, remove, photoUrl, q, SLOTS, localDate, isoWeekday } from './api.js';
+import { list, remove, photoUrl, q, SLOTS, SLOT_LABEL, localDate, isoWeekday } from './api.js';
 import { h, icon, longDate, toast } from './ui.js';
 import { plate } from './charts.js';
 import { activitySummary } from './activity.js';
+import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { patientShell } from './shell.js';
 
 const { me, nutritionist } = await patientShell('today');
@@ -17,6 +18,7 @@ if (params.has('activity')) toast('¡Bien! Actividad registrada.');
 if (params.has('logged') || params.has('welcome') || params.has('activity')) history.replaceState(null, '', '/today.html');
 
 const statusEl = document.getElementById('status');
+const fbSince = lastSeen('meal'); // what was already seen on this phone
 const mealsEl = document.getElementById('meals');
 
 try {
@@ -63,7 +65,8 @@ try {
         todays[key] ? h('p', { text: todays[key] }) : h('p', { class: 'plato-muted', text: 'Fuera de tu plan' }),
         done.length ? h('span', { class: `plato-meal-status${seen ? ' is-seen' : ''}` }, icon(seen ? 'eye' : 'check', 14),
           seen ? 'Vista por tu nutrióloga/o' : 'Registrada') : null,
-        done.length ? thumbs : null),
+        done.length ? thumbs : null,
+        ...done.map((l) => feedbackEl(l, { from: 'Tu nutrióloga/o', isNew: isNewSince(l, fbSince) }))),
       h('a', {
         class: 'btn', 'data-variant': done.length ? 'outline' : null, 'data-size': 'sm',
         href: `/log.html?slot=${key}`, 'aria-label': `${done.length ? 'Otra foto' : 'Registrar'}: ${label}`,
@@ -73,6 +76,25 @@ try {
   statusEl.textContent = e.message;
   document.getElementById('plate').replaceChildren();
 }
+
+// Feedback on earlier days (today's shows on its meal above). Last 14 days, newest first.
+try {
+  const from = new Date(); from.setDate(from.getDate() - 14);
+  const older = await list('meal_logs', {
+    filter: `patient = ${q(me.id)} && feedback_at != "" && date != ${q(today)} && date >= ${q(localDate(from))}`, sort: '-feedback_at', perPage: 30,
+  });
+  const fbList = document.getElementById('fb-list');
+  document.getElementById('fb-section').hidden = !older.length;
+  for (const l of older) {
+    const img = h('img', { alt: `Tu foto de ${SLOT_LABEL[l.slot].toLowerCase()}`, width: 56, height: 56, class: 'plato-fb-thumb' });
+    photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
+    fbList.append(h('li', { class: 'plato-fb-item' }, img,
+      h('div', {},
+        h('strong', { class: 'plato-small', text: `${SLOT_LABEL[l.slot]} · ${longDate(l.date)}` }),
+        feedbackEl(l, { from: 'Tu nutrióloga/o', isNew: isNewSince(l, fbSince) }))));
+  }
+} catch { /* the rest of Hoy still works */ }
+markSeen('meal');
 
 // Today's physical activity (same-day delete, like meals).
 const actEl = document.getElementById('activities');

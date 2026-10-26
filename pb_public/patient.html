@@ -255,6 +255,33 @@
     </div>
   </dialog>
 
+  <dialog class="dialog" id="fb-dialog" aria-labelledby="fb-title">
+    <div>
+      <header><h2 id="fb-title">Retroalimentación</h2><p id="fb-sub">Tu paciente la verá en su app.</p></header>
+      <form id="fb-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <fieldset class="plato-star-pick" id="fb-stars">
+            <legend>Calificación del plato <span class="plato-muted">(opcional)</span></legend>
+            <label><input type="radio" name="stars" value="0" checked> Sin estrellas</label>
+            <label><input type="radio" name="stars" value="1"> <span class="plato-stars" aria-hidden="true">★<span class="plato-stars-off">★★</span></span> Puede mejorar</label>
+            <label><input type="radio" name="stars" value="2"> <span class="plato-stars" aria-hidden="true">★★<span class="plato-stars-off">★</span></span> Bien</label>
+            <label><input type="radio" name="stars" value="3"> <span class="plato-stars" aria-hidden="true">★★★</span> ¡Excelente!</label>
+          </fieldset>
+          <div class="field">
+            <label for="fb-text">Comentario <span class="plato-muted" id="fb-text-opt">(opcional)</span></label>
+            <textarea class="textarea" id="fb-text" rows="3" maxlength="500" placeholder="Ej. ¡Muy buen plato! Agrega más verdura en la cena."></textarea>
+            <p class="plato-muted plato-small" id="fb-count" style="margin:0;text-align:right">0 / 500</p>
+          </div>
+        </section>
+        <footer class="plato-actions">
+          <button class="btn" data-variant="outline" type="button" id="fb-cancel">Cancelar</button>
+          <button class="btn" type="submit" id="fb-save">Enviar</button>
+        </footer>
+      </form>
+      <button type="button" aria-label="Cerrar" id="fb-x"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+
   <dialog class="dialog plato-photo-dialog" id="photo-dialog" aria-labelledby="ph-title">
     <div>
       <header><h2 id="ph-title"></h2><p id="ph-sub"></p></header>

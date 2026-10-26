@@ -1,5 +1,6 @@
 // shell.js — shared chrome for the patient app: top bar with the nutritionist's name, bottom nav, offline banner.
-import { requireRole, view, signOut } from './api.js';
+import { requireRole, view, list, q, signOut } from './api.js';
+import { lastSeen } from './feedback.js';
 import { h, icon, offlineBanner } from './ui.js';
 
 export async function patientShell(current) {
@@ -19,6 +20,17 @@ export async function patientShell(current) {
     link('/today.html', 'today', 'Hoy', 'home'),
     link('/log.html', 'log', 'Registrar', 'camera'),
     link('/progress.html', 'progress', 'Progreso', 'chart')));
+
+  // A dot on Hoy / Progreso when the nutritionist left feedback this phone has not shown yet.
+  const dot = (key, label) => {
+    const a = document.querySelector(`.plato-bottom-nav a[href="/${key}.html"]`);
+    if (a && !a.querySelector('.plato-nav-dot')) a.append(h('span', { class: 'plato-nav-dot', role: 'img', 'aria-label': label }));
+  };
+  const newer = (coll, kind) => list(coll, {
+    filter: `patient = ${q(me.id)} && feedback_at != ""${lastSeen(kind) ? ` && feedback_at > ${q(lastSeen(kind))}` : ''}`, perPage: 1, fields: 'id',
+  }).catch(() => []);
+  if (current !== 'today') newer('meal_logs', 'meal').then((r) => { if (r.length) dot('today', 'Retroalimentación nueva'); });
+  if (current !== 'progress') newer('progress_photos', 'progress').then((r) => { if (r.length) dot('progress', 'Retroalimentación nueva'); });
 
   // The install script runs on load; it finds the button we just added.
   document.dispatchEvent(new Event('plato:install-ready'));

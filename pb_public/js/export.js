@@ -7,6 +7,7 @@ import { weekList, hasDiet } from './week.js';
 import { printDocument, miniPlate, printedOn } from './printing.js';
 import { activitySummary, activityName } from './activity.js';
 import { POSE_LABEL } from './progress-photos.js';
+import { feedbackText } from './feedback.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -59,7 +60,8 @@ async function render() {
       h('div', {},
         h('strong', { text: `${SLOT_LABEL[l.slot]} · ${shortDate(l.date)}` }),
         h('span', { class: 'plato-muted', text: `Enviada ${timeOf(l.created)}${l.seen_at ? ' · vista' : ''}` }),
-        l.note ? h('p', { text: l.note }) : null));
+        l.note ? h('p', { text: l.note }) : null,
+        feedbackText(l) ? h('p', { class: 'doc-feedback', text: `Nutrióloga/o: ${feedbackText(l)}` }) : null));
   }));
 
   // Photos load only when the box is ticked, so an export without them never fetches the files.
@@ -139,7 +141,8 @@ async function fillProgress(sectionEl) {
       h('div', {},
         h('strong', { text: `${POSE_LABEL[p.pose]} · ${shortDate(p.date)}` }),
         h('span', { class: 'plato-muted', text: `Enviada ${timeOf(p.created)}${p.seen_at ? ' · vista' : ''}` }),
-        p.note ? h('p', { text: p.note }) : null));
+        p.note ? h('p', { text: p.note }) : null,
+        feedbackText(p) ? h('p', { class: 'doc-feedback', text: `Nutrióloga/o: ${feedbackText(p)}` }) : null));
   })));
 }
 
@@ -175,6 +178,7 @@ jsonBtn.addEventListener('click', () => {
     meal_logs: logs.map((l) => ({
       date: l.date, meal: l.slot, meal_label: SLOT_LABEL[l.slot], note: l.note || '',
       sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo,
+      feedback: l.feedback_at ? { stars: l.feedback_stars || null, text: l.feedback_text || '', given_at: l.feedback_at, edited: !!l.feedback_edited } : null,
     })),
     activity_logs: acts.map((a) => ({
       date: a.date, activity: a.kind, activity_label: activityName(a), minutes: a.minutes,
@@ -184,6 +188,7 @@ jsonBtn.addEventListener('click', () => {
     ...(withProgress.checked ? { progress_photos: progress.map((p) => ({
       date: p.date, pose: p.pose, pose_label: POSE_LABEL[p.pose], note: p.note || '',
       sent_at: p.created, seen_at: p.seen_at || null, photo_file: p.photo,
+      feedback: p.feedback_at ? { text: p.feedback_text || '', given_at: p.feedback_at, edited: !!p.feedback_edited } : null,
     })) } : {}),
     ...(withNotes.checked ? { private_notes: notes.map((n) => ({ created: n.created, text: n.text })) } : {}),
   };

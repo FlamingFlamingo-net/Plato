@@ -35,6 +35,7 @@ export function icon(name, size = 18) {
     alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
     activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
     user: '<circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>',
+    message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
   };
   const span = document.createElement('span');
   span.className = 'icon';

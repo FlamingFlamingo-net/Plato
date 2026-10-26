@@ -214,6 +214,26 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-hide-sm { display: none; }
 }
 
+/* ---- Photo feedback ---- */
+.plato-feedback { background: var(--secondary); color: var(--secondary-foreground); border-radius: calc(var(--radius) - 4px); padding: 0.5rem 0.65rem; display: grid; gap: 0.2rem; margin-top: 0.4rem; }
+.plato-feedback p { margin: 0; font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.plato-stars { color: oklch(0.72 0.15 75); letter-spacing: 0.05em; font-size: 1rem; line-height: 1; display: inline-flex; gap: 0.35rem; align-items: center; }
+.plato-stars-off { color: oklch(0.86 0.02 85); }
+.plato-stars > span:first-child + .plato-stars-off { margin-left: -0.35rem; }
+.plato-stars-label { color: var(--secondary-foreground); font-size: 0.8rem; font-weight: 600; letter-spacing: 0; }
+.plato-star-pick { border: 0; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
+.plato-star-pick legend { font-weight: 600; margin-bottom: 0.35rem; font-size: 0.925rem; }
+.plato-star-pick label { display: flex; gap: 0.5rem; align-items: center; padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+.plato-star-pick label:has(input:checked) { border-color: var(--primary); background: var(--secondary); font-weight: 600; }
+.plato-star-pick label:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+.plato-star-pick input { accent-color: var(--primary); }
+.plato-fb-item { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: start; }
+.plato-fb-thumb { width: 3.5rem; height: 3.5rem; object-fit: cover; border-radius: calc(var(--radius) - 4px); background: var(--muted); }
+.plato-progress-item .plato-feedback { margin-top: 0.15rem; padding: 0.35rem 0.5rem; }
+.plato-progress-item .plato-feedback p { font-size: 0.8rem; }
+.plato-bottom-nav a { position: relative; }
+.plato-nav-dot { position: absolute; top: 0.35rem; left: calc(50% + 0.55rem); width: 0.6rem; height: 0.6rem; border-radius: 50%; background: oklch(0.65 0.18 30); box-shadow: 0 0 0 2px var(--background); }
+
 /* ---- Diet templates ---- */
 .plato-wide-dialog > div { max-width: min(52rem, calc(100vw - 2rem)); } /* Basecoat caps dialogs at 28rem */
 .plato-template-pick { display: grid; grid-template-columns: minmax(14rem, 18rem) 1fr; gap: 1rem; align-items: start; max-height: 60vh; overflow: auto; }

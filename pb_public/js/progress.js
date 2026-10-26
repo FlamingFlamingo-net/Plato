@@ -2,6 +2,7 @@
 import { list, remove, photoUrl, q, dateOnly } from './api.js';
 import { h, icon, toast, shortDate, num } from './ui.js';
 import { POSE_LABEL } from './progress-photos.js';
+import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { weightChart } from './charts.js';
 import { patientShell } from './shell.js';
 
@@ -35,6 +36,7 @@ try {
 
 // Progress photos, newest first, grouped by date. Delete only when the nutritionist allows it (the server checks too).
 const canDelete = !!nutritionist?.allow_progress_delete;
+const fbSince = lastSeen('progress');
 const grid = document.getElementById('pp-grid');
 const ppStatus = document.getElementById('pp-status');
 try {
@@ -57,11 +59,13 @@ try {
             try { await remove('progress_photos', p.id); } catch (e) { toast(e.status === 404 ? 'Tu nutrióloga o nutriólogo no permite borrar estas fotos.' : e.message, 'error'); return; }
             location.reload();
           },
-        }, icon('trash', 14)) : null)));
+        }, icon('trash', 14)) : null),
+      feedbackEl(p, { from: 'Tu nutrióloga/o', isNew: isNewSince(p, fbSince) })));
   }
   if (photos.length && !canDelete) {
     grid.after(h('p', { class: 'plato-muted plato-small', style: 'margin:0.75rem 0 0', text: '¿Quieres borrar una foto? Pídeselo a tu nutrióloga o nutriólogo.' }));
   }
+  markSeen('progress');
 } catch (e) {
   ppStatus.textContent = e.message;
 }

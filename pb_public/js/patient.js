@@ -7,6 +7,7 @@ import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, longDate
 import { activitySummary } from './activity.js';
 import { weekList, cleanMeals, daysFilled } from './week.js';
 import { POSE_LABEL } from './progress-photos.js';
+import { feedbackEl, hasFeedback } from './feedback.js';
 import { weightChart } from './charts.js';
 
 offlineBanner();
@@ -399,9 +400,74 @@ async function renderLogs() {
           h('strong', { text: title }),
           h('span', { class: 'plato-muted plato-small', text: timeOf(l.created) })),
         l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-        h('div', { class: 'plato-row plato-row--between' }, seenBtn, del))));
+        feedbackEl(l),
+        feedbackControls(l, coll, title),
+        h('div', { class: 'plato-row plato-row--between' }, hasFeedback(l) ? null : seenBtn, del))));
   }
 }
+
+// ---------- Photo feedback (spec "Photo feedback"): comment on any photo, 1-3 stars on meal photos ----------
+const fbDialog = document.getElementById('fb-dialog');
+const fbForm = document.getElementById('fb-form');
+const fbText = document.getElementById('fb-text');
+const fbStars = document.getElementById('fb-stars');
+const fbCount = document.getElementById('fb-count');
+let fbTarget = null;
+for (const id of ['fb-cancel', 'fb-x']) document.getElementById(id).addEventListener('click', () => fbDialog.close());
+fbDialog.addEventListener('click', (e) => { if (e.target === fbDialog) fbDialog.close(); });
+fbText.addEventListener('input', () => { fbCount.textContent = `${fbText.value.length} / 500`; });
+
+function feedbackControls(l, coll, title) {
+  if (closed) return null;
+  const open = () => {
+    fbTarget = { l, coll };
+    formError(fbForm, '');
+    const meal = l.type === 'meal';
+    fbStars.hidden = !meal;  // stars rate the plate, not the body: meal photos only
+    document.getElementById('fb-text-opt').hidden = !meal; // on progress photos the comment is the feedback
+    document.getElementById('fb-title').textContent = hasFeedback(l) ? 'Editar retroalimentación' : 'Dar retroalimentación';
+    document.getElementById('fb-sub').textContent = `${title} · ${longDate(l.date)}. Tu paciente la verá en su app.`;
+    fbForm.stars.value = String(meal ? l.feedback_stars || 0 : 0);
+    fbText.value = l.feedback_text || '';
+    fbCount.textContent = `${fbText.value.length} / 500`;
+    fbDialog.showModal();
+    fbText.focus();
+  };
+  if (!hasFeedback(l)) {
+    return h('div', {}, h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'aria-label': `Dar retroalimentación: ${title}`, onclick: open },
+      icon('message', 16), 'Dar retroalimentación'));
+  }
+  return h('div', { class: 'plato-row' },
+    h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', 'aria-label': `Editar retroalimentación: ${title}`, onclick: open }, 'Editar'),
+    h('button', {
+      class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', 'aria-label': `Quitar retroalimentación: ${title}`,
+      onclick: async (ev) => {
+        if (!confirm('¿Quitar tu retroalimentación? Tu paciente dejará de verla.')) return;
+        const body = l.type === 'meal' ? { feedback_text: '', feedback_stars: 0 } : { feedback_text: '' };
+        try { await busy(ev.currentTarget, () => update(coll, l.id, body)); } catch (e) { toast(e.message, 'error'); return; }
+        await loadLogs();
+        toast('Retroalimentación quitada.');
+      },
+    }, 'Quitar'));
+}
+
+fbForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  formError(fbForm, '');
+  const { l, coll } = fbTarget;
+  const meal = l.type === 'meal';
+  const text = fbText.value.trim();
+  const stars = meal ? Number(fbForm.stars.value) : 0;
+  if (!text && !stars) {
+    formError(fbForm, meal ? 'Elige estrellas o escribe un comentario.' : 'Escribe un comentario.');
+    return;
+  }
+  const body = meal ? { feedback_text: text, feedback_stars: stars } : { feedback_text: text };
+  try { await busy(document.getElementById('fb-save'), () => update(coll, l.id, body)); } catch (err) { formError(fbForm, err.message); return; }
+  fbDialog.close();
+  await loadLogs();
+  toast('Retroalimentación enviada. Tu paciente ya la ve.');
+});
 
 function seenControl(l, coll) {
   if (l.seen_at) return h('span', { class: 'badge', 'data-variant': 'secondary' }, icon('check', 14), 'Vista');

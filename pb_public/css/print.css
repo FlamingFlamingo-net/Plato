@@ -58,6 +58,7 @@ body.doc { background: var(--muted); }
 .week-day dt { display: flex; align-items: center; gap: 1.5mm; font-weight: 600; white-space: nowrap; }
 .week-day dd { margin: 0; white-space: pre-wrap; }
 .week-day p { margin: 0; }
+.doc-feedback { font-weight: 600; }
 
 /* ---------- Export sections ---------- */
 .doc-section { margin-top: 6mm; }
