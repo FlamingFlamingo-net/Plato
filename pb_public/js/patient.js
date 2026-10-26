@@ -5,6 +5,7 @@ import {
 } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
+import { POSE_LABEL } from './progress-photos.js';
 import { weightChart } from './charts.js';
 
 offlineBanner();
@@ -215,11 +216,13 @@ photoDialog.addEventListener('click', (e) => { if (e.target === photoDialog) pho
 // Meals and physical activity in one feed, newest first (date, then time sent).
 let logs = [];
 async function loadLogs() {
-  const [meals, acts] = await Promise.all([
+  const [meals, acts, progress] = await Promise.all([
     list('meal_logs', { filter: `patient = ${pid}`, sort: '-date,-created', perPage: 120 }),
     list('activity_logs', { filter: `patient = ${pid}`, sort: '-date,-created', perPage: 120 }),
+    list('progress_photos', { filter: `patient = ${pid}`, sort: '-date,-created', perPage: 120 }),
   ]);
-  logs = [...meals.map((l) => ({ ...l, type: 'meal' })), ...acts.map((a) => ({ ...a, type: 'activity' }))]
+  logs = [...meals.map((l) => ({ ...l, type: 'meal' })), ...acts.map((a) => ({ ...a, type: 'activity' })),
+    ...progress.map((p) => ({ ...p, type: 'progress' }))]
     .sort((x, y) => (y.date + y.created).localeCompare(x.date + x.created));
   const unseen = logs.filter((l) => !l.seen_at).length;
   logCount.hidden = !unseen;
@@ -231,7 +234,7 @@ async function loadLogs() {
 async function renderLogs() {
   feed.replaceChildren();
   logStatus.textContent = logs.length ? '' : (patient.joined
-    ? 'Tu paciente aún no ha registrado comidas ni actividad.'
+    ? 'Tu paciente aún no ha registrado comidas, actividad ni fotos de progreso.'
     : 'Tu paciente aún no tiene la app. Mándale su enlace desde la pestaña Acceso.');
   let lastDay = '';
   for (const l of logs) {
@@ -239,7 +242,7 @@ async function renderLogs() {
       lastDay = l.date;
       feed.append(h('li', { class: 'plato-feed-day', text: longDate(l.date) }));
     }
-    const coll = l.type === 'meal' ? 'meal_logs' : 'activity_logs';
+    const coll = { meal: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos' }[l.type];
     const seenBtn = seenControl(l, coll);
     if (l.type === 'activity') {
       feed.append(h('li', { class: 'plato-log-card plato-log-card--activity' },
@@ -251,26 +254,38 @@ async function renderLogs() {
         h('div', {}, seenBtn)));
       continue;
     }
-    const img = h('img', { alt: `Foto de ${SLOT_LABEL[l.slot].toLowerCase()}`, loading: 'lazy', width: 400, height: 300 });
+    const title = l.type === 'meal' ? SLOT_LABEL[l.slot] : `Foto de progreso · ${POSE_LABEL[l.pose]}`;
+    const alt = l.type === 'meal' ? `Foto de ${SLOT_LABEL[l.slot].toLowerCase()}` : `Foto de progreso: ${POSE_LABEL[l.pose].toLowerCase()}`;
+    const img = h('img', { alt, loading: 'lazy', width: 400, height: 300 });
     photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
-    feed.append(h('li', { class: 'plato-log-card' },
+    // The nutritionist can always delete a progress photo (wrong upload, or the patient asks).
+    const del = l.type !== 'progress' ? null : h('button', {
+      class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': `Borrar ${title.toLowerCase()}`,
+      onclick: async (ev) => {
+        if (!confirm('¿Borrar esta foto de progreso? No se puede deshacer.')) return;
+        try { await busy(ev.currentTarget, () => remove('progress_photos', l.id)); } catch (e) { toast(e.message, 'error'); return; }
+        await loadLogs();
+        toast('Foto de progreso borrada.');
+      },
+    }, icon('trash', 14));
+    feed.append(h('li', { class: `plato-log-card${l.type === 'progress' ? ' plato-log-card--progress' : ''}` },
       h('button', {
-        class: 'plato-photo-btn', type: 'button', 'aria-label': `Ver foto grande: ${SLOT_LABEL[l.slot]}`,
+        class: 'plato-photo-btn', type: 'button', 'aria-label': `Ver foto grande: ${title}`,
         onclick: async () => {
-          document.getElementById('ph-title').textContent = SLOT_LABEL[l.slot];
+          document.getElementById('ph-title').textContent = title;
           document.getElementById('ph-sub').textContent = `${longDate(l.date)} · ${timeOf(l.created)}${l.note ? ` · “${l.note}”` : ''}`;
           const big = document.getElementById('ph-img');
-          big.alt = `Foto de ${SLOT_LABEL[l.slot].toLowerCase()}`;
+          big.alt = alt;
           big.src = await photoUrl(l, '');
           photoDialog.showModal();
         },
       }, img),
       h('div', { class: 'plato-log-body' },
         h('div', { class: 'plato-row plato-row--between' },
-          h('strong', { text: SLOT_LABEL[l.slot] }),
+          h('strong', { text: title }),
           h('span', { class: 'plato-muted plato-small', text: timeOf(l.created) })),
         l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-        h('div', {}, seenBtn))));
+        h('div', { class: 'plato-row plato-row--between' }, seenBtn, del))));
   }
 }
 
@@ -279,7 +294,7 @@ function seenControl(l, coll) {
   if (closed) return h('span', { class: 'badge', 'data-variant': 'outline', text: 'Sin ver' });
   return h('button', {
     class: 'btn', 'data-size': 'sm', type: 'button',
-    'aria-label': l.type === 'meal' ? `Marcar vista: ${SLOT_LABEL[l.slot]}` : `Marcar vista: ${activitySummary(l)}`,
+    'aria-label': `Marcar vista: ${l.type === 'meal' ? SLOT_LABEL[l.slot] : l.type === 'progress' ? `foto de progreso, ${POSE_LABEL[l.pose]}` : activitySummary(l)}`,
     onclick: async (ev) => {
       try {
         await busy(ev.currentTarget, () => update(coll, l.id, { seen_at: new Date().toISOString().replace('T', ' ') }));

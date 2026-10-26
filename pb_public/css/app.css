@@ -214,6 +214,16 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-hide-sm { display: none; }
 }
 
+/* ---- Progress photos (slice 2) ---- */
+.plato-photo-pick--tall { aspect-ratio: 3 / 4; max-height: 60vh; }
+.plato-progress-grid { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.625rem; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); }
+.plato-progress-day { grid-column: 1 / -1; font-weight: 700; font-family: var(--font-heading); margin-top: 0.25rem; }
+.plato-progress-item { display: grid; gap: 0.25rem; }
+.plato-progress-item img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: calc(var(--radius) - 4px); background: var(--muted); display: block; }
+.plato-log-card--progress button.plato-photo-btn { aspect-ratio: 3 / 4; }
+.plato-settings label { display: flex; gap: 0.75rem; align-items: flex-start; cursor: pointer; }
+.plato-settings input[role=switch] { flex: none; margin-top: 0.15rem; }
+
 /* ---- Activity log (slice 1) ---- */
 .plato-log-type { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.25rem; padding: 0.25rem; margin-bottom: 1rem;
   background: var(--muted); border-radius: var(--radius); }

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ajustes — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/settings.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/patients.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
+    <div class="plato-row">
+      <span class="plato-muted plato-small plato-hide-sm" id="who"></span>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main" style="max-width:44rem">
+    <a class="plato-back" href="/patients.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Mis pacientes</a>
+    <h1 class="plato-page-title" style="margin-bottom:1.25rem">Ajustes</h1>
+
+    <section class="card" aria-labelledby="photos-title">
+      <header>
+        <h2 id="photos-title">Fotos de progreso</h2>
+        <p>Son fotos sensibles. Tú siempre puedes borrar una, por ejemplo si tu paciente lo pide o subió la foto equivocada.</p>
+      </header>
+      <section class="plato-settings">
+        <label for="allow-delete">
+          <input type="checkbox" role="switch" class="input" id="allow-delete" disabled>
+          <span class="plato-stack-sm">
+            <strong>Permitir que mis pacientes borren sus fotos de progreso</strong>
+            <span class="plato-muted plato-small" id="allow-help">Apagado: solo tú puedes borrarlas. Tus pacientes ven “Pídeselo a tu nutrióloga o nutriólogo”.</span>
+          </span>
+        </label>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

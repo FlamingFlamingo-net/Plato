@@ -6,6 +6,7 @@ import { weightChart } from './charts.js';
 import { weekList, hasDiet } from './week.js';
 import { printDocument, miniPlate, printedOn } from './printing.js';
 import { activitySummary, activityName } from './activity.js';
+import { POSE_LABEL } from './progress-photos.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -13,6 +14,8 @@ const id = new URL(location.href).searchParams.get('id') || '';
 const statusEl = document.getElementById('status');
 const sheet = document.getElementById('sheet');
 const withNotes = document.getElementById('with-notes');
+// Progress photos are body photos: only included when ticked (off by default), like private notes.
+const withProgress = document.getElementById('with-progress');
 const printBtn = document.getElementById('print');
 const jsonBtn = document.getElementById('json');
 document.getElementById('back').href = `/patient.html?id=${encodeURIComponent(id)}&tab=access`;
@@ -25,14 +28,15 @@ let data;
 try {
   const patient = await view('patients', id);
   const pid = q(patient.id);
-  const [measurements, [diet], logs, notes, acts] = await Promise.all([
+  const [measurements, [diet], logs, notes, acts, progress] = await Promise.all([
     list('measurements', { filter: `patient = ${pid}`, sort: 'date,created' }),
     list('diets', { filter: `patient = ${pid}` }),
     list('meal_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
     list('patient_notes', { filter: `patient = ${pid}`, sort: 'created' }),
     list('activity_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
+    list('progress_photos', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
   ]);
-  data = { patient, measurements, diet, logs, notes, acts };
+  data = { patient, measurements, diet, logs, notes, acts, progress };
   document.title = `Datos de ${patient.name} — Plato`;
   await render();
   statusEl.hidden = true;
@@ -44,7 +48,7 @@ try {
 }
 
 async function render() {
-  const { patient, measurements, diet, logs, notes, acts } = data;
+  const { patient, measurements, diet, logs, notes, acts, progress } = data;
   const birth = dateOnly(patient.birth_date);
   const a = age(birth);
 
@@ -57,6 +61,13 @@ async function render() {
         h('span', { class: 'plato-muted', text: `Enviada ${timeOf(l.created)}${l.seen_at ? ' · vista' : ''}` }),
         l.note ? h('p', { text: l.note }) : null));
   }));
+
+  // Photos load only when the box is ticked, so an export without them never fetches the files.
+  const progressSection = section(`Fotos de progreso (${progress.length})`,
+    progress.length ? h('div', { class: 'doc-logs', id: 'progress-photos' }) : h('p', { class: 'doc-empty', text: 'Sin fotos de progreso.' }));
+  progressSection.id = 'progress-section';
+  progressSection.hidden = !withProgress.checked;
+  if (withProgress.checked) await fillProgress(progressSection);
 
   const notesSection = section('Notas privadas de la nutrióloga/o',
     notes.length
@@ -110,11 +121,34 @@ async function render() {
             h('td', { text: a.note || '—' })))))
         : h('p', { class: 'doc-empty', text: 'Sin actividad registrada.' })),
 
+    progressSection,
+
     notesSection,
 
     h('p', { class: 'doc-foot', text: 'Contiene datos personales y de salud. Entrégalo solo al paciente o a quien él autorice.' }));
   sheet.hidden = false;
 }
+
+async function fillProgress(sectionEl) {
+  const box = sectionEl.querySelector('#progress-photos');
+  if (!box || box.childElementCount) return;
+  box.append(...await Promise.all(data.progress.map(async (p) => {
+    const img = h('img', { alt: `Foto de progreso (${POSE_LABEL[p.pose].toLowerCase()}) del ${shortDate(p.date)}`, loading: 'eager', decoding: 'sync' });
+    img.src = await photoUrl(p, '');
+    return h('figure', { class: 'doc-log', style: 'margin:0' }, img,
+      h('div', {},
+        h('strong', { text: `${POSE_LABEL[p.pose]} · ${shortDate(p.date)}` }),
+        h('span', { class: 'plato-muted', text: `Enviada ${timeOf(p.created)}${p.seen_at ? ' · vista' : ''}` }),
+        p.note ? h('p', { text: p.note }) : null));
+  })));
+}
+
+withProgress.addEventListener('change', async () => {
+  const s = document.getElementById('progress-section');
+  if (!s) return;
+  if (withProgress.checked) await fillProgress(s);
+  s.hidden = !withProgress.checked;
+});
 
 withNotes.addEventListener('change', () => {
   const s = document.getElementById('notes-section');
@@ -124,7 +158,7 @@ withNotes.addEventListener('change', () => {
 printBtn.addEventListener('click', printDocument);
 
 jsonBtn.addEventListener('click', () => {
-  const { patient, measurements, diet, logs, notes, acts } = data;
+  const { patient, measurements, diet, logs, notes, acts, progress } = data;
   const out = {
     format: 'plato-patient-export',
     version: 1,
@@ -147,6 +181,10 @@ jsonBtn.addEventListener('click', () => {
       intensity: a.intensity || null, terrain: a.terrain || null, distance_km: a.distance_km || null,
       summary: activitySummary(a), note: a.note || '', sent_at: a.created, seen_at: a.seen_at || null,
     })),
+    ...(withProgress.checked ? { progress_photos: progress.map((p) => ({
+      date: p.date, pose: p.pose, pose_label: POSE_LABEL[p.pose], note: p.note || '',
+      sent_at: p.created, seen_at: p.seen_at || null, photo_file: p.photo,
+    })) } : {}),
     ...(withNotes.checked ? { private_notes: notes.map((n) => ({ created: n.created, text: n.text })) } : {}),
   };
   const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });

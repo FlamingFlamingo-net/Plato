@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Foto de progreso — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/progress-photo.js?v=1"></script>
+</head>
+<body>
+  <main id="main" class="plato-main plato-main--phone">
+    <h1 class="plato-page-title" style="margin-bottom:0.75rem">Foto de progreso</h1>
+    <nav class="plato-log-type" aria-label="¿Qué quieres registrar?">
+      <a href="/log.html">Comida</a>
+      <a href="/activity.html">Actividad</a>
+      <a href="/progress-photo.html" aria-current="page">Progreso</a>
+    </nav>
+    <form id="pp-form" class="plato-form" novalidate>
+      <fieldset class="plato-slot-pick" id="poses"><legend>¿Qué toma es?</legend></fieldset>
+      <p class="plato-hint" id="tip" style="margin:0">Usa ropa ajustada o deportiva, el mismo lugar y la misma luz cada vez. Así se nota mejor el cambio.</p>
+
+      <label class="plato-photo-pick plato-photo-pick--tall" id="pick">
+        <span id="pick-label" class="plato-stack-sm" style="justify-items:center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <strong>Toma tu foto</strong>
+          <span class="plato-small">o elige una de tu galería</span>
+        </span>
+        <img id="preview" alt="Vista previa de tu foto de progreso" hidden>
+        <input type="file" id="photo" name="photo" accept="image/*" required aria-label="Foto de progreso">
+      </label>
+
+      <div class="field">
+        <label for="note">Nota <span class="plato-muted">(opcional)</span></label>
+        <textarea class="textarea" id="note" name="note" rows="2" maxlength="300" placeholder="Ej. Semana 4."></textarea>
+      </div>
+      <p class="plato-muted plato-small" id="privacy" style="margin:0">Solo tú y tu nutrióloga o nutriólogo pueden ver esta foto.</p>
+      <button class="btn" data-size="lg" type="submit" style="width:100%">Enviar</button>
+    </form>
+  </main>
+</body>
+</html>

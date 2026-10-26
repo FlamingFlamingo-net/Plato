@@ -1,10 +1,15 @@
-// progress.js — the patient's measurements and weight chart (read-only).
-import { list, q, dateOnly } from './api.js';
-import { h, shortDate, num } from './ui.js';
+// progress.js — the patient's measurements, weight chart and progress photos.
+import { list, remove, photoUrl, q, dateOnly } from './api.js';
+import { h, icon, toast, shortDate, num } from './ui.js';
+import { POSE_LABEL } from './progress-photos.js';
 import { weightChart } from './charts.js';
 import { patientShell } from './shell.js';
 
-const { me } = await patientShell('progress');
+const { me, nutritionist } = await patientShell('progress');
+if (new URL(location.href).searchParams.has('photo')) {
+  toast('¡Bien! Foto de progreso guardada.');
+  history.replaceState(null, '', '/progress.html');
+}
 const statusEl = document.getElementById('status');
 
 try {
@@ -26,4 +31,37 @@ try {
     h('td', { class: 'num', text: m.waist_cm ? `${num(m.waist_cm)} cm` : '—' }))));
 } catch (e) {
   statusEl.textContent = e.message;
+}
+
+// Progress photos, newest first, grouped by date. Delete only when the nutritionist allows it (the server checks too).
+const canDelete = !!nutritionist?.allow_progress_delete;
+const grid = document.getElementById('pp-grid');
+const ppStatus = document.getElementById('pp-status');
+try {
+  const photos = await list('progress_photos', { filter: `patient = ${q(me.id)}`, sort: '-date,-created', perPage: 200 });
+  ppStatus.textContent = photos.length ? '' : 'Aún no tienes fotos de progreso. Toma una hoy y compárala en unas semanas.';
+  let last = '';
+  for (const p of photos) {
+    if (p.date !== last) { last = p.date; grid.append(h('li', { class: 'plato-progress-day', text: shortDate(p.date) })); }
+    const img = h('img', { alt: `Tu foto de progreso: ${POSE_LABEL[p.pose]}, ${shortDate(p.date)}`, loading: 'lazy', width: 400, height: 533 });
+    photoUrl(p).then((u) => { img.src = u; }).catch(() => {});
+    grid.append(h('li', { class: 'plato-progress-item' },
+      img,
+      h('div', { class: 'plato-row plato-row--between' },
+        h('span', { class: 'plato-small', text: POSE_LABEL[p.pose] }),
+        p.seen_at ? h('span', { class: 'plato-small plato-muted', title: 'Vista por tu nutrióloga/o' }, icon('eye', 14)) : null,
+        canDelete ? h('button', {
+          class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': `Borrar foto de progreso: ${POSE_LABEL[p.pose]}, ${shortDate(p.date)}`,
+          onclick: async () => {
+            if (!confirm('¿Borrar esta foto de progreso? No se puede deshacer.')) return;
+            try { await remove('progress_photos', p.id); } catch (e) { toast(e.status === 404 ? 'Tu nutrióloga o nutriólogo no permite borrar estas fotos.' : e.message, 'error'); return; }
+            location.reload();
+          },
+        }, icon('trash', 14)) : null)));
+  }
+  if (photos.length && !canDelete) {
+    grid.after(h('p', { class: 'plato-muted plato-small', style: 'margin:0.75rem 0 0', text: '¿Quieres borrar una foto? Pídeselo a tu nutrióloga o nutriólogo.' }));
+  }
+} catch (e) {
+  ppStatus.textContent = e.message;
 }
