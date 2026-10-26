@@ -515,6 +515,57 @@ check("B6 closed account: no new feedback", s == 404, s)
 s, r = call("GET", fb_url, token=ta)
 check("B6 closed account: existing feedback stays readable", s == 200 and r.get("feedback_stars") == 3, (s, r))
 
+# ---- age limits (spec "Feature: Age limits") ----
+import os
+import subprocess
+
+
+def years_ago(n, days=0):
+    t = date.today() - timedelta(days=days)
+    try:
+        d = t.replace(year=t.year - n)
+    except ValueError:  # 29 February
+        d = t.replace(year=t.year - n, day=28)
+    return f"{d} 12:00:00.000Z"
+
+
+s, r = call("POST", "/api/collections/patients/records",
+            {"name": "ZZ Sin Fecha", "sex": "male", "nutritionist": a_id, "password": "x" * 12, "passwordConfirm": "x" * 12}, ta)
+check("E4 a new patient needs a birth date", s == 400, s)
+pm, tpm = joined_patient(ta, a_id, "ZZ Paciente Menor")
+s, r = call("PATCH", f"/api/collections/patients/records/{pm['id']}", {"birth_date": years_ago(17)}, ta)
+check("E3 the nutritionist sets a birth date (17 years old)", s == 200, (s, r))
+s, r = call("PATCH", f"/api/collections/patients/records/{pm['id']}", {"birth_date": ""}, ta)
+check("E4 the birth date cannot be cleared", s == 404, s)
+prog = {"patient": pm["id"], "date": d0, "pose": "front"}
+s, r = call("POST", "/api/collections/progress_photos/records", prog, tpm, files={"photo": ("p.jpg", img, "image/jpeg")})
+check("E1 a 17-year-old cannot upload a progress photo (plain message)", s == 400 and "Por tu edad" in r.get("message", ""), (s, r))
+s, r = call("POST", "/api/collections/meal_logs/records", {"patient": pm["id"], "date": d0, "slot": "lunch"}, tpm,
+            files={"photo": ("l.jpg", img, "image/jpeg")})
+check("E1 a 17-year-old can still upload a meal photo", s == 200, (s, r))
+s, r = call("POST", "/api/collections/activity_logs/records", {"patient": pm["id"], "date": d0, "kind": "walk", "minutes": 20}, tpm)
+check("E1 a 17-year-old can still log activity", s == 200, (s, r))
+s, r = call("PATCH", f"/api/collections/patients/records/{pm['id']}", {"birth_date": years_ago(18, days=1)}, ta)
+s, r = call("POST", "/api/collections/progress_photos/records", prog, tpm, files={"photo": ("p.jpg", img, "image/jpeg")})
+check("E2 18 years and a day: progress photos work", s == 200, (s, r))
+s, r = call("PATCH", f"/api/collections/patients/records/{pm['id']}", {"birth_date": years_ago(18, days=-1)}, ta)
+s, r = call("POST", "/api/collections/progress_photos/records", prog, tpm, files={"photo": ("p.jpg", img, "image/jpeg")})
+check("E3 turning 18 tomorrow: locked again at once", s == 400, (s, r))
+s, r = call("PATCH", f"/api/collections/patients/records/{pm['id']}", {"birth_date": years_ago(18)}, ta)
+s, r = call("POST", "/api/collections/progress_photos/records", prog, tpm, files={"photo": ("p.jpg", img, "image/jpeg")})
+check("E2 18th birthday today: progress photos work", s == 200, (s, r))
+# An older patient with no birth date (created before this rule): needs the admin to blank it, so only on a throwaway container.
+box = os.environ.get("PB_CONTAINER")
+if box:
+    su_email, su_pw = f"zz-su-{uuid.uuid4().hex[:6]}@test.local", "Zz" + secrets.token_hex(12)  # never starts with "-" (CLI flag)
+    subprocess.run(["docker", "exec", box, "/pb/pocketbase", "superuser", "upsert", su_email, su_pw], capture_output=True, check=True)
+    s, su = call("POST", "/api/collections/_superusers/auth-with-password", {"identity": su_email, "password": su_pw})
+    s, r = call("PATCH", f"/api/collections/patients/records/{pm['id']}", {"birth_date": ""}, su["token"])
+    s, r = call("POST", "/api/collections/progress_photos/records", prog, tpm, files={"photo": ("p.jpg", img, "image/jpeg")})
+    check("E4 an older patient with no birth date is treated as a minor", s == 400 and "Falta tu fecha" in r.get("message", ""), (s, r))
+else:
+    print("SKIP E4 no-birth-date patient (set PB_CONTAINER=pb-check to run it)")
+
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")
 sys.exit(1 if failed else 0)
