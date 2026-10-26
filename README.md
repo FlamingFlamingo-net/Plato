@@ -55,7 +55,7 @@ docker run -d --rm --name pb-check -p 127.0.0.1:8091:8090 \
   -v "$PWD/pb_hooks:/pb/pb_hooks" \
   -v "$PWD/pb_migrations:/pb/pb_migrations" \
   -v "$PWD/pb_public:/pb/pb_public" pocketbase-local:0.40.5
-python tools/api_check.py http://127.0.0.1:8091                       # 135 permission, invite, rate-limit, close-account, activity, progress-photo and template checks
+python tools/api_check.py http://127.0.0.1:8091                       # 153 permission, invite, rate-limit, close-account, activity, progress-photo, template and feedback checks
 PHOTO=path/to/photo.jpg node tools/e2e.mjs http://127.0.0.1:8091 out --offline-after "docker stop pb-check"   # 22 screen checks
 python tools/seed.py http://127.0.0.1:8091 out/seed                   # demo data + session tokens (fresh server)
 PDF_PYTHON=python node tools/docs_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out   # 25 print + export checks
@@ -63,6 +63,7 @@ node tools/close_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out  
 node tools/activity_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out # 17 activity-log screen checks (fresh seed)
 PHOTO=photo.jpg node tools/progress_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out # 15 progress-photo screen checks (fresh seed)
 node tools/templates_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out # 14 diet-template screen checks (fresh seed)
+PHOTO=photo.jpg node tools/feedback_check.mjs http://127.0.0.1:8091 out/seed/demo-tokens.json out # 16 photo-feedback screen checks (fresh seed)
 ```
 
 `docs_check.mjs` reads the PDFs with `tools/pdf_info.py`, which needs PyMuPDF (`pip install pymupdf`); point `PDF_PYTHON` at that Python.

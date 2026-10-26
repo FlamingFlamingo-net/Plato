@@ -464,6 +464,57 @@ check("T7 delete", s == 204, s)
 s, r = call("GET", f"/api/collections/diets/records/{d['id']}", token=ta)
 check("T7 deleting a template leaves the patient's diet intact", s == 200 and r.get("meals") == week, (s, r))
 
+# ---- photo feedback (spec "Feature: Photo feedback") ----
+pf, tpf = joined_patient(ta, a_id, "ZZ Paciente Feedback")
+s, ml = call("POST", "/api/collections/meal_logs/records", {"patient": pf["id"], "date": d0, "slot": "lunch"}, tpf,
+             files={"photo": ("l.jpg", img, "image/jpeg")})
+s, pr = call("POST", "/api/collections/progress_photos/records", {"patient": pf["id"], "date": d0, "pose": "front"}, tpf,
+             files={"photo": ("p.jpg", img, "image/jpeg")})
+fb_url = f"/api/collections/meal_logs/records/{ml['id']}"
+s, r = call("PATCH", fb_url, {"feedback_stars": 2, "feedback_text": "  ¡Buen plato! Más verdura en la cena.  "}, ta)
+check("B1 nutritionist rates a meal photo ★★ with a comment", s == 200 and r.get("feedback_stars") == 2
+      and r.get("feedback_text") == "¡Buen plato! Más verdura en la cena." and r.get("feedback_at") and not r.get("feedback_edited"), (s, r))
+check("B1 giving feedback marks the photo seen", bool(r.get("seen_at")), r.get("seen_at"))
+s, r = call("GET", fb_url, token=tpf)
+check("B1 the patient sees the stars and the comment", s == 200 and r.get("feedback_stars") == 2 and r.get("feedback_text"), (s, r))
+first_at = r.get("feedback_at")
+time.sleep(1.1)
+s, r = call("PATCH", fb_url, {"feedback_stars": 3}, ta)
+check("B3 edit: new stars, 'editada', new time", s == 200 and r.get("feedback_stars") == 3 and r.get("feedback_edited") is True
+      and r.get("feedback_at") > first_at, (s, r))
+s, r = call("PATCH", fb_url, {"feedback_at": "2020-01-01 00:00:00.000Z", "feedback_edited": False}, ta)
+check("B3 the feedback time and 'editada' cannot be faked", s == 200 and r.get("feedback_edited") is True and r.get("feedback_at") > first_at, (s, r))
+s, r = call("PATCH", fb_url, {"feedback_stars": 0, "feedback_text": ""}, ta)
+check("B3 remove: comment and stars cleared, feedback gone", s == 200 and not r.get("feedback_at") and not r.get("feedback_text")
+      and not r.get("feedback_stars") and r.get("feedback_edited") is False, (s, r))
+s, r = call("PATCH", fb_url, {"feedback_stars": 3}, ta)
+check("B2 stars only is allowed", s == 200 and r.get("feedback_stars") == 3 and r.get("feedback_at"), (s, r))
+s, r = call("PATCH", fb_url, {"feedback_stars": 4}, ta)
+check("B5 4 stars is refused", s == 400, s)
+s, r = call("PATCH", fb_url, {"feedback_stars": 1.5}, ta)
+check("B5 half stars are refused", s == 400, s)
+s, r = call("PATCH", fb_url, {"feedback_text": "x" * 501}, ta)
+check("B5 a comment over 500 characters is refused", s == 400, s)
+s, r = call("PATCH", fb_url, {"feedback_text": "Hola"}, tpf)
+check("B4 the patient cannot write feedback", s == 404, s)
+s, r = call("PATCH", fb_url, {"feedback_text": "Hola"}, tb)
+check("B4 another nutritionist cannot write feedback", s == 404, s)
+pr_url = f"/api/collections/progress_photos/records/{pr['id']}"
+s, r = call("PATCH", pr_url, {"feedback_text": "Se nota tu constancia."}, ta)
+check("B1 a progress photo takes a comment", s == 200 and r.get("feedback_text") == "Se nota tu constancia." and r.get("seen_at"), (s, r))
+s, r = call("PATCH", pr_url, {"feedback_stars": 3}, ta)
+check("B1 a progress photo does not take stars (refused)", s == 400, (s, r))
+s, r = call("PATCH", pr_url, {"feedback_text": "x"}, tpf)
+check("B4 the patient cannot write feedback on a progress photo", s == 404, s)
+s, r = call("PATCH", fb_url, {"note": "cambiada"}, ta)
+check("B4 feedback does not open the patient's own fields to the nutritionist", s == 404, s)
+time.sleep(61)  # the shared /api/plato/ rate limit
+s, r = call("POST", f"/api/plato/patients/{pf['id']}/close", {}, ta)
+s, r = call("PATCH", fb_url, {"feedback_text": "Tarde"}, ta)
+check("B6 closed account: no new feedback", s == 404, s)
+s, r = call("GET", fb_url, token=ta)
+check("B6 closed account: existing feedback stays readable", s == 200 and r.get("feedback_stars") == 3, (s, r))
+
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")
 sys.exit(1 if failed else 0)
