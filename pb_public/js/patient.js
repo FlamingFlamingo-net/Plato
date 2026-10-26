@@ -18,7 +18,7 @@ try {
   patient = await view('patients', id);
 } catch (e) {
   statusEl.textContent = e.status === 404 ? 'No encontrado. Este paciente no existe o no es tuyo.' : e.message;
-  throw e;
+  await new Promise(() => {}); // stop here: the message is the whole page (no uncaught error)
 }
 statusEl.hidden = true;
 document.getElementById('content').hidden = false;

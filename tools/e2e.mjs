@@ -196,7 +196,7 @@ await step('A3 second nutritionist', async () => {
   await other.waitFor(`document.getElementById('status').textContent.startsWith('No encontrado')`);
   check('A3 second nutritionist: empty list; first patient page says "No encontrado"', true);
   await shot(other, 'A3-not-found');
-  const pageErrors = other.errors.filter((e) => !/404|Not Found|No encontrado/i.test(e));
+  const pageErrors = other.errors.filter((e) => !/404|Not Found/i.test(e));
   check('A3 no unexpected console errors for the second nutritionist', pageErrors.length === 0, pageErrors.join(' | '));
 });
 
