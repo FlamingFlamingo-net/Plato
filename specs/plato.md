@@ -484,6 +484,111 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 
 ---
 
+## Feature: Food catalogue and import (FUTURE — parked until the data source is chosen)
+
+**Status (owner, 2026-10-25):** long-term feature. Direction agreed (decisions below); not scheduled. Blocked on the choice of official data source.
+
+**What:** the nutritionist's **catalogue** (the "Catálogo" tab): dishes and meals built from an **ingredient database from official sources** (the owner supplies the data later). Dishes, meals or a whole diet can be **imported** from a simple file that an AI agent can write: "add the following meal to my catalogue". **Plato computes the nutrition**, never the agent.
+
+**Why:** typing diets is the slowest job (Nutrimind's "dietas automáticas" and "recetas" are its strongest pull). Numbers must be trustworthy and traceable to a source.
+
+**Who:**
+- Admin (owner): loads and updates the ingredient database. Read-only for everyone else.
+- Nutritionist: imports and edits dishes and meals in **their own** catalogue; uses them in diets. Can **share a dish to the global catalogue** so new nutritionists can copy from what earlier users built (decision 2).
+- Patient: sees the dishes in their diet (name, servings). Calories and macros only when the nutritionist turns them on for that patient (decision 4).
+
+### Three levels
+
+| Level | Example | Holds |
+|---|---|---|
+| **Platillo** (dish) | Taco de lomo en salsa verde, **1 taco** | ingredients with quantity **per serving**, a **serving unit** |
+| **Comida** (meal) | Tacos × 3 + frijoles × 1 taza | dishes × servings |
+| **Dieta** (diet) | the week | meals per day and slot (today's free text keeps working) |
+
+**Multi-serving dishes:** a dish has a serving unit (`taco`, `pieza`, `taza`, `porción`) and the label **"Se sirve por piezas"** when it is naturally multiplied. The catalogue keeps **1 taco**; a meal or diet says **"× 3"** and Plato multiplies. "5 tacos" is never saved as its own dish.
+
+### Import format (`plato-import`, version 1)
+
+JSON, one file per import, any of the three levels. Ingredients are referenced by the database's **id** (preferred) or exact **name**; quantities in `g`, `ml` or `pieza` (only when the ingredient has a standard piece weight in the database).
+
+```json
+{
+  "format": "plato-import",
+  "version": 1,
+  "dishes": [
+    {
+      "name": "Taco de lomo de cerdo en salsa verde",
+      "serving_unit": "taco",
+      "multi_serving": true,
+      "ingredients": [
+        { "ingredient": "Tortilla de maíz", "amount": 1, "unit": "pieza" },
+        { "ingredient": "Lomo de cerdo, cocido", "amount": 50, "unit": "g" },
+        { "ingredient": "Tomate verde (tomatillo), crudo", "amount": 1, "unit": "pieza" },
+        { "ingredient": "Cilantro, crudo", "amount": 10, "unit": "g" },
+        { "ingredient": "Jugo de limón", "amount": 10, "unit": "ml" }
+      ],
+      "notes": "Salsa: tomatillo y cilantro molidos con el limón."
+    }
+  ],
+  "meals": [
+    { "name": "Comida: tacos de lomo", "items": [ { "dish": "Taco de lomo de cerdo en salsa verde", "servings": 3 } ] }
+  ],
+  "diet": null
+}
+```
+
+- `diet` (optional): `{ "title": "...", "days": { "1": { "lunch": [ { "meal": "Comida: tacos de lomo" } ] }, ... } }` (1 = Monday, slots as today), applied to one patient chosen on screen.
+- The file never carries nutrition numbers. If it does, they are ignored.
+- The agent finds ingredient names/ids in a downloadable **ingredient list** (`Descargar lista de ingredientes`, JSON/CSV) or, later, a lookup API.
+
+### Import screen (nutritionist)
+
+1. **Catálogo → Importar**: paste the text or choose a `.json` file.
+2. **Check first, save after.** Plato shows a preview: each dish with its ingredients matched to the database, **nutrition per serving** (and per meal), and problems in plain words:
+   - "No encontré 'tomatillo' en la base. ¿Quisiste decir 'Tomate verde, crudo'?" (suggestions only; nothing is guessed silently)
+   - "'Cilantro' no tiene peso por pieza: usa gramos."
+   - "Ya tienes un platillo con ese nombre: reemplazar, guardar como copia o saltar."
+3. Nothing is saved while there is an unresolved problem. **Guardar en mi catálogo** saves everything in one go (all or nothing).
+4. Each dish keeps **which database version** its numbers came from; if the database is updated, the dish shows "Valores actualizados" and recalculates (open question Q6).
+
+### Nutrition shown
+
+Per serving, per meal, per day: energy (kcal), protein, fat, carbohydrates, fiber, and whatever else the official data includes (sodium, sugars, etc.). Columns follow the source the owner provides. Rounded for display; exact values kept.
+
+### Acceptance
+
+1. Import the taco file above: preview shows 5 matched ingredients and kcal/protein/fat/carbs **per taco**, computed from the database (checked by hand against the source for this one taco).
+2. A meal "Tacos × 3" shows exactly 3 × the taco values.
+3. A file with an unknown ingredient cannot be saved; the message names it and suggests close matches.
+4. `pieza` for an ingredient without a piece weight is refused with the reason.
+5. A file with nutrition numbers in it: the numbers are ignored; Plato's own values are shown.
+6. Another nutritionist cannot see or use my dishes. A patient cannot open the catalogue.
+7. Import a diet for Ana: her week shows the dishes with servings ("Tacos de lomo × 3"); her free-text meals elsewhere are untouched.
+8. Bad JSON or wrong `format`/`version`: a plain message, nothing saved.
+
+### Risks
+
+- **Data licence.** USDA FoodData Central is public domain. Mexican tables (SMAE book, INCMNSZ/BAM tables) may be copyrighted: check the licence of whatever source is supplied before loading it (Legal L8/L9 territory).
+- **Wrong numbers hurt people.** Plato only computes from the database; the preview shows the source per ingredient; the owner checks a sample by hand on first load.
+- **Raw vs cooked, piece weights, ml → g.** The database must say the state ("cocido", "crudo") and carry piece weights and densities where needed; otherwise grams are required.
+- **Calories for patients** can harm people with eating disorders: off by default, per patient (decision 4).
+
+**Later:** an API key so an agent adds dishes directly (no paste); food-exchange equivalents (sistema mexicano de equivalentes) computed from the same data; recipe photos and preparation steps; shopping list from a diet; targets per patient (kcal/macros) with the diet's totals compared.
+
+**Not now:** Plato generating diets by itself (AI); barcode scanning; restaurant/brand databases.
+
+### Decisions (owner, 2026-10-25)
+
+1. **Data source: open.** The owner is still choosing the official source(s). Suggested format when ready: a CSV with id, name, state (raw/cooked), values per 100 g, piece weight, density, source and version; Plato gets a loader and a checker.
+2. **Ingredients belong to the platform** (one shared, read-only database loaded by the admin). **Dishes and meals belong to each nutritionist.** Added by the owner: a nutritionist can **make a dish global** so other (new) nutritionists can copy it into their own catalogue. Copies are independent; numbers still come from the shared ingredient database. (To spec later: who can un-share, credit to the author, moderation.)
+3. **Diet structure: hybrid.** Each meal slot holds catalogue dishes with servings and/or free text; today's diets keep working.
+4. **Patients see calories and macros only if turned on**, with a per-patient switch for the nutritionist (off by default). **The patient's screens must look complete and cohesive in both cases**: designed for "with numbers" and "without numbers" as two first-class layouts, not a layout with holes when the numbers are hidden.
+5. **Hand-over: paste or upload** the file in the first version; an agent API key later.
+6. **Recalculate** saved dishes when the database changes, with a visible "Valores actualizados el …" note.
+7. **Three slices:** (a) ingredient database + loader + list download, (b) dishes and meals in the catalogue with import + preview, (c) diets using catalogue items with servings and daily totals.
+
+---
+
 ## Build notes
 
 - **Collections** (PocketBase):
