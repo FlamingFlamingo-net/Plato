@@ -502,7 +502,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 | 3 | Recetas | dishes / platillos (Feature: Food catalogue) | future |
 | 4 | Planes de comidas (**meal plan** = one day) | a day of meals (5 slots), reusable in diets | future (with the food catalogue) |
 | 5 | Dietas (**diet** = one week) | diet templates (Feature: Saved diet templates) | built (Plantillas page) |
-| 6 | Cuestionarios | Google Forms integration (Feature: Questionnaires) | spec later; needs the client's forms |
+| 6 | Cuestionarios | connects the client's Google Forms (Feature: Questionnaires) | specced, parked |
 | 7 | Planes de ejercicio | exercise plans prescribed by the nutritionist (Feature: Exercise plans) | waiting on the client's Excel sheet |
 
 - **Terms (owner, 2026-10-26):** **meal plan** ("Plan de comidas") = one day of meals; **diet** ("Dieta") = one week. A diet can be built from meal plans (e.g. Monday-Friday = plan A, weekend = plan B). Today's diet editor and templates are weekly diets.
@@ -655,19 +655,59 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ---
 
-## Feature: Questionnaires (FUTURE — needs the client's Google Forms)
+## Feature: Questionnaires — connect the client's Google Forms (PARKED 2026-10-26: owner, other features first)
 
-**What:** the nutritionist's questionnaires (intake, habits, follow-up) in Catálogo → Cuestionarios, built on the client's existing **Google Forms**.
+**What:** Plato **connects to the forms the client already has** in Google Forms. Plato never copies or rebuilds them: the questions, the answers and the Google Sheet stay in Google, exactly as today. Plato adds what Google can't do for the nutritionist: **which patient was sent which form, when, and whether they answered**, plus the button on the patient's phone.
 
-**Decision (owner, 2026-10-26):** start with **level 1 (links)**; level 2 later if the client needs answers inside Plato. The owner will send form links when the client replies.
+**Owner (2026-10-26):** connect to the existing forms; building forms inside Plato is a "maybe" for much later (level 3 below). The client has 4 forms. **Their links are not written in this repo** (it is public); the nutritionist enters them in Plato, so they live as data on the server.
 
-**Two levels:**
-1. **Link (small, no Google setup):** the nutritionist saves each form's link in Plato and sends it to a patient. The patient's app shows "Cuestionario pendiente" and opens the form in a new tab, pre-filled with the patient's code (Google Forms pre-filled link) so answers can be matched. Answers stay in the client's Google Sheet; the nutritionist marks it "Respondido" in Plato (or Plato checks, level 2).
-2. **Answers inside Plato (bigger):** Plato reads the answers through the Google Forms API and shows them on the patient's page. Needs a Google Cloud project, the client's Google sign-in (OAuth) and a server job; health answers then flow Google → Plato.
+### Levels
+1. **Connect (this spec):** saved links, send to a patient, the patient opens it in a new tab, status tracking.
+2. **Answers inside Plato (later, if asked):** Plato reads the answers through the Google Forms API (Google Cloud project + the client's Google sign-in + a server job). Health answers then flow Google → Plato.
+3. **Forms built in Plato (maybe, much later):** replaces Google Forms entirely.
 
-**Constraints:** Plato's pages load no third-party code, so forms open in a new tab rather than embedded (an embedded Google page needs an explicit OK). Health answers stored in Google = a third-party processor: goes to the legal list (L1/L2: privacy notice, processing agreement).
+### Who does what
+- **Nutritionist, Catálogo → Cuestionarios** (the locked tile opens): list of their forms. **Agregar cuestionario**: name (e.g. "Historia clínica"), the form link (`docs.google.com/forms/…` or `forms.gle/…`; anything else is refused), an optional short description ("Primera consulta"), and optional **pre-filled link** (below). Edit, archive (hidden from "Enviar" but kept on patients who already got it). Private to each nutritionist.
+- **Nutritionist, patient page:** new **Cuestionarios** tab: **Enviar cuestionario** → pick one → it shows on the patient's phone. List per patient: form name, sent date, status, **Marcar como respondido** / **Quitar**. Closed accounts: read-only.
+- **Patient phone, Hoy:** card **"Cuestionario pendiente: Historia clínica"** with **Abrir cuestionario** (opens Google in a new tab; Plato loads no Google code) and **Ya lo envié**. Once tapped: "Enviado. Tu nutrióloga o nutriólogo lo revisará." Answered or removed forms disappear from Hoy.
+- **Home (Inicio):** Pendientes adds "Dice que envió *Historia clínica*: confírmalo" and "*Historia clínica* sin responder desde hace 7 días o más". Recientes shows "Ana envió *Historia clínica*". Counts follow the same rules as other logs.
 
-**Needs from the client:** one or two real form links (or copies with fake data), and whether answers must be visible inside Plato (level 2) or Google Sheets is enough (level 1).
+### Status
+`Pendiente` (sent) → `Enviado por el paciente` (patient tapped "Ya lo envié", optional) → `Respondido` (nutritionist checked the Google Sheet). The nutritionist can mark Respondido at any step, or undo it. Plato **cannot see** whether the form was really submitted (that is level 2); the screens say "marcado por ti" / "según tu paciente" so nobody reads it as proof.
+
+### Matching answers to patients (pre-filled link, optional)
+The Google Sheet has no idea who in Plato answered. Two ways, per form:
+- **With a pre-filled link (recommended):** in the form editor, ⋮ → *Obtener enlace prellenado*, type `PLATO` in a "Código de paciente" question, *Obtener enlace*, paste it in Plato. Plato swaps `PLATO` for the patient's **code** when the patient opens it, so the Sheet has the code in that column.
+- **Without it:** the plain link; the nutritionist matches by name or email in the Sheet, as today.
+- **Patient code:** a short code per patient, shown on the patient page (e.g. `ANA-7Q4K`): first letters of the name + 4 random characters. Not the internal record id. The code goes to Google only inside that link.
+
+### Sign-in on the client's forms (not Plato's choice; a heads-up)
+The 4 links answer **401 / Google sign-in** to anyone signed out: the forms are set to signed-in accounts (settings "Limit to 1 response", "Verified email" or "Restrict to users in…", under Configuración → Respuestas). Then **a patient without a Google account cannot answer**, and with "Restrict to users in…" no patient outside the client's organisation can. Plato shows a per-form note the nutritionist turns on: **"Pide iniciar sesión con Google"** → the patient's card says "Necesitas una cuenta de Google para responderlo." Recommendation for the client: turn those settings off; Plato's status already tracks one answer per patient.
+
+### Data (server)
+- `questionnaires`: nutritionist, name (unique per nutritionist), description, url, prefill_url, needs_google, archived_at. Only the owner reads/writes. A hook checks the host (`docs.google.com/forms/` or `forms.gle`) and that a pre-filled link contains `PLATO`.
+- `questionnaire_sends`: patient, questionnaire, name + link **copied at send time** (the patient never reads the nutritionist's catalogue; a later edit does not change what was sent), sent_at, patient_done_at, answered_at. Nutritionist: create/update/delete for own patients. Patient: read own, and only set `patient_done_at` (a hook refuses anything else). Same closed-account rule as the rest.
+- `patients.code`: set by the server on create (and once for existing patients), unique, read-only.
+- Export (PDF/JSON): a "Cuestionarios" section with names, dates and statuses; never the answers (Plato doesn't have them).
+
+### Acceptance
+1. A link that is not Google Forms is refused (screen and server); a pre-filled link without `PLATO` is refused with how to fix it.
+2. Sending shows the card on the patient's phone; "Abrir cuestionario" opens a new tab with the patient's code in place of `PLATO` (or the plain link).
+3. "Ya lo envié" → status "Enviado por el paciente" on the patient page and in Inicio; the patient can't mark Respondido or change anything else.
+4. Marcar como respondido removes the card from Hoy; undo brings it back.
+5. Another nutritionist can't see or send someone else's forms; a patient sees only their own sends.
+6. Archived forms disappear from "Enviar" but stay on past sends; editing a form doesn't change past sends.
+7. Closed account: read-only, as elsewhere. Export lists sends and statuses.
+8. Plato pages load no Google code (checked: no third-party requests).
+
+### Build (one feature, usual commits)
+Server (migration + hook) → screens (Catálogo page, patient tab, phone card, Inicio items, export, SW bump) → tests (API + `questionnaires_check.mjs`) → spec. Legal list: Google is a processor of health answers (L1/L2), already noted.
+
+### Open questions
+1. Patient code format `ANA-7Q4K` OK, or does the client already use patient numbers (then Plato stores theirs)?
+2. "Ya lo envié" on the patient's side: keep (recommended; it tells the nutritionist when to check) or only the nutritionist marks?
+3. Reminder: Pendientes after **7 days** unanswered OK?
+4. Send the same form again later (e.g. follow-up every month): allowed, each send tracked separately (recommended)?
 
 ---
 
