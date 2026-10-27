@@ -521,7 +521,9 @@ import subprocess
 
 
 def years_ago(n, days=0):
-    t = date.today() - timedelta(days=days)
+    # The server computes age on its own (UTC) date; use the same date so the edge cases hold at any local hour.
+    from datetime import datetime, timezone
+    t = datetime.now(timezone.utc).date() - timedelta(days=days)
     try:
         d = t.replace(year=t.year - n)
     except ValueError:  # 29 February
