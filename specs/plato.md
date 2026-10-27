@@ -526,7 +526,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ---
 
-## Feature: Weekly goals (spec, waiting for approval)
+## Feature: Weekly goals (approved 2026-10-26 — 2 slices)
 
 **Service decides the goals (owner, 2026-10-26):** patients come for **nutrition, training, or both**, from someone losing weight to high-performance athletes. Each patient gets a **service** (set by the nutritionist): **Nutrición**, **Entrenamiento** or **Nutrición + entrenamiento**. It decides which weekly goals apply:
 
@@ -536,9 +536,21 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 | Entrenamiento | off (can be turned on) | on (default 30 min, 5 days) |
 | Nutrición + entrenamiento | on | on |
 
-- **Meal goal** = consistency of logging, the same shape as activity: **N meals logged a day, D days a week** ("3 comidas al día, 5 días a la semana"). A day counts when at least N of the 5 slots have a log that day. It measures logging, not how well the diet was followed (that stays the nutritionist's judgement, with photo feedback).
+- **Meal goal** = consistency, the same shape as activity: **N meals checked a day, D days a week** ("3 comidas al día, 5 días a la semana"). A day counts when at least N of that day's planned meals are checked (slice 1). Extra meals don't count, for or against.
+- **Not policing (owner, 2026-10-26):** Plato shows the patient what they **should** eat and lets them tick it; it never judges what they ate. Words stay neutral; extra meals are welcome information, not failures.
+
+### Slice 1 — today's meals as a checklist (built first; the meal goal counts these checks)
+- **Patient, Hoy:** today's diet becomes a **checklist**: one row per planned meal of the day (slots the nutritionist left empty don't appear): time of day, what the diet says, and a round **check** ("Lo comí"). Tapping the check saves it at once (no photo needed); tapping again undoes it (same day only, like deleting a log today). **Today and yesterday** can be checked (owner, 2026-10-26: people forget in the evening); a "Ayer" switch above the list shows yesterday's meals.
+- **Check first, photo second (owner, 2026-10-26):** an unchecked row shows only the meal and its check. **Once checked**, the row offers **Agregar foto** (optional, camera). With a photo, the row shows the thumbnail, the feedback and stars when the nutritionist gives them, and "Vista" when seen. Undoing a check that has a photo asks first ("Se quitará también la foto") and removes both.
+- **Comida extra:** a button under the list, **"Agregar comida extra"**: photo and/or a short note ("Un pan dulce en la oficina"); at least one of the two. Shows in the list as "Extra" with the time. No count, no colour, no warning.
+- **Registrar** (the Comida tab) keeps working for photos of any slot, and gets "Extra" as a sixth choice.
+- **Nutritionist:** Registros and Inicio show checks without photo as a compact line ("Ana: Desayuno ✓ 8:10"), photos as today, and extras labelled **Extra** (photo/note). "Marcar vista" works on all; feedback stays on photos only. Patient list "nuevas" badges count photos and extras, not bare checks (they would flood it).
+- **Server:** meal logs allow **no photo** for a planned slot (a check), and a new slot value **extra**, which needs a photo or a note. One check per planned slot per day (a second tap undoes, a photo upgrades the check); extras can be many. Same date window and same-day delete as today. Export lists checks and extras per day.
+- **Acceptance (slice 1):** check without photo saves and survives a refresh; undo works today and is refused tomorrow; "Agregar foto" appears only on checked rows and attaches to that check; undoing a check with a photo asks first and removes both; an extra needs a photo or a note; the nutritionist sees "✓" lines, photos and Extra; feedback only on photos; old photo logs still show; empty diet slots don't appear; phone 390 px fits, every check is a real button with a label ("Marcar desayuno como comido").
+
+### Slice 2 — weekly goals (below)
 - **Activity goal** = below. Athletes need more: minutes per day go up to **300** (two sessions a day).
-- New patient: the service is picked in "Nuevo paciente" (Nutrición selected). Existing patients get **Nutrición + entrenamiento** (both goals on, so nothing disappears); the nutritionist adjusts.
+- **Picking the service (owner, 2026-10-26):** in "Nuevo paciente" (and on the patient page), **two cards side by side**: **Nutrición** (left, selected by default) and **Entrenamiento** (right). Each card is a toggle (icon, name, one line: "Dieta semanal y registro de comidas" / "Actividad física y metas de ejercicio"); selecting both = Nutrición + entrenamiento; at least one must stay selected (the last one can't be turned off; a short hint says why). Real checkboxes underneath (keyboard and screen readers), styled as cards. On a phone they stack. Existing patients get **both** (so nothing disappears); the nutritionist adjusts.
 - The service also prepares later features (Exercise plans show only for Entrenamiento / ambos).
 - Everything below about weeks, days, history, screens and grouping applies to **both goals**; the "Tu semana" card shows one row per goal that is on, and Pendientes has one summary row per goal.
 
@@ -591,9 +603,12 @@ Server (migration: three fields + defaults for existing patients; hook keeps the
 
 **Also in this feature:** the existing Pendientes row "No registra comidas desde hace 3 días" becomes **one summary row** like the goal rows (it grows with silent patients). "Aún no usa la app", "No tiene dieta" and "Falta su fecha de nacimiento" stay per patient (one-time setup tasks).
 
-### Open questions
-1. Meal goal measured as **"N meals logged a day"** (recommended; Plato can count it) — OK? Following the diet's content is not measurable yet (that comes with the food catalogue).
-2. Default service for a new patient: **Nutrición** (recommended) — or must the nutritionist always pick?
+### Decided (owner, 2026-10-26)
+- Meal goal counts **checked planned meals**, never judges content; extra meals are allowed and neutral.
+- Service picker: two cards, Nutrición (left, preselected) and Entrenamiento (right); both can be on.
+
+### Build order
+Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (service + goals: server, screens, tests, spec). Each slice gets its own commit plan.
 
 ---
 
