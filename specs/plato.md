@@ -597,6 +597,47 @@ Server (migration: three fields + defaults for existing patients; hook keeps the
 
 ---
 
+## Feature: Client brand look (BACKLOG — deferred to the design phase, owner 2026-10-26)
+
+**Source:** the client's brand manual (v1.0, October 2026) and two earlier client documents (a start-up guide deck and a stretching guide), reviewed 2026-10-26. The files stay outside this public repo; no client texts are copied here.
+
+**Pattern found:**
+- Every piece uses **a dark base + one warm accent + heavy, short headings + real photos of the professional**, high contrast and modular blocks.
+- The accent drifted over time (orange and amber in the deck, green and orange in the stretching guide); the new manual **fixes it to gold** and asks not to vary it per piece.
+- The manual sets: black `#0B0B0D`, charcoal `#171719`, gold `#D4AF37`, smoke white `#F3F3F0`, technical grey `#686B70`; proportion **60% black/charcoal · 30% light/greys · 10% gold**; **Montserrat SemiBold/Bold** for headings, **Inter** for reading and numbers; documents and reports on **white with black titles and gold accents**; logo = gold monogram + "FITNESS" + a descriptor line, never over a busy photo, no effects; voice: professional, direct, close, no guilt, no guarantees, "measuring is not judging".
+- Plato already matches much of the voice (neutral "Tu semana" wording, no before/after as proof, the nutritionist's own photo on the banner).
+
+**Proposal: the brand as a theme, not a rewrite.** Plato's look already lives in CSS variables (`theme.css`: `--primary`, `--font-heading`, …) that Basecoat reads, so the brand is mostly a token swap plus assets.
+
+| Area | Today | With the client theme |
+|---|---|---|
+| Working screens (nutritionist, laptop) | light, leaf green | **light** (the manual's rule for documents): smoke-white page, white cards, black titles, grey metadata, gold accents |
+| Header + home banner | white header, photo banner | **black/charcoal** header and banner, gold logo: carries the 60% dark |
+| Patient phone app | light | light by default; a **dark option** (charcoal + gold), closest to the client's earlier decks |
+| Primary button | green, white text | **gold fill, black text** (9.35:1) |
+| Links, small gold text on light | n/a | **dark gold `#8A6A14`** (5.06:1). Brand gold `#D4AF37` on white is 2.1:1, only for fills, rules and large decoration, never text |
+| Grey text | muted | `#686B70`: 5.35:1 on white, 4.81:1 on smoke white; **not** on charcoal (3.35:1), use smoke white there |
+| Headings / body / numbers | rounded system font | **Montserrat** SemiBold/Bold / **Inter** / Inter with tabular figures; self-hosted woff2 + OFL (no font CDN) |
+| Logo | Plato icon; banner shows initials | client logo on banner, sign-in, printouts; app icon + favicon from the monogram |
+| Printed diet + export PDF | green accents | white, black titles, gold section rules, legible tables (exactly the manual's "plan/report" rule) |
+| Status colours | green/orange | keep meaning-only colours (seen, warning, error); gold stays brand, never a status |
+
+**Decision needed first: whose app is Plato?** Earlier decisions treat Plato as a **platform with many nutritionists** (shared ingredients, global dishes). Then the client's brand should be **one theme a nutritionist turns on** (with "Clinic logo" from Later), not Plato's own look. If Plato is the client's app only, the theme becomes the default.
+
+**Slices (when scheduled):**
+1. Tokens: colours + fonts as a theme file, contrast checked on every screen (numbers, not eyeballing), dark option for the phone.
+2. Logo and icons: needs the client's **final logo as SVG** (the manual says its monogram is a concept until confirmed) → banner, sign-in, manifest icons, favicon.
+3. Print: diet sheet and export PDF in the white + black + gold style.
+4. (Platform only) Per-nutritionist theme: pick "Marca" in Ajustes, upload logo; one built-in preset = this client.
+5. Words: a copy pass with the manual's voice rules (prefer process, consistency, follow-up; avoid guarantees, guilt words).
+
+**Decided:** platform shape with the client as the first and only live user (see "Direction"), so the brand is the **default theme for the MVP** and stays a theme (slice 4) for later nutritionists.
+**Still needed (at the design phase):** the final logo (SVG); whether the dark look is wanted on the patient's phone.
+
+**Related:** the stretching guide and start-up guide are also content for **Exercise plans** (exercise lists with photos and terminology like RIR/RPE): keep them for that feature together with the Excel sheet.
+
+---
+
 ## Feature: Photo feedback (built)
 
 **What:** on a patient's photo (meal or progress), the nutritionist leaves **feedback**: a short **comment** (text) and a **rating of 1 to 3 stars**. The patient sees it on their phone. Replaces the Later item "Comments on a meal photo".
