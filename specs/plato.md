@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: slices 1 (activity log) and 2 (progress photos) built; slice 3 (home with feeds) approved, not built. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: all 3 slices built (activity log, progress photos, nutritionist home with feeds); Pendientes is a placeholder until the client defines it. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -342,7 +342,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ---
 
-## Feature: Patient activity dashboard (approved 2026-10-25 — 3 slices)
+## Feature: Patient activity dashboard (built — 3 slices)
 
 **What:** one screen where the nutritionist sees the latest events from all their patients, newest first. Three event types:
 1. **Meal photo** (exists today).
@@ -478,6 +478,19 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 - Decision taken during build: the nutritionist can also delete a progress photo of a **closed** account (a deletion request can come after closing). Everything else on a closed account stays read-only.
 - **Result (throwaway server):** API 120/120 (24 new: acceptance 2, 4-8 for progress photos), screens `tools/progress_check.mjs` 15/15, and all earlier suites still pass (see the commit plan run).
 
+### Slice 3 — nutritionist home (built 2026-10-26)
+
+- New page **Inicio** (`home.html`): a nutritionist lands here after signing in; "Inicio" link in every header, the Plato logo goes here.
+- **Banner** (upgrades 1-2): the nutritionist's photo as background, and live text on top: initials (no logo upload yet), name, clinic, WhatsApp and Instagram. "Agregar foto de portada / Cambiar portada" opens **Ajustes → Tu perfil y portada** (new card: cover photo, name, clinic, WhatsApp, Instagram). With no photo, a soft green background. The cover is a protected file (needs a file token), like every photo.
+- **Tabs** with live counts (upgrades 3, 4, 7, 8): Recientes (default), Actividades, Fotos (chips Todas / Progreso / Comidas), Catálogo, Pendientes, Agenda (grey, dashed, lock, `aria-disabled`, skipped by the arrow keys). Real tabs: arrow keys, Home/End, selected tab announced; the open tab stays in the address (`?tab=`).
+- **Hoy** (upgrade 5): unseen logs and from how many patients, patients with no meal logged in 3 days, patients without the app, and a locked line for today's appointments.
+- **Cards**: grouped by day (Hoy, Ayer, date), newest first, 50 at a time with **Cargar más**; each card links to the patient. Photo cards open big and have the same **Dar retroalimentación** dialog as the patient page (now one shared file, `js/feedback-dialog.js`); feedback counts as seen. **Marcar todo como visto (N)** marks only what the open tab shows, greyed out on Catálogo and Pendientes. Not live: refreshes when you come back to the browser tab (after 30 s) and with **Actualizar**.
+- **Catálogo**: the 7 lists from the client; Pacientes and Dietas (plantillas) open with counts, the 5 future ones are locked with the reason ("Próximamente · …").
+- **Pendientes (placeholder, still to be defined by the client):** per patient: unseen logs, no app yet, no diet, no meal logged in 3+ days, missing birth date; each with a button that goes to the right tab.
+- Archived (closed) patients are left out of every count and feed.
+- Found during build and fixed: records saved in the same millisecond were skipped by "Cargar más" (the page cursor now uses time + id); Chrome rejected the phone/Instagram input patterns (escaped for the new rules).
+- **Result (throwaway server):** API 167/167 (4 new: profile save, bad Instagram refused, another nutritionist's profile refused, cover needs a token), screens `tools/home_check.mjs` 16/16 (incl. layout alignment measured in px, keyboard, 63 events with Cargar más, phone with no sideways scroll), and all earlier suites still pass.
+
 ### Catálogo contents (client, 2026-10-26)
 
 The **Catálogo** tab is the nutritionist's library: one card per list, each with a count. Lists that exist open their page; lists not built yet show the same disabled look as Agenda (grey + lock, no text-only cue).
@@ -499,7 +512,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ### Reminders for the owner
 
-- **"Pending dashboard"**: an untitled feature with a placeholder button on the home grid. **Remind the owner to define it** before slice 3 is built, and again at each slice review until it is defined.
+- **"Pending dashboard"**: built as the placeholder **Pendientes** (see Slice 3). **Remind the owner to confirm the name and contents with the client**, at each review until it is defined.
 
 ---
 
