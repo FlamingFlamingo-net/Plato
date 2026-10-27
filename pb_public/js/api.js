@@ -103,7 +103,7 @@ export function list(name, { filter = '', sort = '', perPage = 200, fields = '' 
 }
 export const view = (name, id) => request(`${col(name)}/${enc(id)}`);
 export const create = (name, body) => request(col(name), { method: 'POST', ...(body instanceof FormData ? { form: body } : { body }) });
-export const update = (name, id, body) => request(`${col(name)}/${enc(id)}`, { method: 'PATCH', body });
+export const update = (name, id, body) => request(`${col(name)}/${enc(id)}`, { method: 'PATCH', ...(body instanceof FormData ? { form: body } : { body }) });
 export const remove = (name, id) => request(`${col(name)}/${enc(id)}`, { method: 'DELETE' });
 
 // Filters: quote values safely for PocketBase's filter syntax.
@@ -173,13 +173,13 @@ export async function join(token, email, password) {
 // ---- files (meal and progress photos are protected) ----
 let fileToken = null;
 let fileTokenAt = 0;
-export async function photoUrl(rec, thumb = '400x400') {
+export async function photoUrl(rec, thumb = '400x400', field = 'photo') {
   if (!fileToken || Date.now() - fileTokenAt > 90_000) {
     fileToken = (await request('/api/files/token', { method: 'POST' })).token;
     fileTokenAt = Date.now();
   }
   const t = thumb ? `&thumb=${thumb}` : '';
-  return `/api/files/${enc(rec.collectionName || 'meal_logs')}/${enc(rec.id)}/${enc(rec.photo)}?token=${enc(fileToken)}${t}`;
+  return `/api/files/${enc(rec.collectionName || 'meal_logs')}/${enc(rec.id)}/${enc(rec[field])}?token=${enc(fileToken)}${t}`;
 }
 
 // ---- helpers ----

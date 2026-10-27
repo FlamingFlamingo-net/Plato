@@ -17,9 +17,10 @@
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
   <header class="plato-top">
-    <a class="plato-brand" href="/patients.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
+    <a class="plato-brand" href="/home.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
     <div class="plato-row">
       <span class="plato-muted plato-small plato-hide-sm" id="who"></span>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/home.html">Inicio</a>
       <a class="btn" data-variant="ghost" data-size="sm" href="/templates.html" id="templates-link">Plantillas</a>
       <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html" aria-current="page">Ajustes</a>
       <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
@@ -29,6 +30,32 @@
   <main id="main" class="plato-main" style="max-width:44rem">
     <a class="plato-back" href="/patients.html"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Mis pacientes</a>
     <h1 class="plato-page-title" style="margin-bottom:1.25rem">Ajustes</h1>
+
+    <section class="card" aria-labelledby="profile-title" style="margin-bottom:1rem">
+      <header>
+        <h2 id="profile-title">Tu perfil y portada</h2>
+        <p>Se muestran en tu inicio. Tu foto va de fondo y tus datos encima, como texto (se leen bien en cualquier pantalla).</p>
+      </header>
+      <form id="profile-form" class="plato-form" novalidate>
+        <section class="plato-form">
+          <div class="plato-cover-pick">
+            <img id="cover-preview" alt="Tu foto de portada" hidden>
+            <span id="cover-empty" class="plato-muted plato-small">Aún no tienes foto de portada.</span>
+          </div>
+          <div class="field"><label for="cover">Foto de portada <span class="plato-muted">(JPG, PNG o WebP, hasta 5 MB; se usa horizontal)</span></label>
+            <input class="input" type="file" id="cover" accept="image/jpeg,image/png,image/webp"></div>
+          <div class="plato-row plato-row--fields">
+            <div class="field"><label for="pr-name">Tu nombre</label><input class="input" id="pr-name" maxlength="120" required autocomplete="name"></div>
+            <div class="field"><label for="pr-clinic">Consultorio <span class="plato-muted">(opcional)</span></label><input class="input" id="pr-clinic" maxlength="120"></div>
+          </div>
+          <div class="plato-row plato-row--fields">
+            <div class="field"><label for="pr-whatsapp">WhatsApp <span class="plato-muted">(opcional)</span></label><input class="input" id="pr-whatsapp" maxlength="20" inputmode="tel" pattern="[0-9 +\(\)\-]*" placeholder="614 000 0000"></div>
+            <div class="field"><label for="pr-instagram">Instagram <span class="plato-muted">(opcional)</span></label><input class="input" id="pr-instagram" maxlength="31" pattern="@?[A-Za-z0-9\._]*" placeholder="@tuconsultorio"></div>
+          </div>
+        </section>
+        <footer class="plato-actions" style="justify-content:flex-end"><button class="btn" type="submit" id="profile-save">Guardar perfil</button></footer>
+      </form>
+    </section>
 
     <section class="card" aria-labelledby="photos-title">
       <header>

@@ -3,7 +3,7 @@ import { session, signIn, signUpNutritionist } from './api.js';
 import { wireTabs, formError, busy, offlineBanner } from './ui.js';
 
 const s = session();
-if (s?.collection === 'nutritionists') location.replace('/patients.html');
+if (s?.collection === 'nutritionists') location.replace('/home.html');
 else if (s?.collection === 'patients') location.replace('/today.html');
 
 offlineBanner();
@@ -42,9 +42,9 @@ onSubmit(document.getElementById('patient-signin'), async ({ email, password }) 
 });
 onSubmit(signinForm, async ({ email, password }) => {
   await signIn('nutritionists', email.trim(), password);
-  location.href = '/patients.html';
+  location.href = '/home.html';
 });
 onSubmit(signupForm, async (d) => {
   await signUpNutritionist({ ...d, email: d.email.trim(), name: d.name.trim() });
-  location.href = '/patients.html';
+  location.href = '/home.html';
 });

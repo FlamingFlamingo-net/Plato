@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Inicio — Plato</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/home.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/home.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">Plato</a>
+    <div class="plato-row">
+      <a class="btn" data-variant="ghost" data-size="sm" href="/home.html" aria-current="page">Inicio</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/patients.html">Pacientes</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/templates.html">Plantillas</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html">Ajustes</a>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main plato-home">
+    <h1 class="sr-only">Inicio</h1>
+
+    <!-- Upgrades 1 + 2: the nutritionist's photo only; name, clinic and contact are live text -->
+    <section class="plato-banner" aria-label="Tu portada">
+      <div class="plato-banner-photo" id="banner-photo"></div>
+      <a class="plato-banner-edit" href="/settings.html" id="banner-edit">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        <span id="banner-edit-label">Cambiar portada</span>
+      </a>
+      <div class="plato-banner-body">
+        <div class="plato-banner-logo" id="banner-logo" aria-hidden="true"></div>
+        <div>
+          <p class="plato-banner-name" id="banner-name"></p>
+          <p class="plato-banner-clinic" id="banner-clinic"></p>
+          <p class="plato-banner-contact" id="banner-contact"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upgrades 3-5 + layout decisions: tabs with counts (left) and Hoy + "Marcar todo como visto" (right), aligned -->
+    <section class="plato-home-panel">
+      <div class="plato-home-tabs" role="tablist" aria-label="Qué quieres ver" id="tabs"></div>
+      <div class="plato-home-side">
+        <aside class="plato-home-today" aria-labelledby="today-title">
+          <h2 id="today-title">Hoy</h2>
+          <ul id="today"><li class="plato-muted">Cargando…</li></ul>
+        </aside>
+        <button class="btn" data-variant="outline" type="button" id="all-seen" disabled>Marcar todo como visto</button>
+      </div>
+    </section>
+
+    <section id="feed" role="tabpanel" tabindex="0" class="plato-home-feed">
+      <div class="plato-home-feed-head">
+        <div><h2 id="feed-title"></h2><p id="feed-sub"></p></div>
+        <div class="plato-row">
+          <div class="plato-row" id="chips"></div>
+          <button class="btn" data-variant="ghost" data-size="sm" type="button" id="refresh">Actualizar</button>
+        </div>
+      </div>
+      <p class="plato-muted" id="feed-status" role="status"></p>
+      <ul class="plato-feed" id="cards"></ul>
+      <p style="text-align:center;margin-top:1rem"><button class="btn" data-variant="outline" type="button" id="more" hidden>Cargar más</button></p>
+    </section>
+  </main>
+
+  <dialog class="dialog plato-photo-dialog" id="photo-dialog" aria-labelledby="ph-title">
+    <div>
+      <header><h2 id="ph-title"></h2><p id="ph-sub"></p></header>
+      <section><img id="ph-img" alt=""></section>
+      <button type="button" aria-label="Cerrar" id="ph-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  </dialog>
+</body>
+</html>

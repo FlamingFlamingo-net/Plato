@@ -43,7 +43,8 @@ await step('1 nutritionist signs up', async () => {
   await nutri.fill('#s-email', nEmail);
   await nutri.fill('#s-password', pw());
   await nutri.click('#nutri-signup [type=submit]');
-  await nutri.waitUrl('/patients.html');
+  await nutri.waitUrl('/home.html'); // sign-up lands on Inicio (slice 3)
+  await nutri.goto(`${BASE}/patients.html`);
   await nutri.waitFor(`document.querySelector('.plato-empty-state')`);
   check('1 nutritionist signs up and sees an empty patient list', true);
   await shot(nutri, '01-patients-empty');
@@ -190,7 +191,8 @@ await step('A3 second nutritionist', async () => {
   await other.click('#tab-nutri'); await other.click('#to-signup');
   await other.fill('#s-name', 'Otro Nutri'); await other.fill('#s-email', `zz-other-${tag}@test.local`); await other.fill('#s-password', pw());
   await other.click('#nutri-signup [type=submit]');
-  await other.waitUrl('/patients.html');
+  await other.waitUrl('/home.html');
+  await other.goto(`${BASE}/patients.html`);
   await other.waitFor(`document.querySelector('.plato-empty-state')`);
   await other.goto(patientUrl);
   await other.waitFor(`document.getElementById('status').textContent.startsWith('No encontrado')`);

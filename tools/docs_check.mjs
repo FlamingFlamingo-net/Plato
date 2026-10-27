@@ -115,7 +115,7 @@ await step('P5', async () => {
   await other.click('#tab-nutri'); await other.click('#to-signup');
   await other.fill('#s-name', 'ZZ Otra'); await other.fill('#s-email', email); await other.fill('#s-password', pw);
   await other.click('#nutri-signup [type=submit]');
-  await other.waitUrl('/patients.html');
+  await other.waitUrl('/home.html');
   await other.goto(`${BASE}/diet-print.html?id=${anaId}`);
   await other.waitFor(`document.getElementById('status').textContent.startsWith('No encontrado')`);
   check('P5 second nutritionist opening Ana\'s print page: "No encontrado"', await other.eval(`document.getElementById('sheet').hidden`));
