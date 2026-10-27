@@ -568,6 +568,18 @@ if box:
 else:
     print("SKIP E4 no-birth-date patient (set PB_CONTAINER=pb-check to run it)")
 
+# ---- home banner profile (spec "Patient activity dashboard", slice 3) ----
+s, r = call("PATCH", f"/api/collections/nutritionists/records/{a_id}", {"whatsapp": "614 000 0000", "instagram": "@consultorio.demo"}, ta,
+            files={"cover": ("c.jpg", img, "image/jpeg")})
+check("H1 the nutritionist saves a cover photo, WhatsApp and Instagram", s == 200 and r.get("cover") and r.get("instagram") == "@consultorio.demo", (s, r))
+s, r = call("PATCH", f"/api/collections/nutritionists/records/{a_id}", {"instagram": "bad handle!"}, ta)
+check("H1 an Instagram handle with spaces or symbols is refused", s == 400, s)
+s, r = call("PATCH", f"/api/collections/nutritionists/records/{b_id}", {"whatsapp": "1"}, ta)
+check("H1 a nutritionist cannot change another one's profile", s == 404, s)
+s, me_a = call("GET", f"/api/collections/nutritionists/records/{a_id}", token=ta)
+s, r = call("GET", f"/api/files/nutritionists/{a_id}/{me_a['cover']}")
+check("H1 the cover photo does not open without a file token", s == 404, s)
+
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")
 sys.exit(1 if failed else 0)
