@@ -118,6 +118,10 @@ Run on the current release. Mark each step pass or fail. Last run: 2026-10-19, h
 
 ---
 
+## Direction (owner, 2026-10-26)
+
+**Both:** the live MVP launches with **the direct client only**, run as if Plato were their own platform; the code keeps the **multi-nutritionist platform** shape (data per nutritionist, shared catalogue later) so it can scale if it succeeds. Narrowing to a single-client app only if that proves to bring large value. Consequence: client-specific looks and texts are a theme/setting, never hard-coded.
+
 ## Decisions (made during build)
 
 - Open questions 1–5: the recommended answers apply (Plato, Spanish UI, five fixed slots, one weekly diet that repeats, patient sees all measurements).
@@ -409,7 +413,13 @@ It replaces opening each patient one by one to look for new photos. It absorbs t
 - Progress photos are the most sensitive data in Plato (bodies, sometimes in underwear). Legal L1 applies before real patients; the join screen should mention them in the privacy notice. Until then: fake photos only.
 - Storage: photos are the main cost driver online (about 0.3–0.6 MB each after shrinking). 100 patients × 3 photos a day ≈ 1–2 GB a month. Fine on a 3 GB disk for a pilot; a cloud bucket later.
 
-**Later:** live updates on the dashboard; comments on any event; weekly activity totals and goals ("150 min de actividad a la semana"); calories burned from activity; side-by-side before/after comparison with the same pose; reminders to log.
+**Later (order agreed by the owner, 2026-10-26):**
+1. **Weekly goal (minutes a day × days a week) + weekly totals**: "Feature: Weekly activity goal" (specced).
+2. Comments on any event (activities too; reuses the feedback dialog, text only).
+3. Side-by-side before/after comparison of progress photos (same pose, a date picker each).
+4. Live updates on Inicio (PocketBase realtime).
+5. Reminders to log: needs Plato online (push notifications need HTTPS + the installed app); until then only an in-app nudge.
+- **Dropped:** calories burned from activity (owner, 2026-10-26). Estimates are rough and invite "I can eat more" thinking; revisit with the food catalogue, decided by the nutritionist.
 
 **Not now:** step counters, smartwatch or Google Fit / Apple Health import; GPS routes; automatic body measurements from photos.
 
@@ -513,6 +523,77 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 ### Reminders for the owner
 
 - **"Pending dashboard"**: built as the placeholder **Pendientes** (see Slice 3). **Remind the owner to confirm the name and contents with the client**, at each review until it is defined.
+
+---
+
+## Feature: Weekly goals (spec, waiting for approval)
+
+**Service decides the goals (owner, 2026-10-26):** patients come for **nutrition, training, or both**, from someone losing weight to high-performance athletes. Each patient gets a **service** (set by the nutritionist): **Nutrición**, **Entrenamiento** or **Nutrición + entrenamiento**. It decides which weekly goals apply:
+
+| Service | Meal goal | Activity goal |
+|---|---|---|
+| Nutrición | on (default 3 meals a day, 5 days) | off (the nutritionist can still turn it on) |
+| Entrenamiento | off (can be turned on) | on (default 30 min, 5 days) |
+| Nutrición + entrenamiento | on | on |
+
+- **Meal goal** = consistency of logging, the same shape as activity: **N meals logged a day, D days a week** ("3 comidas al día, 5 días a la semana"). A day counts when at least N of the 5 slots have a log that day. It measures logging, not how well the diet was followed (that stays the nutritionist's judgement, with photo feedback).
+- **Activity goal** = below. Athletes need more: minutes per day go up to **300** (two sessions a day).
+- New patient: the service is picked in "Nuevo paciente" (Nutrición selected). Existing patients get **Nutrición + entrenamiento** (both goals on, so nothing disappears); the nutritionist adjusts.
+- The service also prepares later features (Exercise plans show only for Entrenamiento / ambos).
+- Everything below about weeks, days, history, screens and grouping applies to **both goals**; the "Tu semana" card shows one row per goal that is on, and Pendientes has one summary row per goal.
+
+**Activity goal:** each patient has an activity goal of **N minutes a day, D days a week** (e.g. **"30 minutos, 4 días a la semana"**), set by the nutritionist. The point is **consistency**: 150 minutes in one day counts as **one** day, not the whole week. Patient and nutritionist see this week's progress and the last 8 weeks. Builds on the activity log (slice 1); nothing new for the patient to type.
+
+**Why:** "ran for 30 min" alone doesn't say whether the habit is forming. A days-based goal rewards moving often, which is what the nutritionist wants.
+
+**Decisions (owner, 2026-10-26):** the nutritionist sets the goal per patient (the patient cannot); minutes-per-day × days-per-week, not a weekly total; "Tu semana" goes below the day's meals; calories burned stay out; the list badge is in, ready to remove if it crowds the list.
+
+### Rules
+- **A day counts ("día cumplido")** when the minutes of all activities on that date add up to the daily minutes (walk 15 + gym 20 = 35 ≥ 30 → counts). Below that, the day is **"activo"** (shown, but not counted).
+- **The week is met** when the counted days reach the goal (4 of 4). Extra days are shown ("5 de 4 días") but nothing more is needed.
+- **Week = Monday to Sunday** (same as the diet), by the activity's **date** (the day it happened, not when it was typed). Local dates, as everywhere in Plato.
+- **Goal values:** minutes per day 10–300 in steps of 5; meals per day 1–5; days per week 1–7; or **Sin meta** per goal: totals still show, no "behind" items.
+- **Defaults:** activity **30 min, 5 days** (the WHO's 150 min/week for adults, spread out); meals **3 a day, 5 days**. On or off by service (table above). The nutritionist changes them per patient.
+- A goal change applies to the **current week and later**; past weeks keep the goal they had (the server keeps a small history: `{ "from": "2026-10-26", "min": 30, "days": 4 }`).
+- Minors: no difference (activity is allowed at any age). Closed accounts: read-only (goal can't change).
+
+### Screens
+- **Patient, Hoy (below the meals):** card **"Tu semana"**: **"2 de 4 días"** with the 7 days Monday–Sunday as dots: filled = cumplido, outlined with a small fill = activo (below the daily minutes), empty = nothing; today marked. Under it: "Hoy: 20 de 30 min" and the week's total minutes and sessions. Neutral words, no guilt: "Vas bien", "¡Meta de la semana cumplida!". Sin meta: "Esta semana: 90 min · 3 sesiones".
+- **Patient, Progreso:** **"Actividad por semana"**: a bar chart of the last 8 weeks (days cumplidos per week, 0–7) with that week's goal as a line, plus a text table (week, días cumplidos / meta, minutes) for screen readers and print.
+- **Nutritionist, patient page:** the Registros tab gets the same weekly card and 8-week chart at the top, and **"Meta: 30 min, 4 días a la semana · Cambiar"** (small dialog: minutes, days, or Sin meta).
+- **Patient list:** small badge **"2/4 días"** per patient (this week). *Owner: OK, ready to remove if the list gets crowded* (one line to take out).
+- **Inicio, no crowding (owner, 2026-10-26: many patients go "silent", so they must not flood the screen):**
+  - Pendientes shows **one summary row**, never one row per patient: **"12 pacientes no cumplieron su meta la semana pasada"** with **Ver lista**. The list opens inline, sorted by fewest days, 10 at a time with "Ver más"; each name links to the patient. Only the **last full week** counts (not the current one: on a Monday everyone is behind).
+  - The summary row counts as **1** in the Pendientes tab count, however many patients it holds.
+  - Hoy panel: one line, "12 pacientes por debajo de su meta la semana pasada".
+  - Nothing is pushed or highlighted per patient; the nutritionist looks when they want to.
+- **Export (PDF/JSON):** the activity section adds, per week, días cumplidos / meta, minutes and the goal in force.
+
+### Data (server)
+- `patients.service` (`nutrition` | `training` | `both`; required on new patients; existing → `both`).
+- `patients.activity_goal_days` (0 = Sin meta, 1–7), `patients.activity_goal_min` (10–300, step 5), `patients.meal_goal_days` (0 = Sin meta, 1–7), `patients.meal_goal_per_day` (1–5); defaults from the service when the patient is created; `patients.goal_history` (JSON, kept by a hook when any goal value changes; nobody writes it directly).
+- Only the nutritionist who owns the patient can change the goal (today's update rule already blocks the patient; a check proves it).
+- Progress is computed on screen from the activity logs (8 weeks per patient at most); nothing stored, so edits and deletes of logs are always reflected.
+
+### Acceptance
+1. A new patient has 30 min × 5 days; an existing one gets the same after the update.
+2. The nutritionist sets 30 min × 4 days; the patient's Hoy shows "de 4 días" after a refresh; the patient cannot change it (server refuses).
+3. 150 minutes on one day → 1 day cumplido, not the week. Walk 15 + gym 20 on the same day (goal 30) → that day counts. 20 min alone → "activo", not counted.
+4. A 30-min walk dated Sunday counts in that week, not the next.
+5. 4 of 4 → "¡Meta de la semana cumplida!"; Sin meta → no goal, totals only.
+6. The 8-week chart shows days cumplidos per week with the goal of each week (a change in week 5 moves the line from week 5).
+7. Pendientes shows one summary row with the number of patients below the goal last week (not those who met it, not Sin meta, not the current week); it counts as 1 in the tab count; "Ver lista" shows them, fewest days first, 10 at a time.
+8. Closed account: goal read-only. Export shows weeks with días cumplidos and the goal.
+9. Phone 390 px: card and chart fit, no sideways scroll; the chart has a text alternative.
+
+### Build
+Server (migration: three fields + defaults for existing patients; hook keeps the history) → screens (shared week helper `js/activity-week.js`, Hoy card, Progreso chart, patient page card + goal dialog, list badge, Inicio items, export, SW bump) → tests (API + `goal_check.mjs`) → spec.
+
+**Also in this feature:** the existing Pendientes row "No registra comidas desde hace 3 días" becomes **one summary row** like the goal rows (it grows with silent patients). "Aún no usa la app", "No tiene dieta" and "Falta su fecha de nacimiento" stay per patient (one-time setup tasks).
+
+### Open questions
+1. Meal goal measured as **"N meals logged a day"** (recommended; Plato can count it) — OK? Following the diet's content is not measurable yet (that comes with the food catalogue).
+2. Default service for a new patient: **Nutrición** (recommended) — or must the nutritionist always pick?
 
 ---
 
