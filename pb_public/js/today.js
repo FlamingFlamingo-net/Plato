@@ -6,6 +6,7 @@ import { plate } from './charts.js';
 import { activitySummary } from './activity.js';
 import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { patientShell } from './shell.js';
+import { loadGoalData, weekCard, mondayOf, kindsFor } from './goals.js';
 
 const { me, nutritionist } = await patientShell('today');
 const today = localDate();
@@ -136,6 +137,16 @@ async function renderMeals() {
         l.seen_at ? 'Vista por tu nutrióloga/o' : 'Registrada')),
     delBtn(l, 'comida extra', 'esta comida extra'))));
   document.getElementById('extras-empty').hidden = extras.length > 0;
+  renderWeek().catch(() => {});
+}
+
+// "Tu semana" (spec "Weekly goals", slice 2): always this week, refreshed after every check.
+async function renderWeek() {
+  const box = document.getElementById('week');
+  if (!kindsFor(me).length) { box.hidden = true; return; }
+  const data = await loadGoalData(me.id, mondayOf());
+  document.getElementById('week-rows').replaceChildren(...weekCard(me, data));
+  box.hidden = false;
 }
 await renderMeals();
 

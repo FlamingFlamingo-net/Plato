@@ -102,7 +102,7 @@ await step('X1', async () => {
   await nutri.goto(`${BASE}/export.html?id=${anaId}`);
   await nutri.waitFor(`!document.getElementById('sheet').hidden`);
   const titles = await nutri.eval(`[...document.querySelectorAll('#sheet h2')].map(h => h.textContent)`);
-  const rows = await nutri.eval(`[...document.querySelectorAll('#sheet table')].at(-1).querySelectorAll('tbody tr').length`);
+  const rows = await nutri.eval(`[...document.querySelectorAll('#sheet .doc-section')].find(s => s.querySelector('h2').textContent.startsWith('Actividad física')).querySelectorAll('tbody tr').length`);
   check('X1 export has "Actividad física (2)" with both entries', titles.includes('Actividad física (2)') && rows === 2, `${titles} ${rows}`);
 });
 

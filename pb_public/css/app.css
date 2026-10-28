@@ -318,6 +318,71 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-banner-edit span { display: none; }
 }
 
+/* ---- Weekly goals (slice 2) ---- */
+.plato-week > header h2 { margin: 0; }
+.plato-week-rows { display: grid; gap: 1rem; }
+.plato-week-row { display: grid; gap: 0.4rem; }
+.plato-week-row + .plato-week-row { border-top: 1px solid var(--border); padding-top: 1rem; }
+.plato-week-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.plato-week-count { font-weight: 700; font-variant-numeric: tabular-nums; }
+.plato-week-row.is-done .plato-week-count { color: var(--primary); }
+.plato-week-dots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
+.plato-week-dots li { display: grid; justify-items: center; gap: 0.2rem; }
+.plato-week-dot { width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 2px solid var(--border); background: var(--card); }
+.plato-week-dots li.is-active .plato-week-dot { border-color: var(--primary); background: radial-gradient(circle, color-mix(in oklch, var(--primary) 45%, transparent) 0 35%, var(--card) 36%); }
+.plato-week-dots li.is-met .plato-week-dot { border-color: var(--primary); background: var(--primary); }
+.plato-week-dots li.is-today .plato-week-letter { font-weight: 800; color: var(--foreground); text-decoration: underline; text-underline-offset: 2px; }
+.plato-week-letter { font-size: 0.75rem; color: var(--muted-foreground); }
+.plato-week-line { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 0.75rem; font-size: 0.9rem; }
+.plato-week-mood { margin: 0; font-size: 0.9rem; font-weight: 600; }
+.plato-week-charts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.plato-week-figure { margin: 0; display: grid; gap: 0.35rem; min-width: 0; }
+.plato-week-figure figcaption { font-weight: 600; font-size: 0.9rem; }
+.plato-week-chart { width: 100%; height: auto; max-height: 11rem; }
+.plato-week-chart .grid { stroke: var(--border); }
+.plato-week-chart .axis { font-size: 9px; fill: var(--muted-foreground); }
+.plato-week-chart .bar { fill: color-mix(in oklch, var(--primary) 55%, var(--card)); }
+.plato-week-chart .bar.is-met { fill: var(--primary); }
+.plato-week-chart .goal { stroke: var(--foreground); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.plato-week-figure summary { cursor: pointer; font-size: 0.85rem; color: var(--muted-foreground); gap: 0.35rem; }
+.plato-week-table { font-size: 0.85rem; margin-top: 0.4rem; }
+.plato-week-table :is(thead, tbody, tr, th, td) { border-color: var(--border); }
+.plato-week--nutri .plato-week-grid { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; }
+.plato-week--nutri { margin-bottom: 1rem; }
+@media (max-width: 760px) { .plato-week--nutri .plato-week-grid { grid-template-columns: minmax(0, 1fr); } }
+.plato-week-badges { display: contents; }
+.plato-week-badge.is-met { border-color: var(--primary); color: var(--primary); }
+/* Service picker: two toggle cards, real checkboxes underneath */
+.plato-service { border: 0; padding: 0; margin: 0; display: grid; gap: 0.4rem; min-width: 0; }
+.plato-service legend { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; padding: 0; }
+.plato-service-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+@media (max-width: 420px) { .plato-service-cards { grid-template-columns: minmax(0, 1fr); } }
+.plato-service-card { position: relative; display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.75rem 2.4rem 0.75rem 0.85rem; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--card); cursor: pointer; min-height: 4.25rem; }
+.plato-service-input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.plato-service-body { display: grid; gap: 0.15rem; }
+.plato-service-body small { color: var(--muted-foreground); font-size: 0.8rem; }
+.plato-service-tick { position: absolute; top: 0.7rem; right: 0.7rem; width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 2px solid var(--border); background: var(--card); }
+.plato-service-card:has(.plato-service-input:checked) { border-color: var(--primary); background: var(--secondary); box-shadow: inset 0 0 0 1px var(--primary); }
+.plato-service-card:has(.plato-service-input:checked) .plato-service-tick { border-color: var(--primary);
+  background: var(--primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 70% no-repeat; }
+.plato-service-card:has(.plato-service-input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+.plato-service-hint { margin: 0; min-height: 1em; }
+.plato-goal-set { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.8rem 0.8rem; margin: 0; min-width: 0; }
+.plato-goal-set legend { font-weight: 600; font-size: 0.875rem; padding: 0 0.25rem; }
+.plato-goals-dialog > div { max-width: 34rem; }
+/* Inicio: grouped Pendientes rows (one per kind) */
+.plato-pending-groups { display: grid; gap: 0.6rem; margin-bottom: 0.75rem; }
+.plato-pending-groups:empty { display: none; }
+.plato-pending-group { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); padding: 0.75rem; display: grid; gap: 0.5rem; }
+.plato-pending-group-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; }
+.plato-pending-group-head p { margin: 0; font-weight: 600; }
+.plato-pending-group .plato-activity-icon { background: oklch(0.95 0.04 60); color: oklch(0.5 0.14 45); }
+.plato-group-list { margin: 0; padding: 0 0 0 2.9rem; display: grid; gap: 0.3rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.plato-group-list li { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.9rem; }
+.plato-group-list a { color: inherit; font-weight: 600; }
+.plato-pending-group > .btn { justify-self: start; margin-left: 2.4rem; }
+
 /* ---- Photo feedback ---- */
 .plato-feedback { background: var(--secondary); color: var(--secondary-foreground); border-radius: calc(var(--radius) - 4px); padding: 0.5rem 0.65rem; display: grid; gap: 0.2rem; margin-top: 0.4rem; }
 .plato-feedback p { margin: 0; font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere; }

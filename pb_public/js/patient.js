@@ -1,5 +1,5 @@
 // patient.js — one patient, seen by their nutritionist: measurements, diet, meal photos, private notes, access link.
-import {
+import { localMonday,
   requireRole, view, list, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
   SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly, isCheck,
 } from './api.js';
@@ -9,6 +9,7 @@ import { weekList, cleanMeals, daysFilled } from './week.js';
 import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
+import { loadGoalData, weekCard, weeklyChart, mondayOf, addDays, kindsFor, goalText, SERVICE_LABEL, serviceCards, hasNutrition, hasTraining } from './goals.js';
 import { weightChart } from './charts.js';
 
 offlineBanner();
@@ -386,7 +387,81 @@ async function loadLogs() {
   logCount.textContent = String(unseen);
   logCount.setAttribute('aria-label', `${unseen} sin ver`);
   await renderLogs();
+  renderGoals().catch((e) => { document.getElementById('goals-sub').textContent = e.message; });
 }
+
+// ---------- Weekly goals (spec "Weekly goals", slice 2) ----------
+async function renderGoals() {
+  const p = patient;
+  const kinds = kindsFor(p);
+  const sub = [SERVICE_LABEL[p.service] || 'Sin servicio',
+    hasNutrition(p.service) || p.meal_goal_days > 0 ? `Comidas: ${goalText('meal', p.meal_goal_days > 0 ? { days: p.meal_goal_days, per: p.meal_goal_per_day } : null)}` : null,
+    hasTraining(p.service) || p.activity_goal_days > 0 ? `Actividad: ${goalText('act', p.activity_goal_days > 0 ? { days: p.activity_goal_days, per: p.activity_goal_min } : null)}` : null,
+  ].filter(Boolean).join(' · ');
+  document.getElementById('goals-sub').textContent = sub;
+  document.getElementById('goals-edit').hidden = closed;
+  const data = await loadGoalData(p.id, addDays(mondayOf(), -49));
+  document.getElementById('goals-rows').replaceChildren(...weekCard(p, data, { who: 'nutri' }));
+  document.getElementById('goals-charts').replaceChildren(...kinds.map((k) => {
+    const c = weeklyChart(k, p, data);
+    return h('figure', { class: 'plato-week-figure' }, h('figcaption', { text: k === 'meal' ? 'Comidas: últimas 8 semanas' : 'Actividad: últimas 8 semanas' }), c.svg,
+      h('details', {}, h('summary', { text: 'Ver como tabla' }), c.table));
+  }));
+}
+
+const goalsDialog = h('dialog', { class: 'dialog plato-goals-dialog', id: 'goals-dialog', 'aria-labelledby': 'gd-title' });
+document.body.append(goalsDialog);
+const opt = (v, label, sel) => h('option', { value: String(v), selected: String(v) === String(sel) }, label);
+document.getElementById('goals-edit').addEventListener('click', () => {
+  const p = patient;
+  const svc = serviceCards('gd-service', p.service || 'nutrition');
+  const mDays = h('select', { class: 'select', id: 'gd-meal-days' }, opt(0, 'Sin meta', p.meal_goal_days), ...[1, 2, 3, 4, 5, 6, 7].map((n) => opt(n, `${n} ${n === 1 ? 'día' : 'días'} a la semana`, p.meal_goal_days)));
+  const mPer = h('select', { class: 'select', id: 'gd-meal-per' }, ...[1, 2, 3, 4, 5].map((n) => opt(n, `${n} ${n === 1 ? 'comida' : 'comidas'} al día`, p.meal_goal_per_day || 3)));
+  const aDays = h('select', { class: 'select', id: 'gd-act-days' }, opt(0, 'Sin meta', p.activity_goal_days), ...[1, 2, 3, 4, 5, 6, 7].map((n) => opt(n, `${n} ${n === 1 ? 'día' : 'días'} a la semana`, p.activity_goal_days)));
+  const aMin = h('input', { class: 'input', id: 'gd-act-min', type: 'number', min: 10, max: 300, step: 5, inputmode: 'numeric', value: p.activity_goal_min || 30, required: true });
+  const sync = () => { mPer.disabled = mDays.value === '0'; aMin.disabled = aDays.value === '0'; };
+  mDays.addEventListener('change', sync); aDays.addEventListener('change', sync);
+  // Turning a service on turns its goal on (5 days); turning it off turns it off. Still editable after.
+  svc.addEventListener('servicechange', () => {
+    const s = svc.value();
+    if (hasNutrition(s) && mDays.value === '0') mDays.value = '5';
+    if (!hasNutrition(s)) mDays.value = '0';
+    if (hasTraining(s) && aDays.value === '0') aDays.value = '5';
+    if (!hasTraining(s)) aDays.value = '0';
+    sync();
+  });
+  const form = h('form', { class: 'plato-form', novalidate: true },
+    h('section', { class: 'plato-form' }, svc,
+      h('fieldset', { class: 'plato-goal-set' }, h('legend', { text: 'Meta de comidas' }),
+        h('div', { class: 'plato-row plato-row--fields' },
+          h('div', { class: 'field' }, h('label', { for: 'gd-meal-per', text: 'Comidas marcadas' }), mPer),
+          h('div', { class: 'field' }, h('label', { for: 'gd-meal-days', text: 'Días' }), mDays))),
+      h('fieldset', { class: 'plato-goal-set' }, h('legend', { text: 'Meta de actividad' }),
+        h('div', { class: 'plato-row plato-row--fields' },
+          h('div', { class: 'field' }, h('label', { for: 'gd-act-min', text: 'Minutos al día (10 a 300)' }), aMin),
+          h('div', { class: 'field' }, h('label', { for: 'gd-act-days', text: 'Días' }), aDays))),
+      h('p', { class: 'plato-muted plato-small', style: 'margin:0', text: 'El cambio cuenta desde esta semana; las semanas pasadas conservan su meta.' })),
+    h('footer', { class: 'plato-actions' },
+      h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', onclick: () => goalsDialog.close() }, 'Cancelar'),
+      h('button', { class: 'btn', type: 'submit', id: 'gd-save' }, 'Guardar metas')));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError(form, '');
+    if (!aMin.disabled && (!aMin.checkValidity() || Number(aMin.value) % 5)) { formError(form, 'Los minutos al día van de 10 a 300, de 5 en 5.'); aMin.focus(); return; }
+    const body = { service: svc.value(), meal_goal_days: Number(mDays.value), meal_goal_per_day: Number(mPer.value),
+      activity_goal_days: Number(aDays.value), activity_goal_min: Number(aMin.value), goal_week: localMonday() };
+    try { patient = await busy(document.getElementById('gd-save'), () => update('patients', p.id, body)); } catch (err) { formError(form, err.message); return; }
+    goalsDialog.close();
+    toast('Metas guardadas. Tu paciente las ve en su app.');
+    renderGoals().catch(() => {});
+  });
+  goalsDialog.replaceChildren(h('div', {},
+    h('header', {}, h('h2', { id: 'gd-title', text: 'Metas de la semana' }), h('p', { text: `${p.name}. Cuentan la constancia: los días que cumple, no el total.` })),
+    form));
+  sync();
+  goalsDialog.showModal();
+});
+goalsDialog.addEventListener('click', (e) => { if (e.target === goalsDialog) goalsDialog.close(); });
 
 async function renderLogs() {
   feed.replaceChildren();

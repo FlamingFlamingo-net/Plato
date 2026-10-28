@@ -5,6 +5,7 @@ import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { weightChart } from './charts.js';
 import { patientShell } from './shell.js';
+import { loadGoalData, weeklyChart, mondayOf, addDays, kindsFor } from './goals.js';
 
 const { me, nutritionist, minor } = await patientShell('progress');
 if (minor) document.getElementById('add-photo').remove();
@@ -13,6 +14,19 @@ if (new URL(location.href).searchParams.has('photo')) {
   history.replaceState(null, '', '/progress.html');
 }
 const statusEl = document.getElementById('status');
+
+// Constancia por semana (spec "Weekly goals", slice 2)
+(async () => {
+  const kinds = kindsFor(me);
+  if (!kinds.length) return;
+  const data = await loadGoalData(me.id, addDays(mondayOf(), -49));
+  document.getElementById('wk-charts').replaceChildren(...kinds.map((k) => {
+    const c = weeklyChart(k, me, data);
+    return h('figure', { class: 'plato-week-figure' }, h('figcaption', { text: k === 'meal' ? 'Comidas' : 'Actividad' }), c.svg,
+      h('details', {}, h('summary', { text: 'Ver como tabla' }), c.table));
+  }));
+  document.getElementById('wk-section').hidden = false;
+})().catch(() => {});
 
 try {
   const ms = await list('measurements', { filter: `patient = ${q(me.id)}`, sort: 'date,created' });

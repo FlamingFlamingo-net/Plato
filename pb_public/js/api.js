@@ -154,12 +154,13 @@ export async function requireRole(collection) {
 }
 
 // ---- patients ----
-export function createPatient({ name, sex, birth_date, height_cm }) {
+export function createPatient({ name, sex, birth_date, height_cm, service }) {
   const s = session();
   const pw = randomSecret(); // never shown; the patient sets their own password through the invite link
   const body = { name, sex, nutritionist: s.record.id, password: pw, passwordConfirm: pw };
   if (birth_date) body.birth_date = `${birth_date} 12:00:00.000Z`;
   if (height_cm) body.height_cm = Number(height_cm);
+  if (service) { body.service = service; body.goal_week = localMonday(); }
   return create('patients', body);
 }
 
@@ -200,3 +201,5 @@ export function localDate(d = new Date()) {
 export const isoWeekday = (d = new Date()) => ((d.getDay() + 6) % 7) + 1;
 // PocketBase date "2026-10-19 12:00:00.000Z" → "2026-10-19"
 export const dateOnly = (pbDate) => (pbDate || '').slice(0, 10);
+// This week's Monday on the user's device (the server keys goal history by it; spec "Weekly goals").
+export function localMonday(d = new Date()) { const m = new Date(d); m.setDate(m.getDate() - (isoWeekday(m) - 1)); return localDate(m); }

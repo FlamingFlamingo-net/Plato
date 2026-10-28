@@ -7,6 +7,7 @@ import { activitySummary } from './activity.js';
 import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
+import { weekOf, indexLogs, mondayOf, addDays } from './goals.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -46,6 +47,7 @@ let pmap = {};
 let unseen = { meal: [], activity: [], progress: [] };
 let withDiet = new Set();
 let recentMeals = new Set();
+let behind = { meal: [], act: [] }; // last full week below the goal (spec "Weekly goals": grouped, never per-patient rows)
 let templateCount = 0;
 let pools = null;      // per type: { items, cursor, done }
 let limit = PAGE;
@@ -90,8 +92,8 @@ async function loadAll() {
   // Bare checks (no photo) are not counted as new: they would flood the counts (spec "Weekly goals", slice 1).
   const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : ''}`, fields: 'id,patient', perPage: 500 });
   const [ps, diets, recent, um, ua, up, tpls] = await Promise.all([
-    list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined', sort: 'name', perPage: 500 }),
-    list('diets', { fields: 'patient', perPage: 500 }),
+    list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history', sort: 'name', perPage: 500 }),
+    list('diets', { fields: 'patient,meals', perPage: 500 }),
     list('meal_logs', { filter: `date >= ${q(localDate(since))} && patient.archived_at = ""`, fields: 'patient', perPage: 500 }),
     unseenOf('meal'), unseenOf('activity'), unseenOf('progress'),
     list('diet_templates', { fields: 'id', perPage: 500 }),
@@ -102,6 +104,25 @@ async function loadAll() {
   recentMeals = new Set(recent.map((m) => m.patient));
   unseen = { meal: um, activity: ua, progress: up };
   templateCount = tpls.length;
+  // Last full week (Monday to Sunday before this one)
+  const lastMon = addDays(mondayOf(), -7), lastSun = addDays(lastMon, 6);
+  const wf = `date >= ${q(lastMon)} && date <= ${q(lastSun)} && patient.archived_at = ""`;
+  const [wm, wa] = await Promise.all([
+    list('meal_logs', { filter: wf, fields: 'patient,date,slot', perPage: 1000 }),
+    list('activity_logs', { filter: wf, fields: 'patient,date,minutes', perPage: 1000 }),
+  ]);
+  const by = (rows) => rows.reduce((m, r) => ((m[r.patient] ||= []).push(r), m), {});
+  const mm = by(wm), am = by(wa), dm = Object.fromEntries(diets.map((d) => [d.patient, d]));
+  behind = { meal: [], act: [] };
+  for (const p of ps) {
+    if (!p.joined) continue; // not using the app yet: its own setup row
+    const idx = indexLogs(mm[p.id] || [], am[p.id] || []);
+    for (const k of ['meal', 'act']) {
+      const w = weekOf(k, p, dm[p.id], idx, lastMon);
+      if (w.goal && w.met < w.goal.days) behind[k].push({ p, met: w.met, days: w.goal.days });
+    }
+  }
+  for (const k of ['meal', 'act']) behind[k].sort((a, b) => a.met - b.met || a.p.name.localeCompare(b.p.name));
   pools = Object.fromEntries(Object.keys(COLL).map((k) => [k, { items: [], last: null, done: false }]));
   loadedAt = Date.now();
 }
@@ -119,10 +140,45 @@ function pendingItems() {
     const go = (tab) => `/patient.html?id=${encodeURIComponent(p.id)}${tab ? `&tab=${tab}` : ''}`;
     if (!p.joined) items.push({ warn: true, p, text: 'Aún no usa la app. Mándale su enlace.', action: 'Crear enlace', href: go('access') });
     if (!withDiet.has(p.id)) items.push({ warn: true, p, text: 'No tiene dieta asignada.', action: 'Asignar dieta', href: go('diet') });
-    if (p.joined && !recentMeals.has(p.id)) items.push({ warn: true, p, text: 'No registra comidas desde hace 3 días o más.', action: 'Ver paciente', href: go('log') });
     if (!dateOnly(p.birth_date)) items.push({ warn: true, p, text: 'Falta su fecha de nacimiento.', action: 'Agregar', href: go('') });
   }
   return items;
+}
+
+// Grouped rows: one per kind, however many patients (spec "Weekly goals": many patients go "silent").
+function pendingGroups() {
+  const quiet = patients.filter((p) => p.joined && !recentMeals.has(p.id)).map((p) => ({ p, text: 'Sin comidas desde hace 3 días o más' }));
+  const g = [];
+  if (behind.meal.length) g.push({ key: 'meal', n: behind.meal.length, title: `${behind.meal.length} ${behind.meal.length === 1 ? 'paciente no cumplió su meta' : 'pacientes no cumplieron su meta'} de comidas la semana pasada`,
+    people: behind.meal.map((x) => ({ p: x.p, text: `${x.met} de ${x.days} días` })) });
+  if (behind.act.length) g.push({ key: 'act', n: behind.act.length, title: `${behind.act.length} ${behind.act.length === 1 ? 'paciente no cumplió su meta' : 'pacientes no cumplieron su meta'} de actividad la semana pasada`,
+    people: behind.act.map((x) => ({ p: x.p, text: `${x.met} de ${x.days} días` })) });
+  if (quiet.length) g.push({ key: 'quiet', n: quiet.length, title: `${quiet.length} ${quiet.length === 1 ? 'paciente no registra' : 'pacientes no registran'} comidas desde hace 3 días o más`, people: quiet });
+  return g;
+}
+
+function groupCard(g) {
+  let shown = 10;
+  const listEl = h('ol', { class: 'plato-group-list', id: `grp-${g.key}`, hidden: true });
+  const more = h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', hidden: true }, 'Ver más');
+  const fill = () => {
+    listEl.replaceChildren(...g.people.slice(0, shown).map((x) => h('li', {},
+      h('a', { href: `/patient.html?id=${encodeURIComponent(x.p.id)}&tab=log` }, x.p.name), h('span', { class: 'plato-muted', text: x.text }))));
+    more.hidden = listEl.hidden || g.people.length <= shown;
+  };
+  more.addEventListener('click', () => { shown += 10; fill(); });
+  const toggle = h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'aria-expanded': 'false', 'aria-controls': `grp-${g.key}` }, 'Ver lista');
+  toggle.addEventListener('click', () => {
+    listEl.hidden = !listEl.hidden;
+    toggle.setAttribute('aria-expanded', String(!listEl.hidden));
+    toggle.textContent = listEl.hidden ? 'Ver lista' : 'Ocultar lista';
+    fill();
+  });
+  return h('section', { class: 'plato-pending-group', dataset: { group: g.key } },
+    h('div', { class: 'plato-pending-group-head' },
+      h('span', { class: 'plato-activity-icon' }, icon(g.key === 'act' ? 'activity' : g.key === 'meal' ? 'list' : 'clock', 18)),
+      h('p', { text: g.title }), toggle),
+    listEl, more);
 }
 
 // ---------- Tabs (upgrades 3, 4, 6, 7, 8) ----------
@@ -132,7 +188,7 @@ const TABS = [
   { id: 'activity', label: 'Actividades', hint: 'Ejercicio registrado', icon: 'activity', count: () => unseenCount(['activity']), unit: 'sin ver' },
   { id: 'photos', label: 'Fotos', hint: 'Comidas y progreso', icon: 'image', count: () => unseenCount(['meal', 'progress']), unit: 'sin ver' },
   { id: 'catalog', label: 'Catálogo', hint: 'Tus listas', icon: 'book', count: () => 0 },
-  { id: 'pending', label: 'Pendientes', hint: 'Esperan tu acción', icon: 'list', count: () => pendingItems().length, unit: 'pendientes' },
+  { id: 'pending', label: 'Pendientes', hint: 'Esperan tu acción', icon: 'list', count: () => pendingItems().length + pendingGroups().length, unit: 'pendientes' },
   { id: 'agenda', label: 'Agenda', hint: 'Próximamente', icon: 'calendar', disabled: true },
 ];
 const tabsEl = document.getElementById('tabs');
@@ -190,6 +246,8 @@ function renderToday() {
     line('', all.length, `${all.length === 1 ? 'registro sin ver' : 'registros sin ver'}${people ? ` de ${people} ${people === 1 ? 'paciente' : 'pacientes'}` : ''}`),
     line(quiet ? 'is-warn' : '', quiet, `${quiet === 1 ? 'paciente' : 'pacientes'} sin registrar comidas en 3 días`),
     line(noApp ? 'is-warn' : '', noApp, `${noApp === 1 ? 'paciente' : 'pacientes'} sin la app`),
+    (() => { const n = new Set([...behind.meal, ...behind.act].map((x) => x.p.id)).size;
+      return line(n ? 'is-warn' : '', n, `${n === 1 ? 'paciente' : 'pacientes'} por debajo de su meta la semana pasada`); })(),
     h('li', { class: 'is-off' }, h('span', { class: 'plato-home-dot', 'aria-hidden': 'true' }), icon('lock', 14), h('span', { text: 'Citas de hoy: cuando exista la agenda' })));
 }
 
@@ -301,6 +359,7 @@ function catalogCards() {
 
 function pendingCards() {
   const items = pendingItems();
+  if (!items.length && pendingGroups().length) return [];
   if (!items.length) return [h('li', { class: 'plato-empty-state' }, h('strong', { text: 'Todo al día' }), h('span', { text: 'No hay nada esperando tu acción.' }))];
   return items.map((x) => h('li', { class: `plato-pending${x.warn ? ' is-warn' : ''}` },
     h('span', { class: 'plato-activity-icon' }, icon(x.warn ? 'alert' : 'eye', 18)),
@@ -327,7 +386,9 @@ async function renderFeed() {
   const cards = document.getElementById('cards');
   const status = document.getElementById('feed-status');
   const more = document.getElementById('more');
+  const groupsEl = document.getElementById('groups');
   chips.replaceChildren();
+  groupsEl.replaceChildren();
   more.hidden = true;
   shownItems = [];
   cards.classList.toggle('plato-feed--list', current === 'pending' || current === 'catalog');
@@ -336,7 +397,7 @@ async function renderFeed() {
       h('button', { class: 'plato-chip', type: 'button', 'aria-pressed': String(photoFilter === k), onclick: () => { photoFilter = k; limit = PAGE; renderFeed(); } }, l)));
   }
   if (current === 'catalog') { status.textContent = ''; cards.replaceChildren(...catalogCards()); renderAllSeen(); return; }
-  if (current === 'pending') { status.textContent = ''; cards.replaceChildren(...pendingCards()); renderAllSeen(); return; }
+  if (current === 'pending') { status.textContent = ''; groupsEl.replaceChildren(...pendingGroups().map(groupCard)); cards.replaceChildren(...pendingCards()); renderAllSeen(); return; }
   status.textContent = 'Cargando…';
   let res;
   try { res = await visible(typesFor(current, photoFilter)); } catch (e) { status.textContent = e.message; return; }

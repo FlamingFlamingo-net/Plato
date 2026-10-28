@@ -109,6 +109,13 @@
 
         <!-- Meal photos -->
         <div role="tabpanel" id="log" aria-labelledby="t-log" hidden>
+          <section class="card plato-week plato-week--nutri" aria-labelledby="goals-title" id="goals">
+            <header class="plato-row plato-row--between">
+              <div><h2 id="goals-title">Metas de la semana</h2><p id="goals-sub"></p></div>
+              <button class="btn" data-variant="outline" data-size="sm" type="button" id="goals-edit">Cambiar metas</button>
+            </header>
+            <section class="plato-week-grid"><div class="plato-week-rows" id="goals-rows"></div><div class="plato-week-charts" id="goals-charts"></div></section>
+          </section>
           <p class="plato-muted" id="log-status" role="status"></p>
           <ul class="plato-feed" id="feed" aria-label="Comidas y actividad registradas"></ul>
         </div>

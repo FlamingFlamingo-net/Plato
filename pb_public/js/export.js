@@ -8,6 +8,7 @@ import { printDocument, miniPlate, printedOn } from './printing.js';
 import { activitySummary, activityName } from './activity.js';
 import { POSE_LABEL } from './progress-photos.js';
 import { feedbackText } from './feedback.js';
+import { kindsFor, indexLogs, weeklyChart, goalText, SERVICE_LABEL } from './goals.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -130,12 +131,34 @@ async function render() {
             h('td', { text: a.note || '—' })))))
         : h('p', { class: 'doc-empty', text: 'Sin actividad registrada.' })),
 
+    goalsSection(),
+
     progressSection,
 
     notesSection,
 
     h('p', { class: 'doc-foot', text: 'Contiene datos personales y de salud. Entrégalo solo al paciente o a quien él autorice.' }));
   sheet.hidden = false;
+}
+
+// Weekly goals, last 8 weeks (spec "Weekly goals", slice 2): días cumplidos / meta and the goal in force.
+function goalsSection() {
+  const { patient, diet, logs, acts } = data;
+  const kinds = kindsFor(patient);
+  if (!kinds.length) return null;
+  const gd = { diet, idx: indexLogs(logs, acts) };
+  return section(`Metas semanales (${SERVICE_LABEL[patient.service] || '—'})`,
+    ...kinds.map((k) => {
+      const { weeks } = weeklyChart(k, patient, gd);
+      return h('table', { class: 'doc-table' },
+        h('caption', { text: k === 'meal' ? 'Comidas marcadas' : 'Actividad' }),
+        h('thead', {}, h('tr', {}, ...['Semana del', 'Días cumplidos', 'Meta', k === 'meal' ? 'Comidas' : 'Minutos'].map((t) => h('th', { scope: 'col', text: t })))),
+        h('tbody', {}, ...weeks.slice().reverse().map((w) => h('tr', {},
+          h('td', { text: shortDate(w.monday) }),
+          h('td', { text: w.goal ? `${w.met} de ${w.goal.days}` : String(w.met) }),
+          h('td', { text: goalText(k, w.goal) }),
+          h('td', { text: String(Math.round(w.total)) })))));
+    }));
 }
 
 async function fillProgress(sectionEl) {
@@ -187,6 +210,13 @@ jsonBtn.addEventListener('click', () => {
       sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo || null, checked_without_photo: !l.photo && l.slot !== 'extra',
       feedback: l.feedback_at ? { stars: l.feedback_stars || null, text: l.feedback_text || '', given_at: l.feedback_at, edited: !!l.feedback_edited } : null,
     })),
+    weekly_goals: {
+      service: patient.service || null,
+      current: { meals: { per_day: patient.meal_goal_per_day, days: patient.meal_goal_days }, activity: { minutes_per_day: patient.activity_goal_min, days: patient.activity_goal_days } },
+      history: patient.goal_history || [],
+      last_8_weeks: Object.fromEntries(kindsFor(patient).map((k) => [k === 'meal' ? 'meals' : 'activity',
+        weeklyChart(k, patient, { diet, idx: indexLogs(logs, acts) }).weeks.map((w) => ({ week_of: w.monday, days_met: w.met, goal_days: w.goal?.days ?? null, goal_per_day: w.goal?.per ?? null, total: w.total }))])),
+    },
     activity_logs: acts.map((a) => ({
       date: a.date, activity: a.kind, activity_label: activityName(a), minutes: a.minutes,
       intensity: a.intensity || null, terrain: a.terrain || null, distance_km: a.distance_km || null,
