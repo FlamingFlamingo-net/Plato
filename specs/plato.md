@@ -2,7 +2,7 @@
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
-**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: all 3 slices built (activity log, progress photos, nutritionist home with feeds); Pendientes is a placeholder until the client defines it. Parked: Online plan, Legal.
+**Status:** built (v1) + security fixes + patient export + print weekly diet + close account. Patient activity dashboard: all 3 slices built (activity log, progress photos, nutritionist home with feeds); Pendientes confirmed by the client. Parked: Online plan, Legal.
 **Offline:** off.
 **Source:** triage of nutrimind.net features, rows 1–10 (P0).
 
@@ -513,7 +513,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 | 4 | Planes de comidas (**meal plan** = one day) | a day of meals (5 slots), reusable in diets | future (with the food catalogue) |
 | 5 | Dietas (**diet** = one week) | diet templates (Feature: Saved diet templates) | built (Plantillas page) |
 | 6 | Cuestionarios | connects the client's Google Forms (Feature: Questionnaires) | specced, parked |
-| 7 | Planes de ejercicio | exercise plans prescribed by the nutritionist (Feature: Exercise plans) | waiting on the client's Excel sheet |
+| 7 | Planes de ejercicio | exercise plans prescribed by the nutritionist (Feature: Exercise plans) | sheet received; proposal written, waiting for answers |
 
 - **Terms (owner, 2026-10-26):** **meal plan** ("Plan de comidas") = one day of meals; **diet** ("Dieta") = one week. A diet can be built from meal plans (e.g. Monday-Friday = plan A, weekend = plan B). Today's diet editor and templates are weekly diets.
 - **Naming (owner, 2026-10-26):** the home tab **Actividades** is what patients *did* (activity log, built); Catálogo #7 is **Planes de ejercicio** (what the nutritionist *prescribes*).
@@ -522,7 +522,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ### Reminders for the owner
 
-- **"Pending dashboard"**: built as the placeholder **Pendientes** (see Slice 3). **Remind the owner to confirm the name and contents with the client**, at each review until it is defined.
+- **"Pending dashboard"**: built as the placeholder **Pendientes** (see Slice 3). Name and contents confirmed by the client (2026-10-27).
 
 ---
 
@@ -862,11 +862,56 @@ Server (migration + hook) → screens (Catálogo page, patient tab, phone card, 
 
 ---
 
-## Feature: Exercise plans (FUTURE — needs the client's Excel sheet)
+## Feature: Exercise plans (analysis of the client's sheet — proposal, waiting for answers)
 
-**What:** exercise plans the nutritionist prescribes (Catálogo → Planes de ejercicio), assigned to patients like diets. Required for the full version.
+**Source:** the client's hypertrophy template ("the most important sheet", 2026-10-27), an Excel workbook with macros. The file stays outside this public repo; its exercise list and texts are the client's and are not copied here.
 
-**Waiting on:** the client's Excel sheet (the owner will provide it). It decides the shape: per-day routines vs. a list of exercises, sets/reps/time, intensity, video links. Then: import the sheet once (like the food catalogue), templates per nutritionist, assign to a patient, show on the patient's phone, and link with the patient's activity log ("planned vs. done") later.
+**What the sheet does (pattern found):**
+- **Datos:** intake for training: name, age, primary goals, secondary goals, injury history, training experience.
+- **Base de datos:** the client's **exercise library**: about 14 muscle groups (Pectoral, Espalda, Bíceps, Tríceps, three deltoid heads, Cuádriceps, Isquiosurales, Glúteo, Abdomen, Pantorrilla, Trapecio, Aductor), grouped by **movement pattern** (empuje horizontal/vertical, tracción…), many with a **YouTube video** link. It also holds the **effort scale** the patient picks from: RER 5+ … RER 1, RER 0, RER −1 (fallo), each with an emoji.
+- **Programa (coach):** a **5-week block** ("Semana 1–5"), up to **6 training days** (day 1 is named, e.g. "Empujes"; others "Día 2…6"), up to **10 exercises per day** (A–J). Per exercise and week: muscle group, exercise, **sets (S)**, **reps (R)**, **target RER**, **rest**, note. Per set (up to 5): reps and load done; then average reps and total load.
+- **Microbloque 1–5 (patient, one per week):** the same days as a log: per set **reps, load, RER felt**, a **"Ver video"** link, notes, and **kg/lb** choice. After each set it says **what to do next** by comparing the RER felt with the target: same → keep the load; more in reserve → "consider increasing slightly"; less → lower it.
+- **Reporte / Registro:** **weekly training volume per muscle group** (sets per muscle per week).
+
+**Proposal for AHT Fitness (Entrenamiento service; nothing built yet):**
+1. **Exercise library** (the client's, imported once from his sheet; editable): name, muscle group, movement pattern, video link (opens YouTube in a new tab; no embedded Google/YouTube code).
+2. **Program editor** (nutritionist/coach): a block of N weeks (default 5) × up to 6 days (named) × up to 10 exercises, with sets, reps, target RER, rest and note **per week** (so progression across weeks is written once, like his sheet). Saved programs as templates, like diet templates.
+3. **Patient training log:** today's session on the phone: each exercise with its video link and target; per set **reps, load (kg/lb per patient), RER** with the same emoji scale; after each set the same **next-set advice** (keep / increase slightly / lower). A finished session also counts for the **activity goal** (asks the minutes).
+4. **Reports:** weekly sets per muscle group, average reps and total load per exercise, across the block; on the patient page and in the export.
+5. **Training intake** on the patient page: goals, injury history, experience (his "Datos").
+
+Slices (proposal): 1 library + program editor; 2 patient log with advice; 3 reports + export; 4 templates + intake.
+
+**Questions for the client (before specs):**
+1. **RER or RIR?** The sheet uses both words ("RIR Paciente" and "RER"). Which label should patients see?
+2. Are **5 weeks, 6 days, 10 exercises, 5 sets** fixed limits or just what fits the sheet?
+3. **Volume:** does a set count only for the exercise's main muscle group (as in the sheet), or also for secondary muscles?
+4. Does the **patient log every set** in the app, or only some sessions?
+5. Can his exercise library be **shared** with other coaches on the platform later, or stays his?
+
+---
+
+## Client answers (2026-10-27)
+
+- **Product name:** "AHT Fitness" replaces "Plato" as the name of the project and the website. **Scope (owner, 2026-10-27):**
+  - Rename every name people see (page titles, header, installed-app name, messages, printouts and export, README, spec).
+  - Keep "plato" where it is the Spanish word for dish ("Plato de hoy", the plate graphic). The old tagline "tu dieta, plato a plato" becomes the client's slogan **"Construcción corporal con ciencia y estrategia"**.
+  - Keep internal code names (style prefix `plato-`, `/api/plato/` routes, the saved sign-in key, file names): nobody sees them, and changing the sign-in key would sign everyone out.
+  - **Temporary icon:** a simple "AHT" monogram until the client's final logo (design phase).
+  - GitHub repository name: optional, done by the owner in GitHub settings (the local link is updated after).
+- **Meals:** **3 main meals plus N snacks, 2 by default, up to 4** (owner, 2026-10-27). Today's diet has fixed slots (desayuno, colación de la mañana, comida, colación de la tarde, cena = 3 + 2); 0–4 snacks per patient needs a small diet change (the extra ones: "colación nocturna" and a fourth). **The meal goal counts all planned meals of the day** (3 + 2 = 5 by default), not a separate number: changes the built goal (spec needed). **Activity:** depends on the regimen, up to 7 days, **5 by default** (already so).
+- **Patients deleting progress photos:** off by default — confirmed.
+- **Minors:** yes, he sees patients under 18. The current rule stays (no progress photos under 18); Legal L9 still applies before real minors (parent/guardian consent).
+- **Agenda:** he uses **Google Calendar's own appointment schedules** (booking pages). **Decision (owner, 2026-10-27): option 1 (link) now**, option 2 later. Options in "Agenda options" below.
+- **Food data:** he will provide it later.
+- **Pendientes:** name and contents **confirmed** (no longer a placeholder).
+- **Exercise sheet questions:** to discuss later with the owner.
+
+### Agenda options (Google Calendar)
+1. **Link (small):** his booking page link saved in Ajustes; the patient app shows **"Agendar cita"** (opens in a new tab); Inicio's Agenda tab opens it too. No Google setup.
+2. **Read-only appointments (medium):** the server reads his calendar through Google Calendar's **private iCal address** (Calendar settings → "Dirección secreta en formato iCal"); no Google sign-in. Shows **today's appointments** on Inicio (Hoy panel + Agenda tab) and **"Tu próxima cita"** on the patient's phone, matched by the patient's name or email in the event. Updates every few minutes, read-only; the private address is stored on the server only (it gives read access to his whole calendar).
+3. **Two-way (large):** booking inside AHT Fitness through the Google Calendar API: Google Cloud project, his Google sign-in (OAuth), Google's app verification for calendar access (can take weeks), token upkeep. Not recommended now.
+Recommended: 1 now (hours), 2 as a feature when wanted.
 
 ---
 
