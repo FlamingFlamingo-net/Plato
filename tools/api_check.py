@@ -623,6 +623,52 @@ check("M6 feedback on a check without photo is refused; on its photo it works",
 s, r = call("DELETE", f"{ML}/{chk2['id']}", token=tpm)
 check("M7 the patient undoes their check the same day", s == 204, s)
 
+# ---- service + weekly goals (spec "Feature: Weekly goals", slice 2) ----
+PR = "/api/collections/patients/records"
+def monday(d):
+    return d - timedelta(days=d.weekday())
+s, gn = new_patient(ta, a_id, "ZZ Meta Nutri")          # no service sent (older screens)
+check("G1 a new patient without a service gets Nutrición: meals 3 x 5 on, activity off (30 min kept)",
+      gn.get("service") == "nutrition" and gn.get("meal_goal_days") == 5 and gn.get("meal_goal_per_day") == 3
+      and gn.get("activity_goal_days") == 0 and gn.get("activity_goal_min") == 30, gn)
+check("G1 its goal history starts this week", len(gn.get("goal_history") or []) == 1 and gn["goal_history"][0]["from"] in
+      (str(monday(date.today())), str(monday(date.today() + timedelta(days=1)))), gn.get("goal_history"))
+pt = pw()
+s, gt = call("POST", PR, {"name": "ZZ Meta Entreno", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id,
+                          "password": pt, "passwordConfirm": pt, "service": "training"}, ta)
+check("G1 Entrenamiento: activity 30 min x 5 on, meals off", s == 200 and gt["activity_goal_days"] == 5 and gt["meal_goal_days"] == 0, (s, gt))
+s, gb = call("POST", PR, {"name": "ZZ Meta Ambos", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id,
+                          "password": pt, "passwordConfirm": pt, "service": "both"}, ta)
+check("G1 Nutrición + entrenamiento: both on", s == 200 and gb["activity_goal_days"] == 5 and gb["meal_goal_days"] == 5, (s, gb))
+s, r = call("POST", PR, {"name": "ZZ Meta Hist", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id,
+                         "password": pt, "passwordConfirm": pt, "goal_history": [{"from": "2020-01-06"}]}, ta)
+check("G2 nobody writes the goal history directly (create)", s in (400, 403, 404), s)
+wk = str(monday(date.today()))
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_days": 4, "activity_goal_min": 45, "goal_week": wk}, ta)
+check("G3 the nutritionist sets 45 min x 4 days; this week's history entry follows (no duplicate)",
+      s == 200 and r["activity_goal_days"] == 4 and len(r["goal_history"]) == 1 and r["goal_history"][-1]["act_min"] == 45, (s, r))
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_min": 47}, ta)
+check("G3 minutes must go in steps of 5", s == 400, (s, r))
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_min": 305}, ta)
+check("G3 more than 300 minutes a day is refused", s == 400, s)
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"meal_goal_per_day": 6}, ta)
+check("G3 more than 5 meals a day is refused", s == 400, s)
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"meal_goal_days": 0, "goal_week": wk}, ta)
+check("G3 Sin meta (0 days) is allowed", s == 200 and r["meal_goal_days"] == 0, (s, r))
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_days": 3, "goal_week": "2020-01-06"}, ta)
+check("G4 a goal week far from now is ignored (the server uses the current week)",
+      s == 200 and all(h["from"] != "2020-01-06" for h in r["goal_history"]), (s, r.get("goal_history")))
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"goal_history": []}, ta)
+check("G2 nobody writes the goal history directly (update)", s == 404, s)
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"service": ""}, ta)
+check("G5 the service cannot be cleared", s == 404, s)
+s, r = call("PATCH", f"{PR}/{pm['id']}", {"activity_goal_days": 7}, tpm)
+check("G5 the patient cannot change their own goals", s == 404, s)
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_days": 7}, tb)
+check("G5 another nutritionist cannot change them", s == 404, s)
+s, mine = call("GET", f"{PR}/{pm['id']}", token=tpm)
+check("G5 the patient reads their goals", s == 200 and mine.get("service") and "goal_history" in mine, s)
+
 failed = [n for n, ok in results if not ok]
 print(f"\n{len(results) - len(failed)}/{len(results)} passed")
 sys.exit(1 if failed else 0)
