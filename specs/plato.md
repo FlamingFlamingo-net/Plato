@@ -526,7 +526,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 
 ---
 
-## Feature: Weekly goals (approved 2026-10-26 — 2 slices)
+## Feature: Weekly goals (built — 2 slices)
 
 **Service decides the goals (owner, 2026-10-26):** patients come for **nutrition, training, or both**, from someone losing weight to high-performance athletes. Each patient gets a **service** (set by the nutritionist): **Nutrición**, **Entrenamiento** or **Nutrición + entrenamiento**. It decides which weekly goals apply:
 
@@ -553,7 +553,16 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 - Found and fixed during build: the date window accepted **two days ahead** in the evening (UTC margin); it now uses the real time-zone limits (UTC+14 / UTC−12), so it is today and yesterday wherever the patient is. Photo-card times were cut off on narrow cards (card grid column fixed). Check cards no longer stretch to a photo card's height.
 - **Result (throwaway server):** API 184/184 (17 new checklist checks), screens `tools/checklist_check.mjs` 21/21, every earlier suite passes (demo 22/22, home 18/18, age 13/13, feedback 16/16, templates 14/14, progress 15/15, activity 17/17, close 12/12, print + export 25/25), security probe 0 findings. Real server on v13: Ana's 5 meals show as a checklist, no errors.
 
-### Slice 2 — weekly goals (below)
+### Slice 2 — service + weekly goals (built 2026-10-27)
+
+**Built:** as specified below. Details settled during build:
+- **Meal goal with fewer planned meals than N** (e.g. a day with 2 planned, goal 3): all planned meals are enough. **No diet that day:** N checked meals of any slot. Extras never count.
+- **Server defaults to Nutrición** when no service is sent (older screens and scripts keep working); the screen always sends the two-card choice. The service can't be cleared.
+- **Goal history week = the patient's local Monday**, sent by the screen (`goal_week`) and accepted only within the real time-zone limits; otherwise the server's Monday.
+- **Right after the update, last week has no goal** (history starts this week), so the Pendientes goal rows appear from the following week on. That is correct by the rule "past weeks keep the goal they had".
+- Grouped Pendientes rows sit **above** the equal-height tiles (an expanding list inside the tile grid would stretch every tile); patients without the app are left out of the goal rows (they have their own setup row).
+- Patient page: "Metas de la semana" card at the top of Registros with **Cambiar metas** (service cards + meal and activity goals; turning a service on turns its goal on at 5 days, off turns it off).
+- **Result (throwaway server):** API 200/200 (16 new goal checks), screens `tools/goal_check.mjs` 27/27 (two cards, can't turn both off, steps of 5, 20 min = activo, 20+15 counts, 150 min = one day, Sunday walk in last week, meals 3 of 3, ¡Meta cumplida!, Sin meta, 8-week chart with the goal moving, grouped Pendientes counting as 1, list badges, closed account read-only, export 16 rows, phone without sideways scroll), upgrade tested on old data (existing patients → both, 3×5 and 30×5), all earlier suites pass, probe 0 findings. Real server on v14: Ana and Carlos have both goals.
 - **Activity goal** = below. Athletes need more: minutes per day go up to **300** (two sessions a day).
 - **Picking the service (owner, 2026-10-26):** in "Nuevo paciente" (and on the patient page), **two cards side by side**: **Nutrición** (left, selected by default) and **Entrenamiento** (right). Each card is a toggle (icon, name, one line: "Dieta semanal y registro de comidas" / "Actividad física y metas de ejercicio"); selecting both = Nutrición + entrenamiento; at least one must stay selected (the last one can't be turned off; a short hint says why). Real checkboxes underneath (keyboard and screen readers), styled as cards. On a phone they stack. Existing patients get **both** (so nothing disappears); the nutritionist adjusts.
 - The service also prepares later features (Exercise plans show only for Entrenamiento / ambos).
