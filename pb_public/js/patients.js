@@ -31,7 +31,7 @@ async function load() {
     const [patients, unseen, unseenActs, unseenProgress] = await Promise.all([
       list('patients', { sort: archivedView ? '-archived_at' : 'name', fields: 'id,name,sex,birth_date,joined,archived_at',
         filter: archivedView ? 'archived_at != ""' : 'archived_at = ""' }),
-      archivedView ? [] : list('meal_logs', { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'patient', perPage: 500 }),
+      archivedView ? [] : list('meal_logs', { filter: 'seen_at = "" && patient.archived_at = "" && (photo != "" || slot = "extra")', fields: 'patient', perPage: 500 }),
       archivedView ? [] : list('activity_logs', { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'patient', perPage: 500 }),
       archivedView ? [] : list('progress_photos', { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'patient', perPage: 500 }),
     ]);

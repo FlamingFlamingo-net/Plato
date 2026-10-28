@@ -23,9 +23,23 @@
       <h2>¡Listo! Ya tienes tu plan.</h2>
       <section>Toca <strong>Instalar app</strong> arriba para tenerla en tu pantalla de inicio. En iPhone: Compartir → Agregar a inicio.</section>
     </div>
+    <div class="plato-day-switch" id="day-switch" role="group" aria-label="¿Qué día quieres ver?">
+      <button type="button" data-day="today" aria-pressed="true">Hoy</button>
+      <button type="button" data-day="yesterday" aria-pressed="false">Ayer</button>
+    </div>
     <div class="plato-plate-wrap" id="plate"></div>
     <p id="status" class="plato-muted" role="status">Cargando…</p>
     <ol class="plato-meals" id="meals" aria-label="Comidas de hoy"></ol>
+    <section aria-labelledby="extras-title" class="plato-extras">
+      <div class="plato-row plato-row--between">
+        <h2 class="plato-section-title" id="extras-title" style="margin:0">Comidas extra</h2>
+        <a class="btn" data-variant="outline" data-size="sm" href="/log.html?slot=extra" id="add-extra">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Agregar comida extra</a>
+      </div>
+      <p class="plato-muted plato-small" id="extras-empty" style="margin:0.5rem 0 0">¿Comiste algo fuera de tu plan? Regístralo aquí, sin problema: le ayuda a tu nutrióloga o nutriólogo a ajustar tu plan.</p>
+      <ul class="plato-meals" id="extras" aria-label="Comidas extra"></ul>
+    </section>
     <section aria-labelledby="fb-title" id="fb-section" hidden>
       <h2 class="plato-section-title" id="fb-title">Retroalimentación de tu nutrióloga/o</h2>
       <ul class="plato-activities" id="fb-list" aria-label="Retroalimentación reciente"></ul>

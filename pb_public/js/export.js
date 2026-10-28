@@ -54,6 +54,13 @@ async function render() {
   const a = age(birth);
 
   const photoCards = await Promise.all(logs.map(async (l) => {
+    if (!l.photo) {   // a check ("lo comió") or an extra with only a note
+      return h('div', { class: 'doc-log doc-log--check' },
+        h('div', {},
+          h('strong', { text: `${SLOT_LABEL[l.slot]} · ${shortDate(l.date)}` }),
+          h('span', { class: 'plato-muted', text: `${l.slot === 'extra' ? 'Registrada' : 'Marcada como comida'} ${timeOf(l.created)}${l.seen_at ? ' · vista' : ''}` }),
+          l.note ? h('p', { text: l.note }) : null));
+    }
     const img = h('img', { alt: `Foto de ${SLOT_LABEL[l.slot].toLowerCase()} del ${shortDate(l.date)}`, loading: 'eager', decoding: 'sync' });
     img.src = await photoUrl(l, '');
     return h('figure', { class: 'doc-log', style: 'margin:0' }, img,
@@ -177,7 +184,7 @@ jsonBtn.addEventListener('click', () => {
     diet: diet ? { title: diet.title || '', meals: diet.meals || {}, updated: diet.updated } : null,
     meal_logs: logs.map((l) => ({
       date: l.date, meal: l.slot, meal_label: SLOT_LABEL[l.slot], note: l.note || '',
-      sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo,
+      sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo || null, checked_without_photo: !l.photo && l.slot !== 'extra',
       feedback: l.feedback_at ? { stars: l.feedback_stars || null, text: l.feedback_text || '', given_at: l.feedback_at, edited: !!l.feedback_edited } : null,
     })),
     activity_logs: acts.map((a) => ({

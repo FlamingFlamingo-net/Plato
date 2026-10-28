@@ -1,7 +1,7 @@
 // home.js — the nutritionist's home (spec "Feature: Patient activity dashboard", slice 3).
 // Banner (own photo + live text) · tabs with counts · Hoy summary · cards for the selected tab.
 // Not live: refreshes when you come back to the tab, and with "Actualizar" (decision 1).
-import { requireRole, list, update, photoUrl, signOut, q, SLOT_LABEL, localDate, dateOnly } from './api.js';
+import { requireRole, list, update, photoUrl, signOut, q, SLOT_LABEL, localDate, dateOnly, isCheck } from './api.js';
 import { h, icon, toast, busy, offlineBanner, longDate, shortDate, timeOf } from './ui.js';
 import { activitySummary } from './activity.js';
 import { POSE_LABEL } from './progress-photos.js';
@@ -12,7 +12,9 @@ offlineBanner();
 const me = await requireRole('nutritionists');
 document.getElementById('sign-out').addEventListener('click', signOut);
 
-const COLL = { meal: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos' };
+const COLL = { meal: 'meal_logs', mealphoto: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos' };
+// Fotos shows meal logs with a photo only (checks have none); same collection, its own page cursor.
+const EXTRA_FILTER = { mealphoto: ' && photo != ""' };
 const PAGE = 50;
 const initials = (s) => String(s || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 const nowIso = () => new Date().toISOString().replace('T', ' ');
@@ -51,7 +53,7 @@ let shownItems = [];   // what the cards show now (for "Marcar todo como visto")
 let loadedAt = 0;
 
 const typesFor = (tab, filter) => tab === 'activity' ? ['activity']
-  : tab === 'photos' ? (filter === 'progress' ? ['progress'] : filter === 'meal' ? ['meal'] : ['meal', 'progress'])
+  : tab === 'photos' ? (filter === 'progress' ? ['progress'] : filter === 'meal' ? ['mealphoto'] : ['mealphoto', 'progress'])
   : ['meal', 'activity', 'progress'];
 
 async function fetchPage(type) {
@@ -59,8 +61,8 @@ async function fetchPage(type) {
   // Tie-safe cursor: records saved in the same millisecond share "created", so page on (created, id).
   const c = p.last;
   const after = c ? ` && (created < ${q(c.created)} || (created = ${q(c.created)} && id < ${q(c.id)}))` : '';
-  const items = await list(COLL[type], { filter: `patient.archived_at = ""${after}`, sort: '-created,-id', perPage: PAGE });
-  for (const x of items) x.type = type;
+  const items = await list(COLL[type], { filter: `patient.archived_at = ""${EXTRA_FILTER[type] || ''}${after}`, sort: '-created,-id', perPage: PAGE });
+  for (const x of items) x.type = type === 'mealphoto' ? 'meal' : type;
   p.items.push(...items);
   if (items.length) p.last = items.at(-1);
   if (items.length < PAGE) p.done = true;
@@ -73,6 +75,7 @@ const TOP = '\uffff'; // "nothing loaded yet": sorts above every key
 async function visible(types) {
   for (;;) {
     const merged = types.flatMap((t) => pools[t].items).sort((a, b) => key(b).localeCompare(key(a)));
+    // (one pool per collection view, so no record appears twice in one tab)
     const open = types.filter((t) => !pools[t].done);
     const edge = (t) => (pools[t].last ? key(pools[t].last) : TOP);
     const boundary = open.length ? open.map(edge).reduce((a, b) => (a > b ? a : b)) : '';
@@ -84,7 +87,8 @@ async function visible(types) {
 
 async function loadAll() {
   const since = new Date(); since.setDate(since.getDate() - 2); // today and the 2 days before = "3 days"
-  const unseenOf = (t) => list(COLL[t], { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'id,patient', perPage: 500 });
+  // Bare checks (no photo) are not counted as new: they would flood the counts (spec "Weekly goals", slice 1).
+  const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : ''}`, fields: 'id,patient', perPage: 500 });
   const [ps, diets, recent, um, ua, up, tpls] = await Promise.all([
     list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined', sort: 'name', perPage: 500 }),
     list('diets', { fields: 'patient', perPage: 500 }),
@@ -98,7 +102,7 @@ async function loadAll() {
   recentMeals = new Set(recent.map((m) => m.patient));
   unseen = { meal: um, activity: ua, progress: up };
   templateCount = tpls.length;
-  pools = { meal: { items: [], last: null, done: false }, activity: { items: [], last: null, done: false }, progress: { items: [], last: null, done: false } };
+  pools = Object.fromEntries(Object.keys(COLL).map((k) => [k, { items: [], last: null, done: false }]));
   loadedAt = Date.now();
 }
 
@@ -223,6 +227,15 @@ function card(l) {
       head(l),
       h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon('activity', 18)), h('strong', { text: 'Actividad física' })),
       h('p', { class: 'plato-activity-summary', text: activitySummary(l) }),
+      l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
+      h('div', {}, seenControl(l)));
+  }
+  if (l.type === 'meal' && !l.photo) {   // a check ("lo comió") or an extra with only a note
+    const extra = l.slot === 'extra';
+    return h('li', { class: 'plato-log-card plato-log-card--check', dataset: { id: l.id } },
+      head(l),
+      h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon(extra ? 'plus' : 'check', 16)),
+        h('strong', { text: extra ? 'Comida extra' : SLOT_LABEL[l.slot] }), extra ? null : h('span', { class: 'plato-muted plato-small', text: 'lo comió' })),
       l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
       h('div', {}, seenControl(l)));
   }

@@ -16,7 +16,10 @@ export const SLOTS = [
   ['snack_pm', 'Colación de la tarde'],
   ['dinner', 'Cena'],
 ];
-export const SLOT_LABEL = Object.fromEntries(SLOTS);
+// SLOTS = the diet's five meals. A meal log can also be "extra" (eaten outside the diet; never a diet slot).
+export const SLOT_LABEL = { ...Object.fromEntries(SLOTS), extra: 'Comida extra' };
+// A meal log without photo on a planned slot is a check ("lo comí").
+export const isCheck = (l) => !l.photo && l.slot !== 'extra';
 export const WEEKDAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export class ApiError extends Error {

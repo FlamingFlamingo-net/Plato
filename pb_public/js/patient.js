@@ -1,7 +1,7 @@
 // patient.js — one patient, seen by their nutritionist: measurements, diet, meal photos, private notes, access link.
 import {
   requireRole, view, list, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
-  SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly,
+  SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly, isCheck,
 } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, isMinor, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
@@ -380,7 +380,8 @@ async function loadLogs() {
   logs = [...meals.map((l) => ({ ...l, type: 'meal' })), ...acts.map((a) => ({ ...a, type: 'activity' })),
     ...progress.map((p) => ({ ...p, type: 'progress' }))]
     .sort((x, y) => (y.date + y.created).localeCompare(x.date + x.created));
-  const unseen = logs.filter((l) => !l.seen_at).length;
+  // Bare checks (no photo) don't count as new: they would flood the badge (spec "Weekly goals", slice 1).
+  const unseen = logs.filter((l) => !l.seen_at && !(l.type === 'meal' && isCheck(l))).length;
   logCount.hidden = !unseen;
   logCount.textContent = String(unseen);
   logCount.setAttribute('aria-label', `${unseen} sin ver`);
@@ -406,6 +407,17 @@ async function renderLogs() {
           h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon('activity', 18)), h('strong', { text: 'Actividad física' })),
           h('span', { class: 'plato-muted plato-small', text: timeOf(l.created) })),
         h('p', { class: 'plato-activity-summary', text: activitySummary(l) }),
+        l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
+        h('div', {}, seenBtn)));
+      continue;
+    }
+    if (l.type === 'meal' && !l.photo) {   // a check ("lo comió") or an extra with only a note
+      const extra = l.slot === 'extra';
+      feed.append(h('li', { class: 'plato-log-card plato-log-card--check' },
+        h('div', { class: 'plato-row plato-row--between' },
+          h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon(extra ? 'plus' : 'check', 16)),
+            h('strong', { text: extra ? 'Comida extra' : SLOT_LABEL[l.slot] }), extra ? null : h('span', { class: 'plato-muted plato-small', text: 'lo comió' })),
+          h('span', { class: 'plato-muted plato-small', text: timeOf(l.created) })),
         l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
         h('div', {}, seenBtn)));
       continue;

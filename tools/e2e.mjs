@@ -129,9 +129,11 @@ await step('7 today', async () => {
   await shot(phone, '07-today-empty');
 });
 
-// 8–9. Log lunch with a photo; plate fills a slice
+// 8–9. Check lunch on the checklist, then add its photo; plate fills a slice
 await step('8 log lunch', async () => {
-  await phone.click('a[href="/log.html?slot=lunch"]');
+  await phone.click('#meals li[data-slot="lunch"] .plato-check');
+  await phone.waitFor(`document.querySelector('.plate-count')?.textContent === '1/3' && document.querySelector('#meals li[data-slot="lunch"] a[href^="/log.html?slot=lunch"]')`);
+  await phone.click('#meals li[data-slot="lunch"] a[href^="/log.html?slot=lunch"]');
   await phone.waitUrl('/log.html');
   await phone.waitFor(`document.querySelector('input[name=slot][value=lunch]')?.checked`);
   await phone.setFile('#photo', process.env.PHOTO);

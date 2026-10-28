@@ -10,15 +10,15 @@ const s = (tag, attrs = {}) => {
 };
 
 // slots: [{slot, done}] in day order. One slice per planned meal; a logged meal fills its slice.
-export function plate(slots, size = 220) {
+export function plate(slots, size = 220, day = 'hoy') {
   const c = size / 2;
   const rim = c - 4;
   const r = rim * 0.8;
   const done = slots.filter((x) => x.done).length;
   const svg = s('svg', { viewBox: `0 0 ${size} ${size}`, width: size, height: size, class: 'plato-plate', role: 'img' });
   const label = slots.length
-    ? `Plato de hoy: ${done} de ${slots.length} comidas registradas. ` + slots.map((x) => `${SLOT_LABEL[x.slot]}: ${x.done ? 'registrada' : 'pendiente'}`).join('. ')
-    : 'Hoy no hay comidas en tu plan.';
+    ? `Plato de ${day}: ${done} de ${slots.length} comidas registradas. ` + slots.map((x) => `${SLOT_LABEL[x.slot]}: ${x.done ? 'registrada' : 'pendiente'}`).join('. ')
+    : `${day === 'hoy' ? 'Hoy' : 'Ayer'} no hay comidas en tu plan.`;
   svg.append(Object.assign(s('title'), { textContent: label }));
   svg.append(s('circle', { cx: c, cy: c, r: rim, class: 'plate-rim' }));
   svg.append(s('circle', { cx: c, cy: c, r: rim - 10, class: 'plate-well' }));
