@@ -67,15 +67,15 @@ tn = call("POST", "/api/collections/nutritionists/auth-with-password", {"identit
 token_n, nid = tn["token"], tn["record"]["id"]
 
 
-def patient(name, sex, birth, height):
+def patient(name, sex, birth, height, service="nutrition"):
     p = secrets.token_hex(16)
     return call("POST", "/api/collections/patients/records", {
         "name": name, "sex": sex, "birth_date": f"{birth} 12:00:00.000Z", "height_cm": height,
-        "nutritionist": nid, "password": p, "passwordConfirm": p,
+        "nutritionist": nid, "password": p, "passwordConfirm": p, "service": service,
     }, token_n)
 
 
-ana = patient("Ana López Ríos", "female", "1991-03-14", 162)
+ana = patient("Ana López Ríos", "female", "1991-03-14", 162, "both")
 carlos = patient("Carlos Ruiz Peña", "male", "1985-11-02", 175)
 
 today = date.today()
