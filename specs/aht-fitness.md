@@ -1,4 +1,6 @@
-# Plato (working name)
+# AHT Fitness
+
+Formerly "Plato" (working name); renamed to the client's brand on 2026-10-27.
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
 
@@ -110,7 +112,7 @@ Run on the current release. Mark each step pass or fail. Last run: 2026-10-19, h
 
 ## Open questions
 
-1. Product name? **Recommended:** keep "Plato" as the working name. Rename before launch.
+1. Product name? **Recommended:** keep "AHT Fitness" as the working name. Rename before launch.
 2. UI language? **Recommended:** Spanish (Mexico) only in v1. English later.
 3. Fixed meal slots? **Recommended:** yes, five: breakfast, morning snack, lunch, afternoon snack, dinner. The nutritionist can leave a slot empty.
 4. Does a diet repeat every week? **Recommended:** yes. One active diet per patient. A new diet replaces it.
@@ -120,11 +122,11 @@ Run on the current release. Mark each step pass or fail. Last run: 2026-10-19, h
 
 ## Direction (owner, 2026-10-26)
 
-**Both:** the live MVP launches with **the direct client only**, run as if Plato were their own platform; the code keeps the **multi-nutritionist platform** shape (data per nutritionist, shared catalogue later) so it can scale if it succeeds. Narrowing to a single-client app only if that proves to bring large value. Consequence: client-specific looks and texts are a theme/setting, never hard-coded.
+**Both:** the live MVP launches with **the direct client only**, run as if AHT Fitness were their own platform; the code keeps the **multi-nutritionist platform** shape (data per nutritionist, shared catalogue later) so it can scale if it succeeds. Narrowing to a single-client app only if that proves to bring large value. Consequence: client-specific looks and texts are a theme/setting, never hard-coded.
 
 ## Decisions (made during build)
 
-- Open questions 1–5: the recommended answers apply (Plato, Spanish UI, five fixed slots, one weekly diet that repeats, patient sees all measurements).
+- Open questions 1–5: the recommended answers apply (AHT Fitness, Spanish UI, five fixed slots, one weekly diet that repeats, patient sees all measurements).
 - The diet is one record per patient with the week in a structured `meals` field (day → meal → text), not 35 separate rows. One save, no half-saved weeks. A later version can still link a meal to foods.
 - Patients pick their own email when they accept the invite. The nutritionist never sees or types a patient password.
 - Meal photos are private files: only the patient and their nutritionist can open them.
@@ -187,11 +189,11 @@ Not legal advice. A map of what to ask a lawyer. Checked 2026-10-23.
 
 ### Must clear before real patients
 
-| # | Topic | What it means for Plato | Ask the lawyer |
+| # | Topic | What it means for AHT Fitness | Ask the lawyer |
 |---|---|---|---|
 | L1 | Data protection law: LFPDPPP 2025 (in force 2025-03-21; authority SABG, ex-INAI) | Health data is sensitive. It needs a privacy notice and express consent. The notice says data is stored in the USA (Fly.io, Dallas). | What form of consent? Is a checkbox at join enough? |
-| L2 | Roles | The nutritionist is the controller (*responsable*). Plato is the processor (*encargado*). | Terms of use and a processing contract with each nutritionist. A privacy notice for nutritionists' own data. |
-| L3 | ARCO rights (access, correction, deletion, objection) | Patients can ask for their data or its deletion. Plato needs export and close-account (features below). | Response deadlines. Who answers: the nutritionist or us? How does the nutritionist check the requester's identity before handing over data? How should the file be delivered securely (in person, paper, WhatsApp, email)? |
+| L2 | Roles | The nutritionist is the controller (*responsable*). AHT Fitness is the processor (*encargado*). | Terms of use and a processing contract with each nutritionist. A privacy notice for nutritionists' own data. |
+| L3 | ARCO rights (access, correction, deletion, objection) | Patients can ask for their data or its deletion. AHT Fitness needs export and close-account (features below). | Response deadlines. Who answers: the nutritionist or us? How does the nutritionist check the requester's identity before handing over data? How should the file be delivered securely (in person, paper, WhatsApp, email)? |
 | L4 | Clinical record retention (NOM-004-SSA3-2012) | Records are kept at least 5 years after the last consultation. This conflicts with deletion. | Are a nutritionist's notes and measurements a clinical record? Archive instead of delete? |
 | L5 | Breaches | A leak brings notice duties and fines. | What to do and whom to tell if data leaks. |
 
@@ -199,8 +201,8 @@ Not legal advice. A map of what to ask a lawyer. Checked 2026-10-23.
 
 | # | Topic | Note |
 |---|---|---|
-| L6 | Electronic health record certification (NOM-024-SSA3-2012, DGIS) | Plato is a diet tool, not a full record system. Ask if certification applies, mainly before selling to clinics or government. |
-| L7 | Trademark | Check "Plato" with IMPI before buying a domain. |
+| L6 | Electronic health record certification (NOM-024-SSA3-2012, DGIS) | AHT Fitness is a diet tool, not a full record system. Ask if certification applies, mainly before selling to clinics or government. |
+| L7 | Trademark | "AHT Fitness" is the client's brand: confirm the client owns it (IMPI) before buying a domain; the app name follows it. |
 | L8 | Nutrimind | Use features as ideas only. Never copy their text, images, recipes, or food tables. |
 | L9 | Minors | Pediatric patients need a parent or guardian's consent. Keep minors out until then. **Specced:** "Feature: Age limits" (no progress photos under 18, enforced by the server; no guardian unlock). |
 | L10 | Charging money | Taxes and invoices (SAT, CFDI). PROFECO if selling to consumers. |
@@ -213,7 +215,7 @@ Already fine: MIT license for our code; Basecoat keeps its own MIT license.
 
 ## Feature: Export a patient's data (built)
 
-**What:** the nutritionist downloads everything Plato holds about one patient. Use it when the patient asks for their data (L3), or when the patient moves to another nutritionist.
+**What:** the nutritionist downloads everything AHT Fitness holds about one patient. Use it when the patient asks for their data (L3), or when the patient moves to another nutritionist.
 
 **Who:** the nutritionist of that patient only. Patients do not export by themselves in this version (the nutritionist is the controller, L2).
 
@@ -410,7 +412,7 @@ It replaces opening each patient one by one to look for new photos. It absorbs t
 9. 60 events: the first page shows 50, **Cargar más** shows the rest, newest first, no duplicates.
 
 **Risks:**
-- Progress photos are the most sensitive data in Plato (bodies, sometimes in underwear). Legal L1 applies before real patients; the join screen should mention them in the privacy notice. Until then: fake photos only.
+- Progress photos are the most sensitive data in AHT Fitness (bodies, sometimes in underwear). Legal L1 applies before real patients; the join screen should mention them in the privacy notice. Until then: fake photos only.
 - Storage: photos are the main cost driver online (about 0.3–0.6 MB each after shrinking). 100 patients × 3 photos a day ≈ 1–2 GB a month. Fine on a 3 GB disk for a pilot; a cloud bucket later.
 
 **Later (order agreed by the owner, 2026-10-26):**
@@ -418,7 +420,7 @@ It replaces opening each patient one by one to look for new photos. It absorbs t
 2. Comments on any event (activities too; reuses the feedback dialog, text only).
 3. Side-by-side before/after comparison of progress photos (same pose, a date picker each).
 4. Live updates on Inicio (PocketBase realtime).
-5. Reminders to log: needs Plato online (push notifications need HTTPS + the installed app); until then only an in-app nudge.
+5. Reminders to log: needs AHT Fitness online (push notifications need HTTPS + the installed app); until then only an in-app nudge.
 - **Dropped:** calories burned from activity (owner, 2026-10-26). Estimates are rough and invite "I can eat more" thinking; revisit with the food catalogue, decided by the nutritionist.
 
 **Not now:** step counters, smartwatch or Google Fit / Apple Health import; GPS routes; automatic body measurements from photos.
@@ -443,13 +445,13 @@ It replaces opening each patient one by one to look for new photos. It absorbs t
 
 ### Upgrades over Nutrimind's home (owner approved all 8, 2026-10-25)
 
-Reference: Nutrimind's home (banner image + 6 menu buttons + a "Tip Nutrimind" card). Plato does not copy it 1:1:
+Reference: Nutrimind's home (banner image + 6 menu buttons + a "Tip Nutrimind" card). AHT Fitness does not copy it 1:1:
 1. **Banner = photo only.** Name, clinic and contact are live text from the nutritionist's profile on top of the photo (readable on phones and by screen readers; no redesign when a phone number changes; logo shown once).
 2. **Short banner**: about a quarter of the laptop screen.
 3. **Buttons show live counts** ("Actividades · 3 nuevas", "Fotos · 2 sin ver").
 4. **Buttons are tabs** that switch the cards below (selected one highlighted); **Recientes** is open by default.
 5. **No marketing card.** That space holds a **"Hoy" summary**: unseen logs, today's appointments (once Agenda exists), patients who went quiet.
-6. **One accent colour** (Plato green). Colour only means state: a badge for new, grey + lock for disabled.
+6. **One accent colour** (AHT Fitness green). Colour only means state: a badge for new, grey + lock for disabled.
 7. **Labels say what is behind them** (e.g. "Lo último de tus pacientes" instead of "Recientes"/"Dashboard"); final wording at build.
 8. **Accessible controls**: solid bordered buttons, visible keyboard focus, the selected tab announced to screen readers.
 
@@ -462,7 +464,7 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 - The right column is the **Hoy** panel with a separate **Marcar todo como visto** button under it (a small gap between them), exactly as wide as Hoy. The bottom of the button lines up with the bottom of the tab grid.
 - The button is always in that spot (the layout does not jump between tabs). It marks as seen only what the selected tab shows, shows how many ("(6)"), and is greyed out when there is nothing to mark (e.g. Pendientes, Catálogo).
 - On a phone: tabs (2 columns), then Hoy, then the button.
-- Mockup file (not in the repo): `../Plato-mockups/home-dashboard.html (next to the repo)`.
+- Mockup file (not in the repo): `../AHT Fitness-mockups/home-dashboard.html (next to the repo)`.
 
 ### Open questions (slice 3 only; slices 1 and 2 do not depend on them)
 
@@ -490,7 +492,7 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 
 ### Slice 3 — nutritionist home (built 2026-10-26)
 
-- New page **Inicio** (`home.html`): a nutritionist lands here after signing in; "Inicio" link in every header, the Plato logo goes here.
+- New page **Inicio** (`home.html`): a nutritionist lands here after signing in; "Inicio" link in every header, the AHT Fitness logo goes here.
 - **Banner** (upgrades 1-2): the nutritionist's photo as background, and live text on top: initials (no logo upload yet), name, clinic, WhatsApp and Instagram. "Agregar foto de portada / Cambiar portada" opens **Ajustes → Tu perfil y portada** (new card: cover photo, name, clinic, WhatsApp, Instagram). With no photo, a soft green background. The cover is a protected file (needs a file token), like every photo.
 - **Tabs** with live counts (upgrades 3, 4, 7, 8): Recientes (default), Actividades, Fotos (chips Todas / Progreso / Comidas), Catálogo, Pendientes, Agenda (grey, dashed, lock, `aria-disabled`, skipped by the arrow keys). Real tabs: arrow keys, Home/End, selected tab announced; the open tab stays in the address (`?tab=`).
 - **Hoy** (upgrade 5): unseen logs and from how many patients, patients with no meal logged in 3 days, patients without the app, and a locked line for today's appointments.
@@ -505,7 +507,7 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 
 The **Catálogo** tab is the nutritionist's library: one card per list, each with a count. Lists that exist open their page; lists not built yet show the same disabled look as Agenda (grey + lock, no text-only cue).
 
-| # | List (client's words) | In Plato | Status |
+| # | List (client's words) | In AHT Fitness | Status |
 |---|---|---|---|
 | 1 | Pacientes | patient list (`patients.html`) | built |
 | 2 | Ingredientes | ingredient database (Feature: Food catalogue) | future, waiting on the data source |
@@ -537,7 +539,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 | Nutrición + entrenamiento | on | on |
 
 - **Meal goal** = consistency, the same shape as activity: **N meals checked a day, D days a week** ("3 comidas al día, 5 días a la semana"). A day counts when at least N of that day's planned meals are checked (slice 1). Extra meals don't count, for or against.
-- **Not policing (owner, 2026-10-26):** Plato shows the patient what they **should** eat and lets them tick it; it never judges what they ate. Words stay neutral; extra meals are welcome information, not failures.
+- **Not policing (owner, 2026-10-26):** AHT Fitness shows the patient what they **should** eat and lets them tick it; it never judges what they ate. Words stay neutral; extra meals are welcome information, not failures.
 
 ### Slice 1 — today's meals as a checklist (built 2026-10-27)
 - **Patient, Hoy:** today's diet becomes a **checklist**: one row per planned meal of the day (slots the nutritionist left empty don't appear): time of day, what the diet says, and a round **check** ("Lo comí"). Tapping the check saves it at once (no photo needed); tapping again undoes it (same day only, like deleting a log today). **Today and yesterday** can be checked (owner, 2026-10-26: people forget in the evening); a "Ayer" switch above the list shows yesterday's meals.
@@ -577,7 +579,7 @@ The **Catálogo** tab is the nutritionist's library: one card per list, each wit
 ### Rules
 - **A day counts ("día cumplido")** when the minutes of all activities on that date add up to the daily minutes (walk 15 + gym 20 = 35 ≥ 30 → counts). Below that, the day is **"activo"** (shown, but not counted).
 - **The week is met** when the counted days reach the goal (4 of 4). Extra days are shown ("5 de 4 días") but nothing more is needed.
-- **Week = Monday to Sunday** (same as the diet), by the activity's **date** (the day it happened, not when it was typed). Local dates, as everywhere in Plato.
+- **Week = Monday to Sunday** (same as the diet), by the activity's **date** (the day it happened, not when it was typed). Local dates, as everywhere in AHT Fitness.
 - **Goal values:** minutes per day 10–300 in steps of 5; meals per day 1–5; days per week 1–7; or **Sin meta** per goal: totals still show, no "behind" items.
 - **Defaults:** activity **30 min, 5 days** (the WHO's 150 min/week for adults, spread out); meals **3 a day, 5 days**. On or off by service (table above). The nutritionist changes them per patient.
 - A goal change applies to the **current week and later**; past weeks keep the goal they had (the server keeps a small history: `{ "from": "2026-10-26", "min": 30, "days": 4 }`).
@@ -634,9 +636,9 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 - Every piece uses **a dark base + one warm accent + heavy, short headings + real photos of the professional**, high contrast and modular blocks.
 - The accent drifted over time (orange and amber in the deck, green and orange in the stretching guide); the new manual **fixes it to gold** and asks not to vary it per piece.
 - The manual sets: black `#0B0B0D`, charcoal `#171719`, gold `#D4AF37`, smoke white `#F3F3F0`, technical grey `#686B70`; proportion **60% black/charcoal · 30% light/greys · 10% gold**; **Montserrat SemiBold/Bold** for headings, **Inter** for reading and numbers; documents and reports on **white with black titles and gold accents**; logo = gold monogram + "FITNESS" + a descriptor line, never over a busy photo, no effects; voice: professional, direct, close, no guilt, no guarantees, "measuring is not judging".
-- Plato already matches much of the voice (neutral "Tu semana" wording, no before/after as proof, the nutritionist's own photo on the banner).
+- AHT Fitness already matches much of the voice (neutral "Tu semana" wording, no before/after as proof, the nutritionist's own photo on the banner).
 
-**Proposal: the brand as a theme, not a rewrite.** Plato's look already lives in CSS variables (`theme.css`: `--primary`, `--font-heading`, …) that Basecoat reads, so the brand is mostly a token swap plus assets.
+**Proposal: the brand as a theme, not a rewrite.** AHT Fitness's look already lives in CSS variables (`theme.css`: `--primary`, `--font-heading`, …) that Basecoat reads, so the brand is mostly a token swap plus assets.
 
 | Area | Today | With the client theme |
 |---|---|---|
@@ -647,11 +649,11 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 | Links, small gold text on light | n/a | **dark gold `#8A6A14`** (5.06:1). Brand gold `#D4AF37` on white is 2.1:1, only for fills, rules and large decoration, never text |
 | Grey text | muted | `#686B70`: 5.35:1 on white, 4.81:1 on smoke white; **not** on charcoal (3.35:1), use smoke white there |
 | Headings / body / numbers | rounded system font | **Montserrat** SemiBold/Bold / **Inter** / Inter with tabular figures; self-hosted woff2 + OFL (no font CDN) |
-| Logo | Plato icon; banner shows initials | client logo on banner, sign-in, printouts; app icon + favicon from the monogram |
+| Logo | AHT Fitness icon; banner shows initials | client logo on banner, sign-in, printouts; app icon + favicon from the monogram |
 | Printed diet + export PDF | green accents | white, black titles, gold section rules, legible tables (exactly the manual's "plan/report" rule) |
 | Status colours | green/orange | keep meaning-only colours (seen, warning, error); gold stays brand, never a status |
 
-**Decision needed first: whose app is Plato?** Earlier decisions treat Plato as a **platform with many nutritionists** (shared ingredients, global dishes). Then the client's brand should be **one theme a nutritionist turns on** (with "Clinic logo" from Later), not Plato's own look. If Plato is the client's app only, the theme becomes the default.
+**Decision needed first: whose app is AHT Fitness?** Earlier decisions treat AHT Fitness as a **platform with many nutritionists** (shared ingredients, global dishes). Then the client's brand should be **one theme a nutritionist turns on** (with "Clinic logo" from Later), not AHT Fitness's own look. If AHT Fitness is the client's app only, the theme becomes the default.
 
 **Slices (when scheduled):**
 1. Tokens: colours + fonts as a theme file, contrast checked on every screen (numbers, not eyeballing), dark option for the phone.
@@ -722,12 +724,12 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 
 **What:** the patient's **age** (from their birth date) **hard-limits** some features. First case: **minors cannot upload progress photos** (meal photos stay allowed). "Hard" means the server refuses, not only a hidden button.
 
-**Why:** photos of minors (bodies especially) are the most sensitive data Plato could hold, and minors need a parent's or guardian's consent (Legal L9). Until that is solved with the lawyer, Plato keeps those features away from minors.
+**Why:** photos of minors (bodies especially) are the most sensitive data AHT Fitness could hold, and minors need a parent's or guardian's consent (Legal L9). Until that is solved with the lawyer, AHT Fitness keeps those features away from minors.
 
 **How it works:**
 - Age is computed **on the server at the moment of each upload** from `patients.birth_date`, so a patient turning 18 is unlocked automatically on their birthday.
 - The nutritionist sets the birth date (as today). Changing it re-evaluates the limits immediately.
-- A hook checks every progress photo upload (`progress_photos`) and refuses with a plain message: "Por tu edad, Plato no guarda fotos de progreso." Meal photos are not limited.
+- A hook checks every progress photo upload (`progress_photos`) and refuses with a plain message: "Por tu edad, AHT Fitness no guarda fotos de progreso." Meal photos are not limited.
 - The patient's app hides what is limited and explains why (no dead buttons). The nutritionist's patient page shows a badge: "Menor de edad: sin fotos de progreso".
 - Progress photos uploaded before a birth date was corrected stay; the nutritionist can delete them (always allowed).
 
@@ -759,7 +761,7 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 
 **What:** the nutritionist saves a weekly diet as a **template** ("Bajar de peso — fase 1", "Deportista 2,500 kcal") and starts a patient's diet from it in one click, instead of typing the same week again.
 
-**Why:** typing a 7-day × 5-meal week is the slowest task in Plato. Most patients start from one of a few standard plans and get adjusted.
+**Why:** typing a 7-day × 5-meal week is the slowest task in AHT Fitness. Most patients start from one of a few standard plans and get adjusted.
 
 **Who:** nutritionist only. Templates are **private to the nutritionist** who made them. Patients never see templates, only their own diet.
 
@@ -808,38 +810,38 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 
 ## Feature: Questionnaires — connect the client's Google Forms (PARKED 2026-10-26: owner, other features first)
 
-**What:** Plato **connects to the forms the client already has** in Google Forms. Plato never copies or rebuilds them: the questions, the answers and the Google Sheet stay in Google, exactly as today. Plato adds what Google can't do for the nutritionist: **which patient was sent which form, when, and whether they answered**, plus the button on the patient's phone.
+**What:** AHT Fitness **connects to the forms the client already has** in Google Forms. AHT Fitness never copies or rebuilds them: the questions, the answers and the Google Sheet stay in Google, exactly as today. AHT Fitness adds what Google can't do for the nutritionist: **which patient was sent which form, when, and whether they answered**, plus the button on the patient's phone.
 
-**Owner (2026-10-26):** connect to the existing forms; building forms inside Plato is a "maybe" for much later (level 3 below). The client has 4 forms. **Their links are not written in this repo** (it is public); the nutritionist enters them in Plato, so they live as data on the server.
+**Owner (2026-10-26):** connect to the existing forms; building forms inside AHT Fitness is a "maybe" for much later (level 3 below). The client has 4 forms. **Their links are not written in this repo** (it is public); the nutritionist enters them in AHT Fitness, so they live as data on the server.
 
 ### Levels
 1. **Connect (this spec):** saved links, send to a patient, the patient opens it in a new tab, status tracking.
-2. **Answers inside Plato (later, if asked):** Plato reads the answers through the Google Forms API (Google Cloud project + the client's Google sign-in + a server job). Health answers then flow Google → Plato.
-3. **Forms built in Plato (maybe, much later):** replaces Google Forms entirely.
+2. **Answers inside AHT Fitness (later, if asked):** AHT Fitness reads the answers through the Google Forms API (Google Cloud project + the client's Google sign-in + a server job). Health answers then flow Google → AHT Fitness.
+3. **Forms built in AHT Fitness (maybe, much later):** replaces Google Forms entirely.
 
 ### Who does what
 - **Nutritionist, Catálogo → Cuestionarios** (the locked tile opens): list of their forms. **Agregar cuestionario**: name (e.g. "Historia clínica"), the form link (`docs.google.com/forms/…` or `forms.gle/…`; anything else is refused), an optional short description ("Primera consulta"), and optional **pre-filled link** (below). Edit, archive (hidden from "Enviar" but kept on patients who already got it). Private to each nutritionist.
 - **Nutritionist, patient page:** new **Cuestionarios** tab: **Enviar cuestionario** → pick one → it shows on the patient's phone. List per patient: form name, sent date, status, **Marcar como respondido** / **Quitar**. Closed accounts: read-only.
-- **Patient phone, Hoy:** card **"Cuestionario pendiente: Historia clínica"** with **Abrir cuestionario** (opens Google in a new tab; Plato loads no Google code) and **Ya lo envié**. Once tapped: "Enviado. Tu nutrióloga o nutriólogo lo revisará." Answered or removed forms disappear from Hoy.
+- **Patient phone, Hoy:** card **"Cuestionario pendiente: Historia clínica"** with **Abrir cuestionario** (opens Google in a new tab; AHT Fitness loads no Google code) and **Ya lo envié**. Once tapped: "Enviado. Tu nutrióloga o nutriólogo lo revisará." Answered or removed forms disappear from Hoy.
 - **Home (Inicio):** Pendientes adds "Dice que envió *Historia clínica*: confírmalo" and "*Historia clínica* sin responder desde hace 7 días o más". Recientes shows "Ana envió *Historia clínica*". Counts follow the same rules as other logs.
 
 ### Status
-`Pendiente` (sent) → `Enviado por el paciente` (patient tapped "Ya lo envié", optional) → `Respondido` (nutritionist checked the Google Sheet). The nutritionist can mark Respondido at any step, or undo it. Plato **cannot see** whether the form was really submitted (that is level 2); the screens say "marcado por ti" / "según tu paciente" so nobody reads it as proof.
+`Pendiente` (sent) → `Enviado por el paciente` (patient tapped "Ya lo envié", optional) → `Respondido` (nutritionist checked the Google Sheet). The nutritionist can mark Respondido at any step, or undo it. AHT Fitness **cannot see** whether the form was really submitted (that is level 2); the screens say "marcado por ti" / "según tu paciente" so nobody reads it as proof.
 
 ### Matching answers to patients (pre-filled link, optional)
-The Google Sheet has no idea who in Plato answered. Two ways, per form:
-- **With a pre-filled link (recommended):** in the form editor, ⋮ → *Obtener enlace prellenado*, type `PLATO` in a "Código de paciente" question, *Obtener enlace*, paste it in Plato. Plato swaps `PLATO` for the patient's **code** when the patient opens it, so the Sheet has the code in that column.
+The Google Sheet has no idea who in AHT Fitness answered. Two ways, per form:
+- **With a pre-filled link (recommended):** in the form editor, ⋮ → *Obtener enlace prellenado*, type `PLATO` in a "Código de paciente" question, *Obtener enlace*, paste it in AHT Fitness. AHT Fitness swaps `PLATO` for the patient's **code** when the patient opens it, so the Sheet has the code in that column.
 - **Without it:** the plain link; the nutritionist matches by name or email in the Sheet, as today.
 - **Patient code:** a short code per patient, shown on the patient page (e.g. `ANA-7Q4K`): first letters of the name + 4 random characters. Not the internal record id. The code goes to Google only inside that link.
 
-### Sign-in on the client's forms (not Plato's choice; a heads-up)
-The 4 links answer **401 / Google sign-in** to anyone signed out: the forms are set to signed-in accounts (settings "Limit to 1 response", "Verified email" or "Restrict to users in…", under Configuración → Respuestas). Then **a patient without a Google account cannot answer**, and with "Restrict to users in…" no patient outside the client's organisation can. Plato shows a per-form note the nutritionist turns on: **"Pide iniciar sesión con Google"** → the patient's card says "Necesitas una cuenta de Google para responderlo." Recommendation for the client: turn those settings off; Plato's status already tracks one answer per patient.
+### Sign-in on the client's forms (not AHT Fitness's choice; a heads-up)
+The 4 links answer **401 / Google sign-in** to anyone signed out: the forms are set to signed-in accounts (settings "Limit to 1 response", "Verified email" or "Restrict to users in…", under Configuración → Respuestas). Then **a patient without a Google account cannot answer**, and with "Restrict to users in…" no patient outside the client's organisation can. AHT Fitness shows a per-form note the nutritionist turns on: **"Pide iniciar sesión con Google"** → the patient's card says "Necesitas una cuenta de Google para responderlo." Recommendation for the client: turn those settings off; AHT Fitness's status already tracks one answer per patient.
 
 ### Data (server)
 - `questionnaires`: nutritionist, name (unique per nutritionist), description, url, prefill_url, needs_google, archived_at. Only the owner reads/writes. A hook checks the host (`docs.google.com/forms/` or `forms.gle`) and that a pre-filled link contains `PLATO`.
 - `questionnaire_sends`: patient, questionnaire, name + link **copied at send time** (the patient never reads the nutritionist's catalogue; a later edit does not change what was sent), sent_at, patient_done_at, answered_at. Nutritionist: create/update/delete for own patients. Patient: read own, and only set `patient_done_at` (a hook refuses anything else). Same closed-account rule as the rest.
 - `patients.code`: set by the server on create (and once for existing patients), unique, read-only.
-- Export (PDF/JSON): a "Cuestionarios" section with names, dates and statuses; never the answers (Plato doesn't have them).
+- Export (PDF/JSON): a "Cuestionarios" section with names, dates and statuses; never the answers (AHT Fitness doesn't have them).
 
 ### Acceptance
 1. A link that is not Google Forms is refused (screen and server); a pre-filled link without `PLATO` is refused with how to fix it.
@@ -849,13 +851,13 @@ The 4 links answer **401 / Google sign-in** to anyone signed out: the forms are 
 5. Another nutritionist can't see or send someone else's forms; a patient sees only their own sends.
 6. Archived forms disappear from "Enviar" but stay on past sends; editing a form doesn't change past sends.
 7. Closed account: read-only, as elsewhere. Export lists sends and statuses.
-8. Plato pages load no Google code (checked: no third-party requests).
+8. AHT Fitness pages load no Google code (checked: no third-party requests).
 
 ### Build (one feature, usual commits)
 Server (migration + hook) → screens (Catálogo page, patient tab, phone card, Inicio items, export, SW bump) → tests (API + `questionnaires_check.mjs`) → spec. Legal list: Google is a processor of health answers (L1/L2), already noted.
 
 ### Open questions
-1. Patient code format `ANA-7Q4K` OK, or does the client already use patient numbers (then Plato stores theirs)?
+1. Patient code format `ANA-7Q4K` OK, or does the client already use patient numbers (then AHT Fitness stores theirs)?
 2. "Ya lo envié" on the patient's side: keep (recommended; it tells the nutritionist when to check) or only the nutritionist marks?
 3. Reminder: Pendientes after **7 days** unanswered OK?
 4. Send the same form again later (e.g. follow-up every month): allowed, each send tracked separately (recommended)?
@@ -893,9 +895,9 @@ Slices (proposal): 1 library + program editor; 2 patient log with advice; 3 repo
 
 ## Client answers (2026-10-27)
 
-- **Product name:** "AHT Fitness" replaces "Plato" as the name of the project and the website. **Scope (owner, 2026-10-27):**
+- **Product name:** "AHT Fitness" replaces "AHT Fitness" as the name of the project and the website. **Scope (owner, 2026-10-27):**
   - Rename every name people see (page titles, header, installed-app name, messages, printouts and export, README, spec).
-  - Keep "plato" where it is the Spanish word for dish ("Plato de hoy", the plate graphic). The old tagline "tu dieta, plato a plato" becomes the client's slogan **"Construcción corporal con ciencia y estrategia"**.
+  - Keep "plato" where it is the Spanish word for dish ("AHT Fitness de hoy", the plate graphic). The old tagline "tu dieta, plato a plato" becomes the client's slogan **"Construcción corporal con ciencia y estrategia"**.
   - Keep internal code names (style prefix `plato-`, `/api/plato/` routes, the saved sign-in key, file names): nobody sees them, and changing the sign-in key would sign everyone out.
   - **Temporary icon:** a simple "AHT" monogram until the client's final logo (design phase).
   - GitHub repository name: optional, done by the owner in GitHub settings (the local link is updated after).
@@ -919,7 +921,7 @@ Recommended: 1 now (hours), 2 as a feature when wanted.
 
 **Status (owner, 2026-10-25):** long-term feature. Direction agreed (decisions below); not scheduled. Blocked on the choice of official data source.
 
-**What:** the nutritionist's **catalogue** (the "Catálogo" tab): dishes and meals built from an **ingredient database from official sources** (the owner supplies the data later). Dishes, meals or a whole diet can be **imported** from a simple file that an AI agent can write: "add the following meal to my catalogue". **Plato computes the nutrition**, never the agent.
+**What:** the nutritionist's **catalogue** (the "Catálogo" tab): dishes and meals built from an **ingredient database from official sources** (the owner supplies the data later). Dishes, meals or a whole diet can be **imported** from a simple file that an AI agent can write: "add the following meal to my catalogue". **AHT Fitness computes the nutrition**, never the agent.
 
 **Why:** typing diets is the slowest job (Nutrimind's "dietas automáticas" and "recetas" are its strongest pull). Numbers must be trustworthy and traceable to a source.
 
@@ -937,7 +939,7 @@ Recommended: 1 now (hours), 2 as a feature when wanted.
 | **Plan de comidas** (meal plan) | one day: a meal per slot | meals per slot, daily totals |
 | **Dieta** (diet) | the week | a meal plan or meals per day and slot (today's free text keeps working) |
 
-**Multi-serving dishes:** a dish has a serving unit (`taco`, `pieza`, `taza`, `porción`) and the label **"Se sirve por piezas"** when it is naturally multiplied. The catalogue keeps **1 taco**; a meal or diet says **"× 3"** and Plato multiplies. "5 tacos" is never saved as its own dish.
+**Multi-serving dishes:** a dish has a serving unit (`taco`, `pieza`, `taza`, `porción`) and the label **"Se sirve por piezas"** when it is naturally multiplied. The catalogue keeps **1 taco**; a meal or diet says **"× 3"** and AHT Fitness multiplies. "5 tacos" is never saved as its own dish.
 
 ### Import format (`plato-import`, version 1)
 
@@ -976,7 +978,7 @@ JSON, one file per import, any of the three levels. Ingredients are referenced b
 ### Import screen (nutritionist)
 
 1. **Catálogo → Importar**: paste the text or choose a `.json` file.
-2. **Check first, save after.** Plato shows a preview: each dish with its ingredients matched to the database, **nutrition per serving** (and per meal), and problems in plain words:
+2. **Check first, save after.** AHT Fitness shows a preview: each dish with its ingredients matched to the database, **nutrition per serving** (and per meal), and problems in plain words:
    - "No encontré 'tomatillo' en la base. ¿Quisiste decir 'Tomate verde, crudo'?" (suggestions only; nothing is guessed silently)
    - "'Cilantro' no tiene peso por pieza: usa gramos."
    - "Ya tienes un platillo con ese nombre: reemplazar, guardar como copia o saltar."
@@ -993,7 +995,7 @@ Per serving, per meal, per day: energy (kcal), protein, fat, carbohydrates, fibe
 2. A meal "Tacos × 3" shows exactly 3 × the taco values.
 3. A file with an unknown ingredient cannot be saved; the message names it and suggests close matches.
 4. `pieza` for an ingredient without a piece weight is refused with the reason.
-5. A file with nutrition numbers in it: the numbers are ignored; Plato's own values are shown.
+5. A file with nutrition numbers in it: the numbers are ignored; AHT Fitness's own values are shown.
 6. Another nutritionist cannot see or use my dishes. A patient cannot open the catalogue.
 7. Import a diet for Ana: her week shows the dishes with servings ("Tacos de lomo × 3"); her free-text meals elsewhere are untouched.
 8. Bad JSON or wrong `format`/`version`: a plain message, nothing saved.
@@ -1001,17 +1003,17 @@ Per serving, per meal, per day: energy (kcal), protein, fat, carbohydrates, fibe
 ### Risks
 
 - **Data licence.** USDA FoodData Central is public domain. Mexican tables (SMAE book, INCMNSZ/BAM tables) may be copyrighted: check the licence of whatever source is supplied before loading it (Legal L8/L9 territory).
-- **Wrong numbers hurt people.** Plato only computes from the database; the preview shows the source per ingredient; the owner checks a sample by hand on first load.
+- **Wrong numbers hurt people.** AHT Fitness only computes from the database; the preview shows the source per ingredient; the owner checks a sample by hand on first load.
 - **Raw vs cooked, piece weights, ml → g.** The database must say the state ("cocido", "crudo") and carry piece weights and densities where needed; otherwise grams are required.
 - **Calories for patients** can harm people with eating disorders: off by default, per patient (decision 4).
 
 **Later:** an API key so an agent adds dishes directly (no paste); food-exchange equivalents (sistema mexicano de equivalentes) computed from the same data; recipe photos and preparation steps; shopping list from a diet; targets per patient (kcal/macros) with the diet's totals compared.
 
-**Not now:** Plato generating diets by itself (AI); barcode scanning; restaurant/brand databases.
+**Not now:** AHT Fitness generating diets by itself (AI); barcode scanning; restaurant/brand databases.
 
 ### Decisions (owner, 2026-10-25)
 
-1. **Data source: open.** The owner is still choosing the official source(s). Suggested format when ready: a CSV with id, name, state (raw/cooked), values per 100 g, piece weight, density, source and version; Plato gets a loader and a checker.
+1. **Data source: open.** The owner is still choosing the official source(s). Suggested format when ready: a CSV with id, name, state (raw/cooked), values per 100 g, piece weight, density, source and version; AHT Fitness gets a loader and a checker.
 2. **Ingredients belong to the platform** (one shared, read-only database loaded by the admin). **Dishes and meals belong to each nutritionist.** Added by the owner: a nutritionist can **make a dish global** so other (new) nutritionists can copy it into their own catalogue. Copies are independent; numbers still come from the shared ingredient database. (To spec later: who can un-share, credit to the author, moderation.)
 3. **Diet structure: hybrid.** Each meal slot holds catalogue dishes with servings and/or free text; today's diets keep working.
 4. **Patients see calories and macros only if turned on**, with a per-patient switch for the nutritionist (off by default). **The patient's screens must look complete and cohesive in both cases**: designed for "with numbers" and "without numbers" as two first-class layouts, not a layout with holes when the numbers are hidden.

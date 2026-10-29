@@ -1,5 +1,5 @@
 /// <reference path="../pb_data/types.d.ts" />
-// Plato invite links. Permission rules cannot set another account's password, so this is a hook.
+// AHT Fitness invite links. Permission rules cannot set another account's password, so this is a hook.
 //   POST /api/plato/invite        {patient}                 nutritionist only → new link, old links stop working
 //   GET  /api/plato/invite/{token}                          → {name, nutritionist} if the link still works
 //   POST /api/plato/join          {token, email, password}  → patient auth response (signed in)

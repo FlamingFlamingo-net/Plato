@@ -16,7 +16,7 @@ onRecordCreateRequest((e) => {
   if (patient) {
     const birth = patient.getString("birth_date");
     if (!birth) throw new BadRequestError("Falta tu fecha de nacimiento. Pídele a tu nutrióloga o nutriólogo que la agregue.");
-    if (lib.isMinor(birth)) throw new BadRequestError("Por tu edad, Plato no guarda fotos de progreso.");
+    if (lib.isMinor(birth)) throw new BadRequestError("Por tu edad, AHT Fitness no guarda fotos de progreso.");
   }
   e.next();
 }, "progress_photos");

@@ -18,7 +18,7 @@ try {
   const patient = await view('patients', pid);
   const nutritionist = role === 'nutritionists' ? me : await view('nutritionists', patient.nutritionist).catch(() => null);
   const [diet] = await list('diets', { filter: `patient = ${q(patient.id)}` });
-  document.title = `Dieta de ${patient.name} — Plato`;
+  document.title = `Dieta de ${patient.name} — AHT Fitness`;
 
   if (!diet || !hasDiet(diet.meals)) {
     statusEl.textContent = 'Aún no hay dieta.';
@@ -33,7 +33,7 @@ try {
           h('h1', { id: 'sheet-title', text: diet.title || 'Plan de alimentación' }),
           h('p', { text: patient.name }),
           by ? h('p', { text: by }) : null),
-        h('div', { class: 'sheet-meta' }, h('div', { text: printedOn() }), h('div', { text: 'Plato' }))),
+        h('div', { class: 'sheet-meta' }, h('div', { text: printedOn() }), h('div', { text: 'AHT Fitness' }))),
       weekTable(diet.meals));
     sheet.hidden = false;
     document.getElementById('hint').hidden = false;

@@ -28,7 +28,7 @@ try {
 }
 statusEl.hidden = true;
 document.getElementById('content').hidden = false;
-document.title = `${patient.name} — Plato`;
+document.title = `${patient.name} — AHT Fitness`;
 
 const pid = q(patient.id);
 // A closed (archived) account is read-only: no edit controls anywhere. The server rules enforce it too.

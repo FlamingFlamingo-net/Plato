@@ -1,4 +1,4 @@
-/* app.css — Plato layout and app-only parts (plate, chart, lists). Load after Basecoat + theme.css.
+/* app.css — AHT Fitness layout and app-only parts (plate, chart, lists). Load after Basecoat + theme.css.
    No Tailwind on purpose: Basecoat's standalone CSS covers components; the few layout rules live here. */
 
 html { -webkit-text-size-adjust: 100%; }

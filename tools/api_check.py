@@ -1,4 +1,4 @@
-"""API checks for Plato v1 rules and invite hook.
+"""API checks for AHT Fitness v1 rules and invite hook.
 
 Run against a THROWAWAY server (never the real one):
   docker run -d --rm --name pb-check -p 127.0.0.1:8091:8090 \

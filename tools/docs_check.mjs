@@ -158,14 +158,14 @@ await step('E1', async () => {
     days: document.querySelectorAll('.week-day').length,
     photos: document.querySelectorAll('.doc-log img').length,
     notesHidden: document.getElementById('notes-section').hidden,
-    alta: [...document.querySelectorAll('.doc-facts div')].find(d => d.querySelector('dt').textContent === 'Alta en Plato').querySelector('dd').textContent,
+    alta: [...document.querySelectorAll('.doc-facts div')].find(d => d.querySelector('dt').textContent === 'Alta en AHT Fitness').querySelector('dd').textContent,
   })`);
   const expectAlta = await nutri.eval(`(async () => {
     const s = JSON.parse(localStorage.getItem('plato.auth'));
     const p = await fetch('/api/collections/patients/records/${anaId}', { headers: { Authorization: s.token } }).then(r => r.json());
     return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(p.created.replace(' ', 'T')));
   })()`);
-  check('E1 timestamps show the LOCAL date ("Alta en Plato")', counts.alta === expectAlta, `${counts.alta} vs ${expectAlta}`);
+  check('E1 timestamps show the LOCAL date ("Alta en AHT Fitness")', counts.alta === expectAlta, `${counts.alta} vs ${expectAlta}`);
   check('E1 export page: 4 measurements, chart with 4 points, 7 diet days, 2 photos, notes hidden',
     counts.m === 4 && counts.dots === 4 && counts.days === 7 && counts.photos === 2 && counts.notesHidden, JSON.stringify(counts));
   await nutri.pdf(`${OUT}/export-no-notes.pdf`);

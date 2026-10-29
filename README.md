@@ -1,7 +1,7 @@
-# Plato (working name)
+# AHT Fitness (working name)
 
 A nutritionist gives each patient a weekly diet. The patient follows it on the phone and sends a photo of each meal.
-Spec: `specs/plato.md`.
+Spec: `specs/aht-fitness.md`.
 
 ## Start and stop
 

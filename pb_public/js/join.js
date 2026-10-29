@@ -19,7 +19,7 @@ try {
   document.getElementById('j-title').textContent = `¡Hola, ${info.name}!`;
   sub.textContent = info.rejoin
     ? `${info.nutritionist} te mandó un acceso nuevo. Elige tu contraseña otra vez.`
-    : `${info.nutritionist} te invitó a seguir tu dieta en Plato.`;
+    : `${info.nutritionist} te invitó a seguir tu plan en AHT Fitness.`;
   form.hidden = false;
   form.email.focus();
 } catch (e) {

@@ -82,7 +82,7 @@ await step('E1', async () => {
     await ana.eval(`!!document.getElementById('photo')`), links);
   await ana.goto(`${BASE}/progress.html`);
   await ana.waitFor(`document.getElementById('pp-status').textContent`);
-  check('E1 minor: Progreso has no "Agregar foto" and says why', await ana.eval(`!document.getElementById('add-photo') && document.getElementById('pp-status').textContent === 'Por tu edad, Plato no guarda fotos de progreso.'`));
+  check('E1 minor: Progreso has no "Agregar foto" and says why', await ana.eval(`!document.getElementById('add-photo') && document.getElementById('pp-status').textContent === 'Por tu edad, AHT Fitness no guarda fotos de progreso.'`));
   await ana.goto(`${BASE}/progress-photo.html`);
   await ana.waitFor(`!document.getElementById('pp-minor').hidden`);
   check('E1 minor: opening the progress form directly explains instead of showing it', await ana.eval(`document.getElementById('pp-form').hidden && document.getElementById('pp-minor-text').textContent.startsWith('Por tu edad')`));

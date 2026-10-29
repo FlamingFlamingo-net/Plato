@@ -57,7 +57,7 @@ const ppStatus = document.getElementById('pp-status');
 try {
   const photos = await list('progress_photos', { filter: `patient = ${q(me.id)}`, sort: '-date,-created', perPage: 200 });
   ppStatus.textContent = minor
-    ? (dateOnly(me.birth_date) ? 'Por tu edad, Plato no guarda fotos de progreso.' : 'Las fotos de progreso se activan cuando tu nutrióloga o nutriólogo registre tu fecha de nacimiento.')
+    ? (dateOnly(me.birth_date) ? 'Por tu edad, AHT Fitness no guarda fotos de progreso.' : 'Las fotos de progreso se activan cuando tu nutrióloga o nutriólogo registre tu fecha de nacimiento.')
     : photos.length ? '' : 'Aún no tienes fotos de progreso. Toma una hoy y compárala en unas semanas.';
   let last = '';
   for (const p of photos) {

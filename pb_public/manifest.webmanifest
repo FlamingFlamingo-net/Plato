@@ -1,7 +1,7 @@
 {
-  "name": "Plato — tu dieta, plato a plato",
-  "short_name": "Plato",
-  "description": "Sigue la dieta de tu nutrióloga o nutriólogo y registra cada comida con una foto.",
+  "name": "AHT Fitness — Construcción corporal con ciencia y estrategia",
+  "short_name": "AHT Fitness",
+  "description": "Tu plan de nutrición y entrenamiento: marca tus comidas, registra tu actividad y sigue tu progreso.",
   "lang": "es-MX",
   "start_url": "/",
   "scope": "/",

@@ -1,4 +1,4 @@
-// export.js — everything Plato holds about one patient: printable A4 (portrait) + a JSON file.
+// export.js — everything AHT Fitness holds about one patient: printable A4 (portrait) + a JSON file.
 // Nutritionist only. Reads the same APIs as the patient page, so the same rules lock it. Changes nothing.
 import { requireRole, view, list, photoUrl, q, SLOT_LABEL, dateOnly } from './api.js';
 import { h, offlineBanner, age, shortDate, timeOf, num } from './ui.js';
@@ -39,7 +39,7 @@ try {
     list('progress_photos', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
   ]);
   data = { patient, measurements, diet, logs, notes, acts, progress };
-  document.title = `Datos de ${patient.name} — Plato`;
+  document.title = `Datos de ${patient.name} — AHT Fitness`;
   await render();
   statusEl.hidden = true;
   printBtn.disabled = false;
@@ -93,7 +93,7 @@ async function render() {
       h('div', {},
         h('h1', { id: 'sheet-title', text: `Datos de ${patient.name}` }),
         h('p', { text: [`Nutrióloga/o: ${me.name}`, me.clinic_name].filter(Boolean).join(' · ') })),
-      h('div', { class: 'sheet-meta' }, h('div', { text: printedOn() }), h('div', { text: 'Exportado desde Plato' }))),
+      h('div', { class: 'sheet-meta' }, h('div', { text: printedOn() }), h('div', { text: 'Exportado desde AHT Fitness' }))),
 
     section('Perfil', h('dl', { class: 'doc-facts' },
       fact('Nombre', patient.name),
@@ -101,7 +101,7 @@ async function render() {
       fact('Fecha de nacimiento', birth ? `${shortDate(birth)}${a != null ? ` (${a} años)` : ''}` : '—'),
       fact('Estatura', patient.height_cm ? `${num(patient.height_cm)} cm` : '—'),
       fact('App del paciente', patient.joined ? 'Activa' : 'Sin acceso'),
-      fact('Alta en Plato', shortDate(patient.created)))),
+      fact('Alta en AHT Fitness', shortDate(patient.created)))),
 
     section('Mediciones',
       measurements.length ? h('figure', { class: 'doc-chart' }, weightChart(measurements, { width: 640, height: 200 })) : null,

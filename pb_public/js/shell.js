@@ -7,7 +7,7 @@ export async function patientShell(current) {
   offlineBanner();
   const me = await requireRole('patients');
   const top = h('header', { class: 'plato-top' },
-    h('a', { class: 'plato-brand', href: '/today.html' }, h('img', { src: '/icons/icon-192.png', alt: '', width: 28, height: 28 }), 'Plato'),
+    h('a', { class: 'plato-brand', href: '/today.html' }, h('img', { src: '/icons/icon-192.png', alt: '', width: 28, height: 28 }), 'AHT Fitness'),
     h('div', { class: 'plato-row' },
       h('button', { id: 'install-app', class: 'btn', 'data-variant': 'secondary', 'data-size': 'sm', type: 'button', hidden: true }, 'Instalar app'),
       h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: signOut }, 'Salir')));

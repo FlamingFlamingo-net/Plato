@@ -1,4 +1,4 @@
-"""Seed Plato with demo data: one nutritionist, two fake patients. All names are fictional.
+"""Seed AHT Fitness with demo data: one nutritionist, two fake patients. All names are fictional.
 
   python tools/seed.py http://127.0.0.1:8090 [out_dir]
 
@@ -117,7 +117,7 @@ call("POST", "/api/collections/activity_logs/records",
       "intensity": "moderate", "note": "Con mi perro"}, token_a)
 
 (OUT / "DEMO-LOGINS.txt").write_text(
-    "Plato demo logins (fictional people). Keep this file private.\n\n"
+    "AHT Fitness demo logins (fictional people). Keep this file private.\n\n"
     f"Nutritionist  {nutri_email}  {pw_nutri}\n"
     f"Patient (Ana) {ana_email}  {pw_ana}\n"
     "Patient (Carlos) has no app yet: open him and use Acceso to make his invite link.\n",

@@ -16,7 +16,7 @@ if (minor) {
   form.hidden = true;
   document.getElementById('pp-minor').hidden = false;
   document.getElementById('pp-minor-text').textContent = dateOnly(me.birth_date)
-    ? 'Por tu edad, Plato no guarda fotos de progreso. Puedes seguir registrando tus comidas y tu actividad.'
+    ? 'Por tu edad, AHT Fitness no guarda fotos de progreso. Puedes seguir registrando tus comidas y tu actividad.'
     : 'Tu nutrióloga o nutriólogo aún no registra tu fecha de nacimiento. Las fotos de progreso se activan cuando la agregue.';
 }
 
