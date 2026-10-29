@@ -127,7 +127,7 @@ async function loadAll() {
   loadedAt = Date.now();
 }
 
-// ---------- Pendientes (placeholder for the "pending dashboard"; the client still defines it) ----------
+// ---------- Pendientes (the "pending dashboard"; name and contents confirmed by the client) ----------
 function pendingItems() {
   const per = {};
   for (const t of Object.keys(unseen)) for (const r of unseen[t]) per[r.patient] = (per[r.patient] || 0) + 1;
@@ -373,7 +373,7 @@ const SUBS = {
   activity: 'Ejercicio que registraron tus pacientes. La velocidad se calcula sola.',
   photos: 'Fotos de comidas y de progreso. Puedes dar retroalimentación en cada una.',
   catalog: 'Tus listas. Las que dicen “Próximamente” llegan con sus funciones.',
-  pending: 'Todo lo que espera una acción tuya. Propuesta: el cliente aún define este tablero.',
+  pending: 'Todo lo que espera una acción tuya.',
 };
 let renderToken = 0;
 async function renderFeed() {
