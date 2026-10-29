@@ -669,6 +669,97 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 
 ---
 
+## Feature: Snacks per diet + meal goal = all planned meals (approved 2026-10-28)
+
+**What:** a diet has **3 main meals plus 0–4 snacks (colaciones), 2 by default** (client, 2026-10-27). The weekly meal goal becomes **"all the meals of your plan, D days a week"**: a day counts when every meal planned for that day is checked.
+
+**Today:** five fixed slots (Desayuno, Colación de la mañana, Comida, Colación de la tarde, Cena); an empty slot is simply not planned. The meal goal is "N meals a day" (default 3).
+
+### Rules
+- **Snacks per diet:** a number 0–4 on the diet (weekly diet and saved templates), **2 by default**. It decides which snack rows the diet editor shows. Main meals are always the three.
+- **Snack positions in the day** (fixed order, so the plate, Hoy and the print keep a clear timeline):
+  | Snacks | Shown |
+  |---|---|
+  | 0 | — |
+  | 1 | Colación de la tarde |
+  | 2 | Colación de la mañana, Colación de la tarde (today's layout) |
+  | 3 | + Colación nocturna (after Cena) |
+  | 4 | + **Colación previa al desayuno** (before Desayuno; e.g. before an early workout) |
+- **Lowering the number** hides the extra rows; their text is kept in the diet (not deleted) and comes back if the number goes up again. Hidden rows are not planned (they don't show on Hoy and don't count).
+- **Meal goal:** **"Todas las comidas de tu plan, D días a la semana"** (D = 1–7 or Sin meta; default 5 with nutrition). A day counts when **all of that day's planned meals** are checked (photo or not; extras never count). A day with **no planned meals** (no diet or an empty day) cannot count, and is shown as such ("Sin plan ese día"), never as a failure.
+- The old "N comidas al día" number goes away: existing patients move to "all planned" with the same days. Past weeks keep their history entries as they were (their numbers are shown as written).
+
+### Screens
+- **Diet editor** (patient page → Dieta, and Plantillas): "Colaciones al día: 0 1 2 3 4" (segmented buttons) above the week; rows appear/disappear at once. Templates keep their own number; applying a template sets it on the patient's diet.
+- **Hoy, plate, Registrar, print, export:** follow the planned meals (up to 7 rows a day). Registrar lists only the slots of today's plan plus "Comida extra".
+- **Goal texts:** "Comidas: todas las de tu plan, 5 días a la semana"; Tu semana "Hoy: 3 de 5" (5 = what's planned today); "Cambiar metas" loses the "Comidas marcadas" selector.
+
+### Data (server)
+- `diets.snacks` and `diet_templates.snacks` (0–4, default 2; existing diets → 2).
+- `meal_logs.slot` gains `snack_night` and `snack_early`.
+- Meal goal: `meal_goal_per_day` is no longer used (kept in the history for past weeks); new history entries write `meal_per_day: "all"`.
+
+### Acceptance
+1. A new diet shows 2 snacks; switching to 4 adds "Colación previa al desayuno" and "Colación nocturna" in the right places; back to 2 hides them and their text returns when going to 4 again.
+2. Hoy shows only the planned meals of today (with 4 snacks: up to 7 rows, in time order); the plate has the same slices.
+3. With 5 planned meals, checking 4 doesn't count the day, checking all 5 does; with 3 planned, 3 is enough; a day without a plan never counts and says "Sin plan ese día".
+4. Existing patients keep their days; their goal text becomes "todas las de tu plan"; last week's numbers stay as they were.
+5. Templates save and apply their snack number. Print and export show the new snacks.
+6. Phone 390 px: 7 rows fit; no sideways scroll.
+
+### Decided (owner, 2026-10-28)
+1. The 4th position is **"Colación previa al desayuno"**.
+2. The snack number is **per diet** (each week's plan can differ; templates keep their own).
+
+---
+
+## Feature: Agenda — the nutritionist's own calendar (slice 1 approved 2026-10-28)
+
+**What (owner, 2026-10-28):** AHT Fitness has **its own calendar**. The nutritionist creates appointments there, each **bound to a patient** ("Cita a las 3:00 p.m. con Julio Álvarez"). The **patient is told** in their app. The appointments are **mirrored to the nutritionist's personal Google Calendar**. Patients never book or type anything: the app is primarily for the nutritionist (owner). Reference: Nutrimind's "Mi agenda de citas" (month calendar with dots, Hoy/Semana/Mes counts, the day's list with time, patient and consultation type, Google Calendar sync). Replaces the earlier "Agenda link" idea.
+
+### Slice 1 — Agenda in AHT Fitness (buildable now)
+- **Agenda page** (Inicio's Agenda tab unlocks and opens it; also a header link):
+  - **Month calendar** (weeks Monday–Sunday, like the rest of the app), ‹ › to change month, **Hoy** button; a dot on days with appointments; the selected day highlighted.
+  - **Counts:** Hoy · Esta semana · Este mes.
+  - **Selected day:** its appointments in time order: **time**, patient (avatar initials + name, links to the patient), **consultation type** badge, duration, and the nutritionist's private note. **Editar**, **Cancelar cita**.
+  - **Nueva cita** (dialog): patient (searchable list of active patients), date, time, duration (default 60 min; 15–240), consultation type, private note (optional). Shows a warning (not a block) if it overlaps another appointment.
+- **From the patient page:** "Agendar cita" (same dialog, patient filled in) and the patient's next appointment shown in the header; past appointments listed on the patient page.
+- **Inicio:** the "Citas de hoy" line in Hoy unlocks ("2 citas hoy · la próxima a las 4:00 p.m. con Julio Álvarez"); the Agenda tab shows today's and tomorrow's appointments as cards.
+- **Consultation types:** a list per nutritionist in Ajustes, starting with: *Consulta nutricional presencial*, *Consulta nutricional en línea*, *Consulta de nutrición y entrenamiento*, *Seguimiento*, *Valoración inicial*. Editable (add, rename, remove unused).
+- **Patient side (read-only, nothing to type):**
+  - Hoy shows **"Tu próxima cita: jueves 30 de octubre, 4:00 p.m. · Consulta nutricional presencial"** (no private note), with **Nueva** when it was created or changed since they last opened the app, and a dot on the Hoy tab.
+  - A cancelled appointment shows **"Cancelada: tu cita del jueves 30"** until that day passes, so the patient isn't left waiting.
+  - Real phone notifications (push) need the app online and installed: they belong to "Reminders" (after going online). Until then the patient sees it when they open the app.
+- **Closed accounts:** no new appointments; past ones stay read-only. Archived patients don't appear in "Nueva cita".
+- **Export:** the patient's appointments (date, time, type; never the private note unless "notas privadas" is ticked).
+
+### Slice 2 — Mirror to Google Calendar (after AHT Fitness is online)
+Google has to reach the AHT Fitness server, so this waits for the online step (Fly.io). Two ways, decided then:
+1. **Private subscription link:** AHT Fitness gives the nutritionist a secret calendar address; he adds it once in Google Calendar ("Otros calendarios → Desde URL"). No Google sign-in, nothing to maintain. **Google refreshes subscribed calendars on its own schedule (several hours, up to about a day)**, and they're read-only in Google.
+2. **Direct connection** (Nutrimind's "Vincular / Desvincular"): appointments appear in his Google Calendar **at once** (create, change, cancel). Needs a Google Cloud project, his one-time Google sign-in, and accepting Google's "unverified app" notice (fine for a single account) or Google's review; tokens kept on the server only.
+- **What Google sees:** the event title "Cita: Julio Álvarez — Consulta nutricional presencial", the time and duration. The private note is **not** sent. (Patient names in his Google account: noted for Legal L1/L2, Google as a processor.)
+- One-way: AHT Fitness → Google. Changes made in Google don't come back.
+
+### Data (server)
+- `appointments`: nutritionist, patient, starts_at (date-time, stored in UTC; shown in local time), duration_min, type (text from the nutritionist's list), note (private), cancelled_at, changed_at (for "Nueva" on the patient side). Nutritionist: full access to their own; patient: **read** their own (without the note: the patient view never returns it — a separate field rule/hook); nobody else.
+- `nutritionists.appointment_types` (JSON list).
+
+### Acceptance (slice 1)
+1. Creating "jueves 4:00 p.m., Julio Álvarez, Consulta presencial" puts a dot on Thursday, adds to Semana/Mes counts, and lists it on that day.
+2. Julio's phone shows "Tu próxima cita: …" with **Nueva**; another patient sees nothing; nobody but the nutritionist sees the private note (checked through the API too).
+3. Editing the time updates the patient's card (Nueva again); cancelling shows "Cancelada" until that day passes.
+4. Overlapping appointments warn but save. Archived patients can't get new appointments.
+5. Inicio's "Citas de hoy" shows the count and the next one; the Agenda tab is no longer locked.
+6. Month navigation, Hoy, keyboard use of the calendar (arrow keys move days, Enter selects), and a phone layout that stacks calendar over the day list without sideways scroll.
+
+### Decided (owner, 2026-10-28)
+1. Consultation types: the starting list above (editable in Ajustes).
+2. Default duration: 60 min (the owner will say if it changes).
+3. The patient sees only the next appointment and a cancelled notice; history stays on the nutritionist's side.
+4. Open for slice 2 (later): subscription link with a delay, or the direct connection.
+
+---
+
 ## Feature: Photo feedback (built)
 
 **What:** on a patient's photo (meal or progress), the nutritionist leaves **feedback**: a short **comment** (text) and a **rating of 1 to 3 stars**. The patient sees it on their phone. Replaces the Later item "Comments on a meal photo".
@@ -914,6 +1005,7 @@ Slices (proposal): 1 library + program editor; 2 patient log with advice; 3 repo
 2. **Read-only appointments (medium):** the server reads his calendar through Google Calendar's **private iCal address** (Calendar settings → "Dirección secreta en formato iCal"); no Google sign-in. Shows **today's appointments** on Inicio (Hoy panel + Agenda tab) and **"Tu próxima cita"** on the patient's phone, matched by the patient's name or email in the event. Updates every few minutes, read-only; the private address is stored on the server only (it gives read access to his whole calendar).
 3. **Two-way (large):** booking inside AHT Fitness through the Google Calendar API: Google Cloud project, his Google sign-in (OAuth), Google's app verification for calendar access (can take weeks), token upkeep. Not recommended now.
 Recommended: 1 now (hours), 2 as a feature when wanted.
+**Superseded (owner, 2026-10-28):** the agenda is AHT Fitness's own calendar, appointments made by the nutritionist and mirrored to his Google Calendar; see "Feature: Agenda — the nutritionist's own calendar".
 
 ---
 
