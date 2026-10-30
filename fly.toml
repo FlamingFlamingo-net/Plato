@@ -1,0 +1,30 @@
+# AHT Fitness on Fly.io: one always-on machine with one data disk. Never scale above one machine
+# (PocketBase keeps everything in one SQLite file on that disk).
+# NEVER DELETE the volume "pb_data": it holds every account, diet and photo.
+app = "aht-fitness"
+primary_region = "dfw"            # Dallas, closest Fly region to Mexico
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8090
+  force_https = true
+  auto_stop_machines = "off"      # never sleep: sign-in and live screens break if it does
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/health"
+    timeout = "5s"
+
+[mounts]
+  source = "pb_data"
+  destination = "/pb/pb_data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

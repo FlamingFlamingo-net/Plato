@@ -1,0 +1,9 @@
+# Only the app goes into the image: never local data, demo logins, tests or git history.
+.git
+pb_data
+seed
+tools
+specs
+*.md
+docker-compose.yml
+fly.toml

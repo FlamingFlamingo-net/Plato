@@ -10,10 +10,10 @@ RUN wget -q https://github.com/pocketbase/pocketbase/releases/download/v${PB_VER
  && unzip /tmp/pb.zip -d /pb/ \
  && rm /tmp/pb.zip
 
-# Optional: copy local migrations / hooks / static files
-# COPY ./pb_migrations /pb/pb_migrations
-# COPY ./pb_hooks /pb/pb_hooks
-# COPY ./pb_public /pb/pb_public
+# The app itself (online on Fly these are baked in; locally docker-compose mounts the live folders over them)
+COPY ./pb_migrations /pb/pb_migrations
+COPY ./pb_hooks /pb/pb_hooks
+COPY ./pb_public /pb/pb_public
 
 EXPOSE 8090
 
