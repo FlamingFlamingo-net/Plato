@@ -7,6 +7,7 @@ import { activitySummary } from './activity.js';
 import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { patientShell } from './shell.js';
 import { loadGoalData, weekCard, mondayOf, kindsFor } from './goals.js';
+import { mountNextAppointment } from './next-appt.js';
 
 const { me, nutritionist } = await patientShell('today');
 const today = localDate();
@@ -18,6 +19,7 @@ let day = params.get('day') === 'yesterday' ? 'yesterday' : 'today';
 document.getElementById('greet').textContent = `¡Hola, ${me.name.split(' ')[0]}!`;
 document.getElementById('date').textContent = longDate(today) + (nutritionist ? ` · Plan de ${nutritionist.name}` : '');
 if (params.has('welcome')) document.getElementById('welcome').hidden = false;
+mountNextAppointment(document.getElementById('next-appt'), me);
 if (params.has('logged')) toast('¡Bien! Comida registrada.');
 if (params.has('activity')) toast('¡Bien! Actividad registrada.');
 if (params.has('logged') || params.has('welcome') || params.has('activity')) history.replaceState(null, '', `/today.html${day === 'yesterday' ? '?day=yesterday' : ''}`);

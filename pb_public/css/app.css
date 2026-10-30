@@ -457,3 +457,110 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-log-card--activity .plato-activity-icon { width: 2rem; height: 2rem; }
 .plato-activity-summary { margin: 0; font-weight: 600; line-height: 1.4; }
 .plato-section-title { font-family: var(--font-heading); font-size: 1.05rem; margin: 1.5rem 0 0; }
+
+/* ---------- Agenda (spec "Feature: Agenda", slice 1) ---------- */
+.plato-agenda { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 860px) { .plato-agenda { grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr); } }
+.plato-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.plato-cal-head h2 { margin: 0; font-family: var(--font-heading); font-size: 1.05rem; text-align: center; flex: 1; }
+.plato-cal-grid { display: grid; gap: 0.15rem; }
+.plato-cal-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.15rem; }
+.plato-cal-dow span { text-align: center; font-size: 0.72rem; font-weight: 600; color: var(--muted-foreground); padding: 0.2rem 0; }
+.plato-cal-day {
+  position: relative; display: grid; place-items: center; aspect-ratio: 1; min-height: 2.5rem;
+  border: 0; border-radius: 999px; background: none; color: inherit; font: inherit; font-size: 0.9rem;
+  cursor: pointer; font-variant-numeric: tabular-nums;
+  &:hover { background: var(--muted); }
+  &:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+  &.is-out { color: var(--muted-foreground); opacity: 0.6; }
+  &.is-today { font-weight: 700; color: var(--primary); box-shadow: inset 0 0 0 1.5px var(--primary); }
+  &[aria-selected="true"] { background: var(--primary); color: var(--primary-foreground); font-weight: 700; }
+}
+.plato-cal-dot { position: absolute; bottom: 0.3rem; width: 0.3rem; height: 0.3rem; border-radius: 50%; background: var(--primary); }
+.plato-cal-day[aria-selected="true"] .plato-cal-dot { background: var(--primary-foreground); }
+.plato-cal-hint { margin: 0.5rem 0 0; text-align: center; }
+.plato-cal-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 1rem 0; text-align: center;
+  div { display: grid; gap: 0.1rem; }
+  strong { font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); font-variant-numeric: tabular-nums; }
+  span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); }
+}
+.plato-day-head { display: flex !important; flex-direction: row !important; align-items: center; gap: 0.9rem;
+  h2 { margin: 0; font-family: var(--font-heading); font-size: 1.15rem; }
+  p { margin: 0; color: var(--muted-foreground); font-size: 0.85rem; }
+}
+.plato-day-badge { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; flex: none; border-radius: var(--radius);
+  background: var(--muted); color: var(--foreground); line-height: 1.05;
+  small { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; }
+  strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  &.is-today { background: var(--primary); color: var(--primary-foreground); }
+}
+.plato-appts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.plato-appts-empty { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; color: var(--muted-foreground); padding: 0.5rem 0; }
+.plato-appt {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 0.75rem; align-items: center;
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 0.7rem 0.85rem;
+  &.is-cancelled { background: var(--muted); .plato-appt-time strong, .plato-appt-line { text-decoration: line-through; color: var(--muted-foreground); } }
+}
+@media (max-width: 560px) {
+  .plato-appt { grid-template-columns: auto minmax(0, 1fr); }
+  .plato-appt > .plato-avatar { display: none; }
+  .plato-appt-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+.plato-appt-time { display: grid; text-align: center; min-width: 4.2rem;
+  strong { color: var(--primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  small { font-size: 0.7rem; color: var(--muted-foreground); }
+}
+.plato-appt-body { min-width: 0; display: grid; gap: 0.3rem; }
+.plato-appt-line { margin: 0; overflow-wrap: anywhere; a { font-weight: 600; } }
+.plato-appt-type { white-space: normal; text-align: left; }
+.plato-appt-note { margin: 0; display: flex; gap: 0.35rem; align-items: flex-start; font-size: 0.82rem; color: var(--muted-foreground); overflow-wrap: anywhere; svg { flex: none; margin-top: 0.15rem; } }
+.plato-appt-actions { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.plato-ap-warn { margin: 0; padding: 0.55rem 0.75rem; border-radius: var(--radius); background: oklch(0.96 0.05 85); color: oklch(0.42 0.1 60); font-size: 0.85rem; }
+.plato-agenda-group { margin: 0.5rem 0 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); }
+.plato-home-today-link { margin-left: auto; font-size: 0.82rem; white-space: nowrap; }
+
+/* Patient page strip */
+.plato-p-appt { padding: 0.8rem 1rem; margin-bottom: 1rem; gap: 0.5rem; }
+.plato-p-appt-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  > svg { color: var(--primary); flex: none; }
+  p { margin: 0; flex: 1; min-width: 12rem; }
+}
+.plato-p-appt-all { summary { cursor: pointer; font-size: 0.88rem; color: var(--muted-foreground); }
+  ul { list-style: none; margin: 0.6rem 0; padding: 0; display: grid; gap: 0.45rem; }
+  li { display: flex; flex-wrap: wrap; gap: 0.35rem 0.6rem; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+  li.is-past, li.is-cancelled { color: var(--muted-foreground); }
+  li .plato-appt-note { flex-basis: 100%; }
+}
+.plato-p-appt-when { display: grid; font-size: 0.88rem; min-width: 11rem; span { color: var(--muted-foreground); font-size: 0.8rem; } }
+
+/* Ajustes: consultation types */
+.plato-types { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem;
+  li { display: flex; gap: 0.4rem; align-items: center; }
+}
+.plato-row--nowrap { flex-wrap: nowrap; .input { flex: 1; min-width: 0; } }
+
+/* Patient: next appointment on Hoy */
+.plato-next-appts { display: grid; gap: 0.5rem; margin-top: 0.9rem; }
+.plato-next-appt { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: var(--radius); background: var(--card);
+  strong { display: block; }
+  p { margin: 0; }
+  &.is-cancelled { border-left-color: oklch(0.6 0.19 27); .plato-next-appt-icon { color: oklch(0.55 0.19 27); } }
+}
+.plato-next-appt-icon { color: var(--primary); flex: none; margin-top: 0.1rem; }
+.plato-next-appt-label { display: flex; gap: 0.4rem; align-items: center; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); }
+.plato-new-badge { text-transform: none; letter-spacing: 0; }
+.plato-feed--agenda { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.plato-agenda-day { display: grid; gap: 0.5rem; }
+.plato-types-min { width: 5.5rem; flex: none; }
+.plato-types-head { display: flex; gap: 0.4rem; font-size: 0.78rem; color: var(--muted-foreground); span:first-child { flex: 1; } span:last-child { width: 7.4rem; margin-right: 2.4rem; } }
+.plato-types li { flex-wrap: wrap; }
+.plato-types li > .input:first-child { flex: 1; min-width: 0; }
+.plato-types-m { display: inline-flex; align-items: center; gap: 0.35rem; }
+@media (max-width: 40rem) {
+  .plato-types-head { display: none; }
+  .plato-types li { padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  .plato-types li > .input:first-child { flex-basis: 100%; }
+  .plato-types-m { margin-right: auto; }
+}
+.plato-types-add { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; .field:first-child { flex: 1; min-width: 12rem; } }

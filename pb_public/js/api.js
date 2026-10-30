@@ -97,11 +97,12 @@ export async function request(path, { method = 'GET', body, form, auth = true } 
 const enc = encodeURIComponent;
 const col = (name) => `/api/collections/${name}/records`;
 
-export function list(name, { filter = '', sort = '', perPage = 200, fields = '' } = {}) {
+export function list(name, { filter = '', sort = '', perPage = 200, fields = '', expand = '' } = {}) {
   const q = new URLSearchParams({ perPage: String(perPage), skipTotal: '1' });
   if (filter) q.set('filter', filter);
   if (sort) q.set('sort', sort);
   if (fields) q.set('fields', fields);
+  if (expand) q.set('expand', expand);
   return request(`${col(name)}?${q}`).then((r) => r.items);
 }
 export const view = (name, id) => request(`${col(name)}/${enc(id)}`);

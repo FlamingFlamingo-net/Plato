@@ -63,11 +63,14 @@ await step('H2', async () => {
   const a = await nutri.eval(`(() => { const g = document.getElementById('tabs').getBoundingClientRect(), hoy = document.querySelector('.plato-home-today').getBoundingClientRect(), b = document.getElementById('all-seen').getBoundingClientRect();
     return { top: Math.round(g.top - hoy.top), bottom: Math.round(g.bottom - b.bottom), width: Math.round(b.width - hoy.width), gap: Math.round(b.top - hoy.bottom) }; })()`);
   check('H2 layout: tabs and Hoy share the top edge; tabs end where the button ends; button as wide as Hoy, separate', a.top === 0 && a.bottom === 0 && a.width === 0 && a.gap > 0, JSON.stringify(a));
-  const agenda = await nutri.eval(`(() => { const b = document.getElementById('tab-agenda'); b.click(); return { dis: b.getAttribute('aria-disabled'), sel: b.getAttribute('aria-selected'), lock: !!b.querySelector('.plato-home-tab-lock') }; })()`);
-  check('H2 Agenda is greyed out with a lock and cannot be opened', agenda.dis === 'true' && agenda.sel === 'false' && agenda.lock, JSON.stringify(agenda));
+  // Agenda (spec "Feature: Agenda", slice 1): the tab is live now; it lists today's and tomorrow's appointments.
+  const agenda = await nutri.eval(`(() => { const b = document.getElementById('tab-agenda'); return { dis: b.getAttribute('aria-disabled'), lock: !!b.querySelector('.plato-home-tab-lock') }; })()`);
+  check('H2 Agenda is no longer locked', agenda.dis === null && !agenda.lock, JSON.stringify(agenda));
   await nutri.eval(`document.getElementById('tab-pending').focus()`);
   await nutri.eval(`document.getElementById('tabs').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))`);
-  check('H2 arrow keys move between tabs and skip Agenda', await nutri.eval(`document.activeElement.id`) === 'tab-recent');
+  check('H2 arrow keys reach Agenda after Pendientes', await nutri.eval(`document.activeElement.id`) === 'tab-agenda');
+  await nutri.eval(`document.getElementById('tabs').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))`);
+  check('H2 and wrap around to Recientes', await nutri.eval(`document.activeElement.id`) === 'tab-recent');
 });
 
 await step('H3', async () => {

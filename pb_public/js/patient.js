@@ -11,6 +11,7 @@ import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
 import { loadGoalData, weekCard, weeklyChart, mondayOf, addDays, kindsFor, goalText, SERVICE_LABEL, serviceCards, hasNutrition, hasTraining } from './goals.js';
 import { weightChart } from './charts.js';
+import { mountPatientAppointments } from './patient-appts.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -50,6 +51,7 @@ function renderHead() {
   if (closed) document.getElementById('closed-title').textContent = `Cuenta cerrada el ${longDate(patient.archived_at).toLowerCase()}`;
 }
 renderHead();
+mountPatientAppointments(document.getElementById('p-appts'), { me, patient, closed });
 
 // ---------- Overview / measurements ----------
 let measurements = [];

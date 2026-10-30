@@ -9,6 +9,7 @@ import { activitySummary, activityName } from './activity.js';
 import { POSE_LABEL } from './progress-photos.js';
 import { feedbackText } from './feedback.js';
 import { kindsFor, indexLogs, weeklyChart, goalText, SERVICE_LABEL } from './goals.js';
+import { notesFor, dayLabel, timeRange } from './appointments.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -38,7 +39,9 @@ try {
     list('activity_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
     list('progress_photos', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
   ]);
-  data = { patient, measurements, diet, logs, notes, acts, progress };
+  const appts = await list('appointments', { filter: `patient = ${pid}`, sort: 'starts_at', perPage: 500 });
+  const apptNotes = await notesFor(appts.map((x) => x.id));
+  data = { patient, measurements, diet, logs, notes, acts, progress, appts, apptNotes };
   document.title = `Datos de ${patient.name} — AHT Fitness`;
   await render();
   statusEl.hidden = true;
@@ -133,6 +136,19 @@ async function render() {
 
     goalsSection(),
 
+    section(`Citas (${data.appts.length})`,
+      data.appts.length
+        ? h('table', { class: 'doc-table' },
+          h('thead', {}, h('tr', {}, ...['Día', 'Hora', 'Tipo', 'Estado'].map((t) => h('th', { scope: 'col', text: t })),
+            h('th', { scope: 'col', class: 'appt-note-col', hidden: !withNotes.checked, text: 'Nota privada' }))),
+          h('tbody', {}, ...data.appts.map((x) => h('tr', {},
+            h('td', { text: dayLabel(x.starts_at) }),
+            h('td', { text: timeRange(x) }),
+            h('td', { text: x.type }),
+            h('td', { text: x.cancelled_at ? 'Cancelada' : new Date(x.starts_at.replace(' ', 'T')) < new Date() ? 'Pasada' : 'Próxima' }),
+            h('td', { class: 'appt-note-col', hidden: !withNotes.checked, text: data.apptNotes[x.id]?.text || '—' })))))
+        : h('p', { class: 'doc-empty', text: 'Sin citas.' })),
+
     progressSection,
 
     notesSection,
@@ -186,12 +202,13 @@ withProgress.addEventListener('change', async () => {
 withNotes.addEventListener('change', () => {
   const s = document.getElementById('notes-section');
   if (s) s.hidden = !withNotes.checked;
+  document.querySelectorAll('.appt-note-col').forEach((c) => { c.hidden = !withNotes.checked; });
 });
 
 printBtn.addEventListener('click', printDocument);
 
 jsonBtn.addEventListener('click', () => {
-  const { patient, measurements, diet, logs, notes, acts, progress } = data;
+  const { patient, measurements, diet, logs, notes, acts, progress, appts, apptNotes } = data;
   const out = {
     format: 'plato-patient-export',
     version: 1,
@@ -227,6 +244,10 @@ jsonBtn.addEventListener('click', () => {
       sent_at: p.created, seen_at: p.seen_at || null, photo_file: p.photo,
       feedback: p.feedback_at ? { text: p.feedback_text || '', given_at: p.feedback_at, edited: !!p.feedback_edited } : null,
     })) } : {}),
+    appointments: appts.map((x) => ({
+      starts_at: x.starts_at, duration_min: x.duration_min, type: x.type, cancelled_at: x.cancelled_at || null,
+      ...(withNotes.checked ? { private_note: apptNotes[x.id]?.text || '' } : {}),
+    })),
     ...(withNotes.checked ? { private_notes: notes.map((n) => ({ created: n.created, text: n.text })) } : {}),
   };
   const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });

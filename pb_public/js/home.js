@@ -8,6 +8,7 @@ import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
 import { weekOf, indexLogs, mondayOf, addDays } from './goals.js';
+import { loadRange, timeOf as apptTime, timeRange, dayKey } from './appointments.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -49,6 +50,7 @@ let withDiet = new Set();
 let recentMeals = new Set();
 let behind = { meal: [], act: [] }; // last full week below the goal (spec "Weekly goals": grouped, never per-patient rows)
 let templateCount = 0;
+let upcoming = [];   // today's and tomorrow's appointments (not cancelled)
 let pools = null;      // per type: { items, cursor, done }
 let limit = PAGE;
 let shownItems = [];   // what the cards show now (for "Marcar todo como visto")
@@ -104,6 +106,7 @@ async function loadAll() {
   recentMeals = new Set(recent.map((m) => m.patient));
   unseen = { meal: um, activity: ua, progress: up };
   templateCount = tpls.length;
+  try { upcoming = (await loadRange(localDate(), addDays(localDate(), 1))).filter((a) => !a.cancelled_at); } catch { upcoming = []; }
   // Last full week (Monday to Sunday before this one)
   const lastMon = addDays(mondayOf(), -7), lastSun = addDays(lastMon, 6);
   const wf = `date >= ${q(lastMon)} && date <= ${q(lastSun)} && patient.archived_at = ""`;
@@ -189,7 +192,7 @@ const TABS = [
   { id: 'photos', label: 'Fotos', hint: 'Comidas y progreso', icon: 'image', count: () => unseenCount(['meal', 'progress']), unit: 'sin ver' },
   { id: 'catalog', label: 'Catálogo', hint: 'Tus listas', icon: 'book', count: () => 0 },
   { id: 'pending', label: 'Pendientes', hint: 'Esperan tu acción', icon: 'list', count: () => pendingItems().length + pendingGroups().length, unit: 'pendientes' },
-  { id: 'agenda', label: 'Agenda', hint: 'Próximamente', icon: 'calendar', disabled: true },
+  { id: 'agenda', label: 'Agenda', hint: 'Hoy y mañana', icon: 'calendar', count: () => todayAppts().length, unit: 'citas hoy' },
 ];
 const tabsEl = document.getElementById('tabs');
 let current = new URL(location.href).searchParams.get('tab') || 'recent';
@@ -248,8 +251,13 @@ function renderToday() {
     line(noApp ? 'is-warn' : '', noApp, `${noApp === 1 ? 'paciente' : 'pacientes'} sin la app`),
     (() => { const n = new Set([...behind.meal, ...behind.act].map((x) => x.p.id)).size;
       return line(n ? 'is-warn' : '', n, `${n === 1 ? 'paciente' : 'pacientes'} por debajo de su meta la semana pasada`); })(),
-    h('li', { class: 'is-off' }, h('span', { class: 'plato-home-dot', 'aria-hidden': 'true' }), icon('lock', 14), h('span', { text: 'Citas de hoy: cuando exista la agenda' })));
+    (() => { const tc = todayAppts(), now = Date.now();
+      const next = tc.find((a) => new Date(a.starts_at.replace(' ', 'T')).getTime() + a.duration_min * 60000 > now);
+      return h('li', {}, h('span', { class: 'plato-home-dot', 'aria-hidden': 'true' }), h('b', { text: String(tc.length) }),
+        h('span', { text: `${tc.length === 1 ? 'cita' : 'citas'} hoy${next ? ` · la próxima a las ${apptTime(next.starts_at)} con ${next.expand?.patient?.name || 'tu paciente'}` : ''}` }),
+        h('a', { class: 'plato-home-today-link', href: '/agenda.html', text: 'Ver agenda' })); })());
 }
+const todayAppts = () => upcoming.filter((a) => dayKey(a.starts_at) === localDate());
 
 // ---------- Cards ----------
 const photoDialog = document.getElementById('photo-dialog');
@@ -367,6 +375,30 @@ function pendingCards() {
     h('a', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', href: x.href }, x.action)));
 }
 
+// ---------- Agenda tab: today's and tomorrow's appointments ----------
+function agendaCards() {
+  const today = localDate(), tomorrow = addDays(today, 1);
+  const group = (ymd, title) => {
+    const items = upcoming.filter((a) => dayKey(a.starts_at) === ymd);
+    return h('li', { class: 'plato-agenda-day' },
+      h('h3', { class: 'plato-agenda-group', text: title }),
+      items.length
+        ? h('ul', { class: 'plato-appts' }, ...items.map((a) => h('li', { class: 'plato-appt', dataset: { appt: a.id } },
+          h('div', { class: 'plato-appt-time' }, h('strong', { text: apptTime(a.starts_at) }), h('small', { text: `${a.duration_min} min` })),
+          h('span', { class: 'plato-avatar plato-avatar--sm', 'aria-hidden': 'true', text: initials(a.expand?.patient?.name) }),
+          h('div', { class: 'plato-appt-body' },
+            h('p', { class: 'plato-appt-line' }, 'Cita con ', a.expand?.patient
+              ? h('a', { href: `/patient.html?id=${encodeURIComponent(a.patient)}`, text: a.expand.patient.name }) : h('span', { text: 'paciente' })),
+            h('div', { class: 'plato-row' }, h('span', { class: 'badge plato-appt-type', text: a.type }))),
+          h('div', { class: 'plato-appt-actions' },
+            h('a', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', href: `/agenda.html?day=${ymd}`, 'aria-label': `Ver el ${title.toLowerCase()} en la agenda` }, 'Ver día')))))
+        : h('p', { class: 'plato-muted plato-small', style: 'margin:0', text: 'Sin citas.' }));
+  };
+  return [group(today, 'Hoy'), group(tomorrow, 'Mañana'),
+    h('li', { class: 'plato-row' }, h('a', { class: 'btn', href: '/agenda.html' }, icon('calendar', 16), 'Abrir la agenda'),
+      h('a', { class: 'btn', 'data-variant': 'outline', href: '/agenda.html?new=1' }, 'Nueva cita'))];
+}
+
 // ---------- Feed ----------
 const SUBS = {
   recent: 'Comidas, actividad y fotos de progreso de tus pacientes, lo más nuevo primero.',
@@ -374,6 +406,7 @@ const SUBS = {
   photos: 'Fotos de comidas y de progreso. Puedes dar retroalimentación en cada una.',
   catalog: 'Tus listas. Las que dicen “Próximamente” llegan con sus funciones.',
   pending: 'Todo lo que espera una acción tuya.',
+  agenda: 'Tus citas de hoy y de mañana. La agenda completa tiene el calendario.',
 };
 let renderToken = 0;
 async function renderFeed() {
@@ -392,10 +425,12 @@ async function renderFeed() {
   more.hidden = true;
   shownItems = [];
   cards.classList.toggle('plato-feed--list', current === 'pending' || current === 'catalog');
+  cards.classList.toggle('plato-feed--agenda', current === 'agenda');
   if (current === 'photos') {
     chips.replaceChildren(...[['all', 'Todas'], ['progress', 'Progreso'], ['meal', 'Comidas']].map(([k, l]) =>
       h('button', { class: 'plato-chip', type: 'button', 'aria-pressed': String(photoFilter === k), onclick: () => { photoFilter = k; limit = PAGE; renderFeed(); } }, l)));
   }
+  if (current === 'agenda') { status.textContent = ''; cards.replaceChildren(...agendaCards()); return; }
   if (current === 'catalog') { status.textContent = ''; cards.replaceChildren(...catalogCards()); renderAllSeen(); return; }
   if (current === 'pending') { status.textContent = ''; groupsEl.replaceChildren(...pendingGroups().map(groupCard)); cards.replaceChildren(...pendingCards()); renderAllSeen(); return; }
   status.textContent = 'Cargando…';

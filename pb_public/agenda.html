@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Agenda — AHT Fitness</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/agenda.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/home.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">AHT Fitness</a>
+    <div class="plato-row">
+      <a class="btn" data-variant="ghost" data-size="sm" href="/home.html">Inicio</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/agenda.html" aria-current="page">Agenda</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/patients.html">Pacientes</a>
+      <a class="btn plato-hide-sm" data-variant="ghost" data-size="sm" href="/templates.html">Plantillas</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html">Ajustes</a>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main">
+    <div class="plato-row plato-row--between" style="margin-bottom:1rem">
+      <h1 class="plato-page-title" style="margin:0">Mi agenda</h1>
+      <button class="btn" type="button" id="new-appt">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Nueva cita</button>
+    </div>
+    <p class="plato-muted" id="status" role="status"></p>
+
+    <div class="plato-agenda">
+      <section class="card plato-cal" aria-labelledby="cal-title">
+        <header class="plato-cal-head">
+          <button class="btn" data-variant="ghost" data-size="icon-sm" type="button" id="prev" aria-label="Mes anterior"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <h2 id="cal-title" aria-live="polite"></h2>
+          <button class="btn" data-variant="ghost" data-size="icon-sm" type="button" id="next" aria-label="Mes siguiente"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        </header>
+        <section>
+          <div class="plato-cal-grid" role="grid" aria-labelledby="cal-title" id="grid"></div>
+          <p class="plato-muted plato-small plato-cal-hint">Flechas para moverte entre días, Enter para ver uno.</p>
+          <div class="plato-cal-counts" id="counts"></div>
+          <button class="btn" data-variant="outline" data-size="sm" type="button" id="today-btn" style="width:100%">Ir a hoy</button>
+        </section>
+      </section>
+
+      <section class="card plato-day" aria-labelledby="day-title">
+        <header class="plato-day-head">
+          <span class="plato-day-badge" id="day-badge" aria-hidden="true"><small></small><strong></strong></span>
+          <div><h2 id="day-title"></h2><p id="day-sub"></p></div>
+        </header>
+        <section><ul class="plato-appts" id="day-list" aria-labelledby="day-title"></ul></section>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

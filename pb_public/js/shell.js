@@ -1,6 +1,7 @@
 // shell.js — shared chrome for the patient app: top bar with the nutritionist's name, bottom nav, offline banner.
 import { requireRole, view, list, q, signOut, dateOnly } from './api.js';
 import { lastSeen } from './feedback.js';
+import { hasNewAppointment } from './next-appt.js';
 import { h, icon, offlineBanner, isMinor } from './ui.js';
 
 export async function patientShell(current) {
@@ -31,6 +32,7 @@ export async function patientShell(current) {
   }).catch(() => []);
   if (current !== 'today') newer('meal_logs', 'meal').then((r) => { if (r.length) dot('today', 'Retroalimentación nueva'); });
   if (current !== 'progress') newer('progress_photos', 'progress').then((r) => { if (r.length) dot('progress', 'Retroalimentación nueva'); });
+  if (current !== 'today') hasNewAppointment(me).then((y) => { if (y) dot('today', 'Cita nueva o cambiada'); });
 
   // Age limits: no progress photos under 18 (the server refuses too). Hide the way in.
   const minor = isMinor(dateOnly(me.birth_date));
