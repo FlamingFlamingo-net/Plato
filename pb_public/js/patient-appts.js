@@ -37,10 +37,11 @@ export function mountPatientAppointments(el, { me, patient, closed }) {
           h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: () => open(a) }, 'Editar'),
           h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: () => cancelAppointment(a, load) }, 'Cancelar')));
     });
-    el.replaceChildren(head, all.length
-      ? h('details', { class: 'plato-p-appt-all' }, h('summary', { text: `Todas sus citas (${all.length})` }), h('ul', {}, ...rows),
-          h('a', { class: 'btn', 'data-variant': 'link', 'data-size': 'sm', href: '/agenda.html' }, 'Abrir mi agenda'))
-      : null);
+    // replaceChildren() would print a null as the text "null": pass only real nodes.
+    el.replaceChildren(head, ...(all.length
+      ? [h('details', { class: 'plato-p-appt-all' }, h('summary', { text: `Todas sus citas (${all.length})` }), h('ul', {}, ...rows),
+          h('a', { class: 'btn', 'data-variant': 'link', 'data-size': 'sm', href: '/agenda.html' }, 'Abrir mi agenda'))]
+      : []));
   }
   load();
 }

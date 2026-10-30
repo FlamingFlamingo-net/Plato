@@ -186,6 +186,18 @@ await step('G9', async () => {
   check('G9 all her appointments are listed (2)', all === 'Todas sus citas (2)', all);
 });
 
+await step('G9b', async () => {
+  // A patient with no appointments: the strip says so and nothing else (no stray "null").
+  const s = await nutri.eval(`fetch('/api/collections/patients/records?perPage=1&filter=' + encodeURIComponent('name = "ZZ Sin Citas"')).then(() => 1)`);
+  const r = await fetch(`${BASE}/api/collections/patients/records`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: t.nutritionist.token },
+    body: JSON.stringify({ name: 'ZZ Sin Citas', sex: 'female', birth_date: '1990-01-01 12:00:00.000Z', nutritionist: t.nutritionist.record.id, password: 'Zz1234567890', passwordConfirm: 'Zz1234567890', service: 'nutrition' }) });
+  const p = await r.json();
+  await nutri.goto(`${BASE}/patient.html?id=${p.id}`);
+  await nutri.waitFor(`document.querySelector('#p-appts .plato-p-appt-head')`);
+  const txt = await nutri.eval(`document.getElementById('p-appts').textContent`);
+  check('G9b no appointments: "Sin citas próximas." and no stray text', s === 1 && txt.includes('Sin citas próximas.') && !txt.includes('null'), txt);
+});
+
 await step('G10', async () => {
   await nutri.goto(`${BASE}/export.html?id=${t.ana_id}`);
   await nutri.waitFor(`[...document.querySelectorAll('.doc-section h2')].some(h => h.textContent.startsWith('Citas'))`, 15000);
