@@ -627,8 +627,8 @@ PR = "/api/collections/patients/records"
 def monday(d):
     return d - timedelta(days=d.weekday())
 s, gn = new_patient(ta, a_id, "ZZ Meta Nutri")          # no service sent (older screens)
-check("G1 a new patient without a service gets Nutrición: meals 3 x 5 on, activity off (30 min kept)",
-      gn.get("service") == "nutrition" and gn.get("meal_goal_days") == 5 and gn.get("meal_goal_per_day") == 3
+check("G1 a new patient without a service gets Nutrición: all planned meals x 5 days on, activity off (30 min kept)",
+      gn.get("service") == "nutrition" and gn.get("meal_goal_days") == 5 and (gn.get("goal_history") or [{}])[0].get("meal_per_day") == "all"
       and gn.get("activity_goal_days") == 0 and gn.get("activity_goal_min") == 30, gn)
 check("G1 its goal history starts this week", len(gn.get("goal_history") or []) == 1 and gn["goal_history"][0]["from"] in
       (str(monday(date.today())), str(monday(date.today() + timedelta(days=1)))), gn.get("goal_history"))
@@ -650,8 +650,8 @@ s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_min": 47}, ta)
 check("G3 minutes must go in steps of 5", s == 400, (s, r))
 s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_min": 305}, ta)
 check("G3 more than 300 minutes a day is refused", s == 400, s)
-s, r = call("PATCH", f"{PR}/{gb['id']}", {"meal_goal_per_day": 6}, ta)
-check("G3 more than 5 meals a day is refused", s == 400, s)
+s, r = call("PATCH", f"{PR}/{gb['id']}", {"meal_goal_days": 4, "goal_week": wk}, ta)
+check("G3 the meal goal is all planned meals: history writes \"all\"", s == 200 and r["goal_history"][-1]["meal_per_day"] == "all" and r["goal_history"][-1]["meal_days"] == 4, (s, r.get("goal_history")))
 s, r = call("PATCH", f"{PR}/{gb['id']}", {"meal_goal_days": 0, "goal_week": wk}, ta)
 check("G3 Sin meta (0 days) is allowed", s == 200 and r["meal_goal_days"] == 0, (s, r))
 s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_days": 3, "goal_week": "2020-01-06"}, ta)
@@ -667,6 +667,29 @@ s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_days": 7}, tb)
 check("G5 another nutritionist cannot change them", s == 404, s)
 s, mine = call("GET", f"{PR}/{pm['id']}", token=tpm)
 check("G5 the patient reads their goals", s == 200 and mine.get("service") and "goal_history" in mine, s)
+
+# ---- snacks per diet (spec "Snacks per diet + meal goal = all planned meals") ----
+DR = "/api/collections/diets/records"
+s, sp = new_patient(ta, a_id, "ZZ Colaciones")
+s, d = call("POST", DR, {"patient": sp["id"], "meals": {"1": {"breakfast": "Avena"}}}, ta)
+check("N1 a diet created without a snack number gets 2", s == 200 and d.get("snacks") == 2, (s, d))
+s, r = call("PATCH", f"{DR}/{d['id']}", {"snacks": 4}, ta)
+check("N1 4 snacks saves", s == 200 and r["snacks"] == 4, (s, r))
+s, r = call("PATCH", f"{DR}/{d['id']}", {"snacks": 0}, ta)
+check("N1 0 snacks saves", s == 200 and r["snacks"] == 0, (s, r))
+s, r = call("PATCH", f"{DR}/{d['id']}", {"snacks": 5}, ta)
+check("N2 more than 4 snacks is refused", s == 400, s)
+s, r = call("PATCH", f"{DR}/{d['id']}", {"snacks": -1}, ta)
+check("N2 negative snacks is refused", s == 400, s)
+s, r = call("POST", "/api/collections/diet_templates/records", {"nutritionist": a_id, "title": "ZZ Tpl Colaciones", "meals": {}}, ta)
+check("N1 a template without a snack number gets 2", s == 200 and r.get("snacks") == 2, (s, r))
+s, sn = joined_patient(ta, a_id, "ZZ Colación Nocturna")
+pn, tpn = s, sn
+for slot in ("snack_early", "snack_night"):
+    s, r = call("POST", ML, {"patient": pn["id"], "date": d0, "slot": slot}, tpn)
+    check(f"N3 a patient checks the new slot {slot}", s == 200, (s, r))
+s, r = call("POST", ML, {"patient": pn["id"], "date": d0, "slot": "snack_midnight"}, tpn)
+check("N3 an unknown slot is refused", s == 400, s)
 
 # ---- closed sign-up: nutritionist accounts are made by the admin ----
 ce = f"zz-{uuid.uuid4().hex[:8]}@test.local"; cp_ = pw()

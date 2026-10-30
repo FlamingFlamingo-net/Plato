@@ -1,6 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 // Weekly goals (spec "Feature: Weekly goals", slice 2): defaults by service, value checks, and goal_history.
 // History entry = the goals in force from a week's Monday: { from, service, meal_days, meal_per_day, act_days, act_min }.
+// meal_per_day is "all" (every planned meal of the day) since "Snacks per diet"; older entries hold a number.
 // "from" is the patient's local Monday, sent by the screen as goal_week (not stored). The server accepts it only
 // within the real time-zone limits (UTC+14 / UTC-12); otherwise it uses the UTC Monday.
 // (Hooks run in separate JS runtimes: everything is inside the handlers.)
@@ -13,7 +14,6 @@ onRecordCreateRequest((e) => {
   const s = r.getString("service");
   const nutri = s === "nutrition" || s === "both", train = s === "training" || s === "both";
   if (body.meal_goal_days === undefined) r.set("meal_goal_days", nutri ? 5 : 0);
-  if (body.meal_goal_per_day === undefined) r.set("meal_goal_per_day", 3);
   if (body.activity_goal_days === undefined) r.set("activity_goal_days", train ? 5 : 0);
   if (body.activity_goal_min === undefined) r.set("activity_goal_min", 30);
   G.validate(r);
