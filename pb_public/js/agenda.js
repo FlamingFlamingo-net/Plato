@@ -1,7 +1,9 @@
 // agenda.js — the nutritionist's calendar (spec "Feature: Agenda — the nutritionist's own calendar", slice 1).
 // Month grid (Monday first), dots on days with appointments, Hoy / Semana / Mes counts, and the selected day's list.
-// ?day=YYYY-MM-DD opens a day; ?new=1&patient=ID opens "Nueva cita" for that patient.
-import { requireRole, list, signOut, localDate } from './api.js';
+// ?day=YYYY-MM-DD opens a day; ?appt=ID opens that appointment's day (links from Google Calendar);
+// ?new=1&patient=ID opens "Nueva cita" for that patient.
+import { requireRole, list, view, signOut, localDate } from './api.js';
+import { myFeed } from './settings-calendar.js';
 import { h, icon, offlineBanner } from './ui.js';
 import { mondayOf, addDays } from './goals.js';
 import { loadRange, notesFor, appointmentDialog, cancelAppointment, deleteAppointment, timeRange, timeOf, dayKey } from './appointments.js';
@@ -145,5 +147,14 @@ const openEdit = (a) => appointmentDialog({ me, patients: patients.some((p) => p
   types: me.appointment_types, appt: a, note: notes[a.id], onSaved: (s) => { selected = dayKey(s.starts_at); month = selected.slice(0, 7); return load(); } });
 document.getElementById('new-appt').addEventListener('click', () => openNew({ day: selected >= today ? selected : today }));
 
+if (params.get('appt')) {
+  try { const a = await view('appointments', params.get('appt')); selected = dayKey(a.starts_at); month = selected.slice(0, 7); } catch { /* gone or not yours: today */ }
+}
 await load();
+myFeed().then((f) => {
+  const el = document.getElementById('cal-google');
+  el.replaceChildren(...(f?.enabled
+    ? [icon('check', 14), ' Se ve en tu Google Calendar (Google lo actualiza cada varias horas). ', h('a', { href: '/settings.html#calendar-card', text: 'Ajustes' })]
+    : ['¿Verla en Google Calendar? ', h('a', { href: '/settings.html#calendar-card', text: 'Actívalo en Ajustes' })]));
+});
 if (params.get('new') === '1') openNew({ day: selected >= today ? selected : today, patientId: params.get('patient') || '' });

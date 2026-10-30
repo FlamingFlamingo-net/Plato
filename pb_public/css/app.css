@@ -579,3 +579,8 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   &:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; position: relative; }
   &:disabled { cursor: default; opacity: 0.7; }
 }
+
+/* Ajustes: Google Calendar subscription link (spec "Agenda", Slice 2) */
+.plato-cal-steps { margin: 0; padding-left: 1.25rem; list-style: decimal; display: grid; gap: 0.3rem; font-size: 0.9rem; }
+#cal-url { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.78rem; }
+.plato-cal-google { margin: 0.75rem 0 0; text-align: center; svg { vertical-align: -2px; color: var(--primary); } }

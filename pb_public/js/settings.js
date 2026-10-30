@@ -3,10 +3,12 @@ import { requireRole, update, signOut, photoUrl } from './api.js';
 import { toast, offlineBanner, formError, busy } from './ui.js';
 import { shrink } from './photo.js';
 import { mountTypes } from './settings-types.js';
+import { mountCalendar } from './settings-calendar.js';
 
 offlineBanner();
 let me = await requireRole('nutritionists');
 mountTypes(document.querySelector('#types-card > section'), () => me, (m) => { me = m; });
+mountCalendar(document.querySelector('#calendar-card > section'));
 document.getElementById('who').textContent = me.name;
 document.getElementById('sign-out').addEventListener('click', signOut);
 

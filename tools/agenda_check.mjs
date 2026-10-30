@@ -219,6 +219,43 @@ await step('G11', async () => {
   check('G11 no console errors (phone)', !err, err);
 });
 
+await step('G13', async () => {
+  // Google Calendar subscription link (spec "Feature: Agenda", Slice 2)
+  await nutri.goto(`${BASE}/settings.html`);
+  await nutri.waitFor(`document.getElementById('cal-enable')`);
+  await nutri.eval('window.confirm = () => true');
+  await nutri.click('#cal-enable');
+  await nutri.waitFor(`document.getElementById('cal-url')?.value.includes('/api/plato/calendar/')`);
+  const url = await nutri.eval(`document.getElementById('cal-url').value`);
+  check('G13 Ajustes: Activar enlace shows the private address, Copiar enlace and the 3 steps',
+    /\/api\/plato\/calendar\/[A-Za-z0-9]{40,}\.ics$/.test(url) && await nutri.eval(`!!document.getElementById('cal-copy') && document.querySelectorAll('.plato-cal-steps li').length === 3`), url);
+  const r = await fetch(url);
+  const ics = (await r.text()).replace(/\r\n /g, '');
+  check('G13 the address serves the calendar with Carlos\'s appointment (Google sees no private note)',
+    r.status === 200 && ics.includes('SUMMARY:Cita: Carlos Ruiz Peña') && !ics.includes('rodilla'), `${r.status} ${ics.slice(0, 200)}`);
+  await nutri.goto(`${BASE}/settings.html`);
+  await nutri.waitFor(`document.getElementById('cal-url')`);
+  check('G13 after a reload the same address is shown', await nutri.eval(`document.getElementById('cal-url').value`) === url);
+  await nutri.eval('window.confirm = () => true');
+  await nutri.click('#cal-rotate');
+  await nutri.waitFor(`document.getElementById('cal-url').value !== ${JSON.stringify(url)}`);
+  check('G13 Cambiar enlace: new address, the old one stops working', (await fetch(url)).status === 404);
+  await openAgenda();
+  await nutri.waitFor(`document.getElementById('cal-google').textContent.length > 0`);
+  check('G13 the Agenda page says it shows in Google Calendar', (await nutri.text('#cal-google')).includes('Se ve en tu Google Calendar'));
+  const id = ics.split('BEGIN:VEVENT').find((ev) => ev.includes('Carlos'))?.match(/UID:([a-z0-9]+)@aht-fitness/)?.[1];
+  await nutri.goto(`${BASE}/agenda.html?appt=${id}`);
+  await nutri.waitFor(`document.querySelectorAll('.plato-cal-day').length === 42 && document.getElementById('day-list').children.length > 0`);
+  check('G13 a link from Google opens that appointment\'s day', (await nutri.eval(`document.getElementById('day-list').textContent`)).includes('Carlos'));
+  await nutri.goto(`${BASE}/settings.html`);
+  await nutri.waitFor(`document.getElementById('cal-disable')`);
+  await nutri.eval('window.confirm = () => true');
+  await nutri.click('#cal-disable');
+  await nutri.waitFor(`document.getElementById('cal-enable')`);
+  check('G13 Desactivar: back to "Activar enlace"', true);
+  await nutri.screenshot(`${OUT}/settings-calendar.png`, { full: false });
+});
+
 const errs = [...nutri.errors, ...ana.errors].join(' | ');
 check('G12 no console errors', !errs, errs);
 await browser.close();
