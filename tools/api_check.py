@@ -691,6 +691,55 @@ for slot in ("snack_early", "snack_night"):
 s, r = call("POST", ML, {"patient": pn["id"], "date": d0, "slot": "snack_midnight"}, tpn)
 check("N3 an unknown slot is refused", s == 400, s)
 
+# ---- Google Calendar subscription link (spec "Feature: Agenda", Slice 2) ----
+def ics_get(token):
+    req = urllib.request.Request(f"{BASE}/api/plato/calendar/{token}.ics")
+    try:
+        with urllib.request.urlopen(req) as r:
+            return r.status, r.read().decode("utf-8").replace("\r\n ", ""), r.headers.get("Content-Type", "")
+    except urllib.error.HTTPError as e:
+        return e.code, "", ""
+time.sleep(61)  # the shared /api/plato/ rate limit (20 a minute): the calendar checks below use ~15
+CF = "/api/collections/calendar_feeds/records"
+AP = "/api/collections/appointments/records"
+soon = f"{date.today() + timedelta(days=3)} 18:00:00.000Z"
+s, keep = call("POST", AP, {"nutritionist": a_id, "patient": pn["id"], "starts_at": soon, "duration_min": 45, "type": "Consulta de mediciones"}, ta)
+call("POST", "/api/collections/appointment_notes/records", {"appointment": keep["id"], "nutritionist": a_id, "text": "NOTA-PRIVADA-XYZ"}, ta)
+s, gone = call("POST", AP, {"nutritionist": a_id, "patient": pn["id"], "starts_at": soon, "duration_min": 30, "type": "Cita cancelada ZZ"}, ta)
+call("PATCH", f"{AP}/{gone['id']}", {"cancelled_at": "2000-01-01 00:00:00.000Z"}, ta)
+s, en = call("POST", "/api/plato/calendar/enable", {}, ta)
+check("C1 the nutritionist turns the calendar link on (secret of 40+ characters)", s == 200 and len(en.get("token", "")) >= 40, (s, en))
+s, en2 = call("POST", "/api/plato/calendar/enable", {}, ta)
+check("C1 turning it on again keeps the same address", s == 200 and en2.get("token") == en.get("token"), s)
+s, ics, ct = ics_get(en["token"])
+check("C2 the address returns a calendar (text/calendar) with the appointment, patient name and type",
+      s == 200 and ct.startswith("text/calendar") and "BEGIN:VCALENDAR" in ics and f"UID:{keep['id']}@aht-fitness" in ics
+      and "SUMMARY:Cita: ZZ Colación Nocturna — Consulta de mediciones" in ics, (s, ct, ics[:300]))
+check("C2 start and end in UTC (45 minutes)", "DTSTART:" + soon.replace("-", "").replace(" ", "T").replace(":", "")[:15] + "Z" in ics
+      and "DTEND:" + soon.replace("-", "").replace(" ", "T").replace(":", "")[:11] + "45" + "00Z" in ics, ics[:600])
+check("C3 never the private note or a cancelled appointment", "NOTA-PRIVADA-XYZ" not in ics and gone["id"] not in ics and "Cita cancelada ZZ" not in ics, ics[:400])
+s, r = call("GET", CF, token=tpn)
+check("C4 a patient cannot read their nutritionist's link", s == 200 and r["totalItems"] == 0, (s, r))
+s, r = call("GET", CF, token=tb)
+check("C4 another nutritionist cannot read it", s == 200 and r["totalItems"] == 0, (s, r))
+s, r = call("GET", CF)
+check("C4 a guest cannot read it", s in (200, 401, 403) and (s != 200 or r["totalItems"] == 0), (s, r))
+s, r = call("POST", CF, {"nutritionist": a_id, "token": "Z" * 48, "enabled": True}, ta)
+check("C4 nobody writes a link directly (only the server makes them)", s in (400, 403), s)
+s, r = call("POST", "/api/plato/calendar/enable", {}, tpn)
+check("C4 a patient cannot turn a link on", s in (401, 403), s)
+s, b_ics, _ = (lambda en_b: ics_get(en_b["token"]))(call("POST", "/api/plato/calendar/enable", {}, tb)[1])
+check("C3 another nutritionist's calendar has none of these appointments", s == 200 and keep["id"] not in b_ics, s)
+s, rot = call("POST", "/api/plato/calendar/rotate", {}, ta)
+check("C5 Cambiar enlace: a new address works and the old one is gone",
+      s == 200 and rot["token"] != en["token"] and ics_get(rot["token"])[0] == 200 and ics_get(en["token"])[0] == 404, s)
+s, r = call("POST", "/api/plato/calendar/disable", {}, ta)
+check("C6 Desactivar: no address works", s == 200 and ics_get(rot["token"])[0] == 404, s)
+bad = [ics_get("x" * 48)[0], ics_get("short")[0], ics_get("..%2F..%2Fetc")[0]]
+check("C6 a made-up or malformed address: not found", bad == [404, 404, 404], bad)
+
+time.sleep(61)  # let the shared /api/plato/ rate limit reset after the calendar checks
+
 # ---- closed sign-up: nutritionist accounts are made by the admin ----
 ce = f"zz-{uuid.uuid4().hex[:8]}@test.local"; cp_ = pw()
 s, r = call("POST", "/api/collections/nutritionists/records", {"email": ce, "password": cp_, "passwordConfirm": cp_, "name": "ZZ Intruso"})
