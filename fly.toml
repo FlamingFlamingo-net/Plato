@@ -24,6 +24,7 @@ primary_region = "dfw"            # Dallas, closest Fly region to Mexico
 [mounts]
   source = "pb_data"
   destination = "/pb/pb_data"
+  snapshot_retention = 7          # daily disk snapshots kept 7 days (owner, 2026-10-30); the only safety net while backups are deferred
 
 [[vm]]
   size = "shared-cpu-1x"
