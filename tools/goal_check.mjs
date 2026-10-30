@@ -75,8 +75,8 @@ await step('W1', async () => {
   await nutri.waitUrl('/patient.html');
   const id = new URL(await nutri.eval('location.href')).searchParams.get('id');
   const p = await api(t.nutritionist.token, 'GET', `/api/collections/patients/records/${id}`);
-  check('W1 both cards on → Nutrición + entrenamiento, both goals on (3 comidas × 5, 30 min × 5)',
-    p.service === 'both' && p.meal_goal_days === 5 && p.meal_goal_per_day === 3 && p.activity_goal_days === 5 && p.activity_goal_min === 30 && p.goal_history?.[0]?.from === monday, JSON.stringify(p));
+  check('W1 both cards on → Nutrición + entrenamiento, both goals on (all planned meals × 5, 30 min × 5)',
+    p.service === 'both' && p.meal_goal_days === 5 && p.goal_history?.[0]?.meal_per_day === 'all' && p.activity_goal_days === 5 && p.activity_goal_min === 30 && p.goal_history?.[0]?.from === monday, JSON.stringify(p));
 });
 
 await step('W2', async () => {
@@ -122,13 +122,13 @@ await step('W3', async () => {
 await step('W4', async () => {
   await openHoy();
   const before = await count(mealRow);
-  const slots = await ana.eval(`[...document.querySelectorAll('#meals li[data-slot]')].map(li => li.dataset.slot).filter(s => document.querySelector('#meals li[data-slot="' + s + '"] .plato-check').getAttribute('aria-pressed') === 'false').slice(0, 3)`);
+  const slots = await ana.eval(`[...document.querySelectorAll('#meals li[data-slot]')].map(li => li.dataset.slot).filter(s => document.querySelector('#meals li[data-slot="' + s + '"] .plato-check').getAttribute('aria-pressed') === 'false')`);
   for (const s of slots) {
     await ana.click(`#meals li[data-slot="${s}"] .plato-check`);
     await ana.waitFor(`document.querySelector('#meals li[data-slot="${s}"] .plato-check').getAttribute('aria-pressed') === 'true'`);
   }
-  await ana.waitFor(`document.querySelector('${mealRow} .plato-week-line').textContent.startsWith('Hoy: 3 de 3')`);
-  check('W4 checking 3 planned meals today makes today count for the meal goal (card updates without a refresh)',
+  await ana.waitFor(`(() => { const m = document.querySelector('${mealRow} .plato-week-line').textContent.match(/^Hoy: ([0-9]+) de ([0-9]+) /); return !!m && m[1] === m[2]; })()`);
+  check("W4 checking all of today's planned meals makes today count for the meal goal (card updates without a refresh)",
     (await metToday(mealRow)).includes('is-met') && parseInt(await count(mealRow)) === parseInt(before) + 1, `${before} → ${await count(mealRow)}`);
 });
 

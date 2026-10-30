@@ -89,7 +89,7 @@ async function weekBadges(patients) {
   const monday = mondayOf();
   const f = `date >= ${q(monday)} && patient.archived_at = ""`;
   const [diets, meals, acts] = await Promise.all([
-    list('diets', { fields: 'patient,meals', perPage: 500 }),
+    list('diets', { fields: 'patient,meals,snacks', perPage: 500 }),
     list('meal_logs', { filter: f, fields: 'patient,date,slot', perPage: 1000 }),
     list('activity_logs', { filter: f, fields: 'patient,date,minutes', perPage: 1000 }),
   ]);

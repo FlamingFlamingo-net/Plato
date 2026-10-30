@@ -35,6 +35,8 @@
   --slot-lunch: oklch(0.7 0.16 45);         /* tomato */
   --slot-snack_pm: oklch(0.78 0.11 20);     /* berry */
   --slot-dinner: oklch(0.62 0.1 160);       /* herbs */
+  --slot-snack_early: oklch(0.78 0.08 240);  /* blueberry */
+  --slot-snack_night: oklch(0.68 0.09 310);  /* plum */
   --plate-rim: oklch(0.97 0.006 85);
   --plate-empty: oklch(0.93 0.01 85);
 }

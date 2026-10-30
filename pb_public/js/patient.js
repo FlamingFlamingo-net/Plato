@@ -1,7 +1,7 @@
 // patient.js — one patient, seen by their nutritionist: measurements, diet, meal photos, private notes, access link.
 import { localMonday,
   requireRole, view, list, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
-  SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly, isCheck,
+  SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly, isCheck, slotsFor, snacksOf, DEFAULT_SNACKS,
 } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, isMinor, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
@@ -127,11 +127,23 @@ const mealFields = document.getElementById('meal-fields');
 const dietState = document.getElementById('diet-state');
 let diet = null;
 let meals = {};
+let snacks = DEFAULT_SNACKS;   // colaciones a day (0-4), per diet
 let day = 1;
 let dirty = false;
 
 const dayMeals = (d) => (meals[d] ||= {});
-const filledSlots = (d) => SLOTS.filter(([k]) => (meals[d]?.[k] || '').trim()).length;
+const filledSlots = (d) => slotsFor(snacks).filter(([k]) => (meals[d]?.[k] || '').trim()).length;
+
+// "Colaciones al día: 0 1 2 3 4". Fewer hides rows; their text stays and comes back.
+const SNACK_HINT = ['Solo desayuno, comida y cena.', 'Colación de la tarde.', 'Mañana y tarde.', 'Mañana, tarde y nocturna.', 'Previa al desayuno, mañana, tarde y nocturna.'];
+function renderSnacks() {
+  document.getElementById('snacks').replaceChildren(...[0, 1, 2, 3, 4].map((n) => h('button', {
+    type: 'button', 'aria-pressed': String(n === snacks), disabled: closed ? true : null,
+    'aria-label': `${n} ${n === 1 ? 'colación' : 'colaciones'} al día`,
+    onclick: () => { if (n === snacks) return; snacks = n; setDirty(true); renderSnacks(); renderDays(); renderMeals(); },
+  }, String(n))));
+  document.getElementById('snacks-hint').textContent = SNACK_HINT[snacks];
+}
 
 function setDirty(v) {
   dirty = v;
@@ -145,7 +157,7 @@ function renderDays() {
     const n = filledSlots(d);
     return h('button', {
       class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'aria-pressed': String(d === day),
-      'aria-label': `${name}, ${n} de 5 comidas`,
+      'aria-label': `${name}, ${n} de ${slotsFor(snacks).length} comidas`,
       onclick: () => { day = d; renderDays(); renderMeals(); },
     }, name.slice(0, 3), n ? h('span', { class: 'plato-day-dot', 'aria-hidden': 'true' }) : null);
   }));
@@ -153,7 +165,7 @@ function renderDays() {
 
 function renderMeals() {
   document.getElementById('day-title').textContent = WEEKDAYS[day - 1];
-  mealFields.replaceChildren(...SLOTS.map(([key, label]) => {
+  mealFields.replaceChildren(...slotsFor(snacks).map(([key, label]) => {
     const fid = `meal-${key}`;
     const ta = h('textarea', { class: 'textarea', id: fid, rows: 2, maxlength: 600, placeholder: key.startsWith('snack') ? 'Ej. 1 manzana y 10 almendras' : 'Ej. 2 huevos a la mexicana, 2 tortillas, 1 taza de papaya' });
     ta.value = dayMeals(day)[key] || '';
@@ -182,7 +194,7 @@ dietForm.addEventListener('submit', async (e) => {
   formError(dietForm, '');
   // Trim and drop empty slots so the patient app only shows planned meals.
   const clean = cleanMeals(meals);
-  const body = { title: dietForm.title.value.trim(), meals: clean };
+  const body = { title: dietForm.title.value.trim(), meals: clean, snacks };
   try {
     diet = await busy(dietForm.querySelector('[type=submit]'), () =>
       diet ? update('diets', diet.id, body) : create('diets', { ...body, patient: patient.id }));
@@ -260,7 +272,7 @@ document.getElementById('save-template').addEventListener('click', () => {
 
 async function saveTemplate(mode) {
   const title = stName.value.trim();
-  const body = { title, meals: cleanMeals(meals) };
+  const body = { title, meals: cleanMeals(meals), snacks };
   if (mode === 'replace') return update('diet_templates', stExisting.id, body);
   if (mode === 'copy') {
     const taken = new Set((await list('diet_templates', { fields: 'title', perPage: 500 })).map((t) => t.title));
@@ -325,10 +337,10 @@ document.getElementById('use-template').addEventListener('click', async () => {
   for (const t of utTemplates) {
     const input = h('input', { type: 'radio', name: 'ut-pick', value: t.id });
     input.addEventListener('change', () => {
-      utPreview.replaceChildren(weekList(t.meals || {}));
+      utPreview.replaceChildren(weekList(t.meals || {}, snacksOf(t)));
       utUse.disabled = false;
     });
-    const n = daysFilled(t.meals);
+    const n = daysFilled(t.meals, snacksOf(t));
     utList.append(h('label', { class: 'plato-template-option' }, input,
       h('span', { class: 'plato-stack-sm' },
         h('strong', { text: t.title }),
@@ -342,6 +354,8 @@ utUse.addEventListener('click', () => {
   const hasCurrent = !!diet || Object.keys(cleanMeals(meals)).length > 0;
   if (hasCurrent && !confirm(`¿Reemplazar la dieta actual de ${patient.name} con esta plantilla? Podrás revisarla antes de guardar.`)) return;
   meals = structuredClone(t.meals || {});
+  snacks = snacksOf(t);
+  renderSnacks();
   dietForm.title.value = t.title;
   day = 1;
   setDirty(true);
@@ -354,6 +368,8 @@ utUse.addEventListener('click', () => {
 async function loadDiet() {
   [diet] = await list('diets', { filter: `patient = ${pid}` });
   meals = structuredClone(diet?.meals || {});
+  snacks = diet ? snacksOf(diet) : DEFAULT_SNACKS;
+  renderSnacks();
   dietForm.title.value = diet?.title || '';
   dietForm.title.readOnly = closed;
   document.getElementById('copy-day').hidden = closed;
@@ -397,7 +413,7 @@ async function renderGoals() {
   const p = patient;
   const kinds = kindsFor(p);
   const sub = [SERVICE_LABEL[p.service] || 'Sin servicio',
-    hasNutrition(p.service) || p.meal_goal_days > 0 ? `Comidas: ${goalText('meal', p.meal_goal_days > 0 ? { days: p.meal_goal_days, per: p.meal_goal_per_day } : null)}` : null,
+    hasNutrition(p.service) || p.meal_goal_days > 0 ? `Comidas: ${goalText('meal', p.meal_goal_days > 0 ? { days: p.meal_goal_days, per: 'all' } : null)}` : null,
     hasTraining(p.service) || p.activity_goal_days > 0 ? `Actividad: ${goalText('act', p.activity_goal_days > 0 ? { days: p.activity_goal_days, per: p.activity_goal_min } : null)}` : null,
   ].filter(Boolean).join(' · ');
   document.getElementById('goals-sub').textContent = sub;
@@ -418,10 +434,9 @@ document.getElementById('goals-edit').addEventListener('click', () => {
   const p = patient;
   const svc = serviceCards('gd-service', p.service || 'nutrition');
   const mDays = h('select', { class: 'select', id: 'gd-meal-days' }, opt(0, 'Sin meta', p.meal_goal_days), ...[1, 2, 3, 4, 5, 6, 7].map((n) => opt(n, `${n} ${n === 1 ? 'día' : 'días'} a la semana`, p.meal_goal_days)));
-  const mPer = h('select', { class: 'select', id: 'gd-meal-per' }, ...[1, 2, 3, 4, 5].map((n) => opt(n, `${n} ${n === 1 ? 'comida' : 'comidas'} al día`, p.meal_goal_per_day || 3)));
   const aDays = h('select', { class: 'select', id: 'gd-act-days' }, opt(0, 'Sin meta', p.activity_goal_days), ...[1, 2, 3, 4, 5, 6, 7].map((n) => opt(n, `${n} ${n === 1 ? 'día' : 'días'} a la semana`, p.activity_goal_days)));
   const aMin = h('input', { class: 'input', id: 'gd-act-min', type: 'number', min: 10, max: 300, step: 5, inputmode: 'numeric', value: p.activity_goal_min || 30, required: true });
-  const sync = () => { mPer.disabled = mDays.value === '0'; aMin.disabled = aDays.value === '0'; };
+  const sync = () => { aMin.disabled = aDays.value === '0'; };
   mDays.addEventListener('change', sync); aDays.addEventListener('change', sync);
   // Turning a service on turns its goal on (5 days); turning it off turns it off. Still editable after.
   svc.addEventListener('servicechange', () => {
@@ -435,9 +450,8 @@ document.getElementById('goals-edit').addEventListener('click', () => {
   const form = h('form', { class: 'plato-form', novalidate: true },
     h('section', { class: 'plato-form' }, svc,
       h('fieldset', { class: 'plato-goal-set' }, h('legend', { text: 'Meta de comidas' }),
-        h('div', { class: 'plato-row plato-row--fields' },
-          h('div', { class: 'field' }, h('label', { for: 'gd-meal-per', text: 'Comidas marcadas' }), mPer),
-          h('div', { class: 'field' }, h('label', { for: 'gd-meal-days', text: 'Días' }), mDays))),
+        h('div', { class: 'field' }, h('label', { for: 'gd-meal-days', text: 'Días con todas las comidas de su plan' }), mDays),
+        h('p', { class: 'plato-muted plato-small', style: 'margin:0', text: 'Un día cuenta cuando marca todas las comidas que su plan tiene ese día.' })),
       h('fieldset', { class: 'plato-goal-set' }, h('legend', { text: 'Meta de actividad' }),
         h('div', { class: 'plato-row plato-row--fields' },
           h('div', { class: 'field' }, h('label', { for: 'gd-act-min', text: 'Minutos al día (10 a 300)' }), aMin),
@@ -450,7 +464,7 @@ document.getElementById('goals-edit').addEventListener('click', () => {
     e.preventDefault();
     formError(form, '');
     if (!aMin.disabled && (!aMin.checkValidity() || Number(aMin.value) % 5)) { formError(form, 'Los minutos al día van de 10 a 300, de 5 en 5.'); aMin.focus(); return; }
-    const body = { service: svc.value(), meal_goal_days: Number(mDays.value), meal_goal_per_day: Number(mPer.value),
+    const body = { service: svc.value(), meal_goal_days: Number(mDays.value),
       activity_goal_days: Number(aDays.value), activity_goal_min: Number(aMin.value), goal_week: localMonday() };
     try { patient = await busy(document.getElementById('gd-save'), () => update('patients', p.id, body)); } catch (err) { formError(form, err.message); return; }
     goalsDialog.close();

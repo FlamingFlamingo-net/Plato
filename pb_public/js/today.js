@@ -1,6 +1,6 @@
 // today.js — the patient's day: the plate, the day's meals as a checklist, extra meals, and today's activity.
 // Check first ("lo comí"), then an optional photo (spec "Feature: Weekly goals", slice 1). Today and yesterday.
-import { list, create, remove, photoUrl, q, SLOTS, SLOT_LABEL, localDate, isoWeekday } from './api.js';
+import { list, create, remove, photoUrl, q, SLOTS, SLOT_LABEL, localDate, isoWeekday, plannedSlots } from './api.js';
 import { h, icon, longDate, toast, timeOf } from './ui.js';
 import { plate } from './charts.js';
 import { activitySummary } from './activity.js';
@@ -73,7 +73,8 @@ async function renderMeals() {
   } catch (e) { statusEl.textContent = e.message; return; }
   if (token !== renderToken) return;
   const plan = diet?.meals?.[isoWeekday(new Date(`${date}T12:00:00`))] || {};
-  const planned = SLOTS.filter(([k]) => plan[k]);
+  const planned = plannedSlots(diet, plan);
+  const plannedKeys = new Set(planned.map(([k]) => k));
   const bySlot = {};
   for (const l of logs) (bySlot[l.slot] ||= []).push(l);
 
@@ -84,7 +85,7 @@ async function renderMeals() {
   else statusEl.textContent = 'Marca cada comida cuando la comas. La foto es opcional.';
 
   // Planned meals, plus any slot logged that is not in the plan.
-  const rows = SLOTS.filter(([k]) => plan[k] || bySlot[k]).map(([key, label]) => {
+  const rows = SLOTS.filter(([k]) => plannedKeys.has(k) || bySlot[k]).map(([key, label]) => {
     const done = bySlot[key] || [];
     const checked = done.length > 0;
     const photos = done.filter((l) => l.photo);
@@ -114,7 +115,7 @@ async function renderMeals() {
       check,
       h('div', {},
         h('h3', { text: label }),
-        plan[key] ? h('p', { text: plan[key] }) : h('p', { class: 'plato-muted', text: 'Fuera de tu plan' }),
+        plannedKeys.has(key) ? h('p', { text: plan[key] }) : h('p', { class: 'plato-muted', text: 'Fuera de tu plan' }),
         checked ? h('span', { class: `plato-meal-status${seen ? ' is-seen' : ''}` }, icon(seen ? 'eye' : 'check', 14),
           seen ? 'Vista por tu nutrióloga/o' : 'Registrada') : null,
         photos.length ? h('div', { class: 'plato-meal-thumbs' }, ...photos.flatMap((l) => [thumb(l, label), delBtn(l, label)])) : null,

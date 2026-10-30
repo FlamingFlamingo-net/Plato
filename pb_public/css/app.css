@@ -132,6 +132,8 @@ h1, h2, h3, .plato-brand { font-family: var(--font-heading); letter-spacing: -0.
 .plate-slice.is-done.plate-slice--lunch { fill: var(--slot-lunch); }
 .plate-slice.is-done.plate-slice--snack_pm { fill: var(--slot-snack_pm); }
 .plate-slice.is-done.plate-slice--dinner { fill: var(--slot-dinner); }
+.plate-slice.is-done.plate-slice--snack_early { fill: var(--slot-snack_early); }
+.plate-slice.is-done.plate-slice--snack_night { fill: var(--slot-snack_night); }
 .plate-center { fill: var(--card); }
 .plate-count { font: 700 30px var(--font-heading); fill: var(--foreground); }
 .plate-caption { font: 500 12px var(--font-sans); fill: var(--muted-foreground); }
@@ -331,6 +333,7 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-week-dot { width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 2px solid var(--border); background: var(--card); }
 .plato-week-dots li.is-active .plato-week-dot { border-color: var(--primary); background: radial-gradient(circle, color-mix(in oklch, var(--primary) 45%, transparent) 0 35%, var(--card) 36%); }
 .plato-week-dots li.is-met .plato-week-dot { border-color: var(--primary); background: var(--primary); }
+.plato-week-dots li.is-noplan .plato-week-dot { border-style: dashed; background: transparent; }
 .plato-week-dots li.is-today .plato-week-letter { font-weight: 800; color: var(--foreground); text-decoration: underline; text-underline-offset: 2px; }
 .plato-week-letter { font-size: 0.75rem; color: var(--muted-foreground); }
 .plato-week-line { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 0.75rem; font-size: 0.9rem; }
@@ -564,3 +567,15 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-types-m { margin-right: auto; }
 }
 .plato-types-add { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; .field:first-child { flex: 1; min-width: 12rem; } }
+
+/* Diet editor: "Colaciones al dia" segmented picker (spec "Snacks per diet") */
+.plato-snacks { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem; }
+.plato-snacks-label { font-weight: 600; font-size: 0.9rem; }
+.plato-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.plato-seg button { min-width: 2.6rem; min-height: 2.4rem; padding: 0 0.6rem; border: 0; background: var(--card); color: inherit; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer;
+  & + button { border-left: 1px solid var(--border); }
+  &:hover:not(:disabled) { background: var(--muted); }
+  &[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); font-weight: 700; }
+  &:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; position: relative; }
+  &:disabled { cursor: default; opacity: 0.7; }
+}

@@ -9,15 +9,25 @@
 
 const KEY = 'plato.auth';
 
+// Every diet slot in the order of the day: 3 main meals + up to 4 snacks (spec "Snacks per diet").
 export const SLOTS = [
+  ['snack_early', 'Colación previa al desayuno'],
   ['breakfast', 'Desayuno'],
   ['snack_am', 'Colación de la mañana'],
   ['lunch', 'Comida'],
   ['snack_pm', 'Colación de la tarde'],
   ['dinner', 'Cena'],
+  ['snack_night', 'Colación nocturna'],
 ];
-// SLOTS = the diet's five meals. A meal log can also be "extra" (eaten outside the diet; never a diet slot).
+// A meal log can also be "extra" (eaten outside the diet; never a diet slot).
 export const SLOT_LABEL = { ...Object.fromEntries(SLOTS), extra: 'Comida extra' };
+// Snacks a day (0-4) decide which snack rows a diet has. Hidden rows keep their text but are not planned.
+export const DEFAULT_SNACKS = 2;
+const SNACKS_SHOWN = [[], ['snack_pm'], ['snack_am', 'snack_pm'], ['snack_am', 'snack_pm', 'snack_night'], ['snack_early', 'snack_am', 'snack_pm', 'snack_night']];
+export const snacksOf = (diet) => (Number.isInteger(diet?.snacks) && diet.snacks >= 0 && diet.snacks <= 4 ? diet.snacks : DEFAULT_SNACKS);
+export const slotsFor = (n) => SLOTS.filter(([k]) => !k.startsWith('snack') || SNACKS_SHOWN[n ?? DEFAULT_SNACKS].includes(k));
+// The planned meals of one day: shown slots that have text.
+export const plannedSlots = (diet, dayMeals) => slotsFor(snacksOf(diet)).filter(([k]) => (dayMeals?.[k] || '').trim());
 // A meal log without photo on a planned slot is a check ("lo comí").
 export const isCheck = (l) => !l.photo && l.slot !== 'extra';
 export const WEEKDAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];

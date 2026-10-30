@@ -2,7 +2,7 @@
 // A photo for a meal already checked on Hoy attaches to that check. "Comida extra": photo or note.
 // ?date= may be yesterday (the checklist's "Ayer"); anything else means today.
 // Photos are shrunk on the phone (max 1600 px JPEG) so they upload fast and stay under the 5 MB limit.
-import { create, update, list, q, SLOTS, localDate, isoWeekday } from './api.js';
+import { create, update, list, q, SLOTS, localDate, isoWeekday, slotsFor, plannedSlots, snacksOf, DEFAULT_SNACKS } from './api.js';
 import { h, formError, busy, longDate } from './ui.js';
 import { patientShell } from './shell.js';
 import { photoPicker } from './photo.js';
@@ -24,16 +24,23 @@ if (isYesterday) {
 }
 
 let todays = {};
+let diet = null;
 try {
-  const [diet] = await list('diets', { filter: `patient = ${q(me.id)}` });
+  [diet] = await list('diets', { filter: `patient = ${q(me.id)}` });
   todays = diet?.meals?.[isoWeekday(new Date(`${date}T12:00:00`))] || {};
 } catch { /* the form still works without the plan text */ }
 
-// Default slot: ?slot=, else the meal closest to now.
-const hour = new Date().getHours();
-const guess = hour < 11 ? 'breakfast' : hour < 13 ? 'snack_am' : hour < 17 ? 'lunch' : hour < 19 ? 'snack_pm' : 'dinner';
-const CHOICES = [...SLOTS, ['extra', 'Comida extra']];
+// Only the day's planned meals (spec "Snacks per diet"); with nothing planned, the diet's usual slots.
+// A slot asked for by ?slot= (e.g. a meal outside the plan, checked on Hoy) is always offered.
 const wanted = params.get('slot');
+const plannedToday = plannedSlots(diet, todays);
+const shown = new Set((plannedToday.length ? plannedToday : slotsFor(diet ? snacksOf(diet) : DEFAULT_SNACKS)).map(([k]) => k));
+const CHOICES = [...SLOTS.filter(([k]) => shown.has(k) || k === wanted), ['extra', 'Comida extra']];
+// Default slot: ?slot=, else the offered meal closest to now.
+const hour = new Date().getHours();
+const near = hour < 7 ? ['snack_early', 'breakfast'] : hour < 11 ? ['breakfast', 'snack_am'] : hour < 13 ? ['snack_am', 'lunch'] : hour < 17 ? ['lunch', 'snack_pm']
+  : hour < 19 ? ['snack_pm', 'dinner'] : hour < 21 ? ['dinner', 'snack_night'] : ['snack_night', 'dinner'];
+const guess = near.find((k) => CHOICES.some(([c]) => c === k)) || CHOICES[0][0];
 const initial = CHOICES.some(([k]) => k === wanted) ? wanted : guess;
 
 for (const [key, label] of CHOICES) {

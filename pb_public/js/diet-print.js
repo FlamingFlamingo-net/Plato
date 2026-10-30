@@ -1,5 +1,5 @@
 // diet-print.js — the weekly diet as one landscape A4 sheet. Nutritionist (?id=patient) or patient (own diet).
-import { view, list, q } from './api.js';
+import { view, list, q, snacksOf } from './api.js';
 import { h, offlineBanner } from './ui.js';
 import { weekTable, hasDiet } from './week.js';
 import { printDocument, requireAnyRole, miniPlate, printedOn } from './printing.js';
@@ -20,7 +20,7 @@ try {
   const [diet] = await list('diets', { filter: `patient = ${q(patient.id)}` });
   document.title = `Dieta de ${patient.name} — AHT Fitness`;
 
-  if (!diet || !hasDiet(diet.meals)) {
+  if (!diet || !hasDiet(diet.meals, snacksOf(diet))) {
     statusEl.textContent = 'Aún no hay dieta.';
     printBtn.disabled = true;
     printBtn.hidden = true;
@@ -34,7 +34,7 @@ try {
           h('p', { text: patient.name }),
           by ? h('p', { text: by }) : null),
         h('div', { class: 'sheet-meta' }, h('div', { text: printedOn() }), h('div', { text: 'AHT Fitness' }))),
-      weekTable(diet.meals));
+      weekTable(diet.meals, snacksOf(diet)));
     sheet.hidden = false;
     document.getElementById('hint').hidden = false;
     statusEl.textContent = '';

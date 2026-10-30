@@ -1,10 +1,11 @@
 // goals.js — weekly goals (spec "Feature: Weekly goals", slice 2), shared by Hoy, Progreso, the patient page,
 // the patient list and Inicio. Weeks run Monday to Sunday by the log's date (the patient's local day).
-// Meal goal: a day counts when at least N of that day's planned meals are checked (photo or not; extras never count).
-//   If the day has fewer planned meals than N, all of them are enough; with no diet that day, N logged meals.
+// Meal goal: a day counts when ALL that day's planned meals are checked (photo or not; extras never count).
+//   A day with nothing planned can't count and shows as "sin plan", never as a miss (spec "Snacks per diet").
+//   Weeks from before that change keep their old rule: N meals a day (their history entry holds the number).
 // Activity goal: a day counts when that day's minutes add up to the daily minutes.
 // The goal of a past week is the one in force that Monday (goal_history); weeks before the first entry have none.
-import { list, q, SLOTS, isoWeekday, localDate } from './api.js';
+import { list, q, isoWeekday, localDate, plannedSlots } from './api.js';
 import { h, num } from './ui.js';
 
 export const SERVICE_LABEL = { nutrition: 'Nutrición', training: 'Entrenamiento', both: 'Nutrición + entrenamiento' };
@@ -24,7 +25,7 @@ export function goalFor(patient, monday) {
   let g = null;
   for (const e of hist) if (e && e.from <= monday) g = e;
   if (!g && monday >= mondayOf()) {   // this week, history not written yet: today's values
-    g = { from: monday, service: patient.service, meal_days: patient.meal_goal_days, meal_per_day: patient.meal_goal_per_day,
+    g = { from: monday, service: patient.service, meal_days: patient.meal_goal_days, meal_per_day: 'all',
       act_days: patient.activity_goal_days, act_min: patient.activity_goal_min };
   }
   return g;
@@ -38,10 +39,7 @@ export function indexLogs(meals, acts) {
   return { meals: m, minutes: min, acts };
 }
 
-const plannedOn = (diet, ymd) => {
-  const day = diet?.meals?.[isoWeekday(toDate(ymd))] || {};
-  return SLOTS.filter(([k]) => day[k]).map(([k]) => k);
-};
+const plannedOn = (diet, ymd) => plannedSlots(diet, diet?.meals?.[isoWeekday(toDate(ymd))]).map(([k]) => k);
 
 // One week for one goal kind. Returns { goal: {days, per}|null, days: [{ymd, state, value, need}], met, total }.
 export function weekOf(kind, patient, diet, idx, monday) {
@@ -54,6 +52,10 @@ export function weekOf(kind, patient, diet, idx, monday) {
       const planned = plannedOn(diet, ymd);
       const done = idx.meals[ymd] || new Set();
       const value = planned.length ? planned.filter((s) => done.has(s)).length : done.size;
+      if (goal && typeof goal.per !== 'number') {   // "all planned meals"
+        if (!planned.length) return { ymd, value, need: 0, planned: 0, state: 'noplan' };
+        return { ymd, value, need: planned.length, planned: planned.length, state: value >= planned.length ? 'met' : value > 0 ? 'active' : 'none' };
+      }
       const need = goal ? (planned.length ? Math.min(goal.per, planned.length) : goal.per) : 0;
       return { ymd, value, need, planned: planned.length, state: goal && value >= need ? 'met' : value > 0 ? 'active' : 'none' };
     }
@@ -69,7 +71,7 @@ export function weekOf(kind, patient, diet, idx, monday) {
 export async function loadGoalData(patientId, fromMonday) {
   const f = `patient = ${q(patientId)} && date >= ${q(fromMonday)}`;
   const [[diet], meals, acts] = await Promise.all([
-    list('diets', { filter: `patient = ${q(patientId)}`, fields: 'meals' }),
+    list('diets', { filter: `patient = ${q(patientId)}`, fields: 'meals,snacks' }),
     list('meal_logs', { filter: f, fields: 'date,slot', perPage: 500 }),
     list('activity_logs', { filter: f, fields: 'date,minutes,distance_km', perPage: 500 }),
   ]);
@@ -84,6 +86,8 @@ export const kindsFor = (p) => [
 
 export function goalText(kind, goal) {
   if (!goal) return 'Sin meta';
+  const d = `${goal.days} ${goal.days === 1 ? 'día' : 'días'} a la semana`;
+  if (kind === 'meal' && typeof goal.per !== 'number') return `todas las de tu plan, ${d}`;
   return kind === 'meal'
     ? `${goal.per} ${goal.per === 1 ? 'comida' : 'comidas'} al día, ${goal.days} ${goal.days === 1 ? 'día' : 'días'} a la semana`
     : `${goal.per} min al día, ${goal.days} ${goal.days === 1 ? 'día' : 'días'} a la semana`;
@@ -94,7 +98,7 @@ function dots(kind, week, today) {
     h('li', { class: `is-${d.state}${d.ymd === today ? ' is-today' : ''}`, title: `${DAY_NAME[i]}: ${dayLabel(kind, d)}` },
       h('span', { class: 'plato-week-dot' }), h('span', { class: 'plato-week-letter', text: DAY_LETTER[i] }))));
 }
-const dayLabel = (kind, d) => kind === 'meal'
+const dayLabel = (kind, d) => d.state === 'noplan' ? 'sin plan ese día' : kind === 'meal'
   ? `${d.value}${d.need ? ` de ${d.need}` : ''} ${d.value === 1 && !d.need ? 'comida' : 'comidas'}`
   : `${d.value}${d.need ? ` de ${d.need}` : ''} min`;
 
@@ -117,14 +121,14 @@ export function weekCard(patient, data, { who = 'patient', today = localDate() }
     const title = kind === 'meal' ? 'Comidas' : 'Actividad';
     const head = w.goal ? `${w.met} de ${w.goal.days} ${w.goal.days === 1 ? 'día' : 'días'}` : 'Sin meta';
     const sr = w.goal
-      ? `${title}: ${w.met} de ${w.goal.days} días cumplidos esta semana. ${w.days.map((d, i) => `${DAY_NAME[i]} ${d.state === 'met' ? 'cumplido' : d.state === 'active' ? 'activo' : 'sin registro'}`).join(', ')}.`
+      ? `${title}: ${w.met} de ${w.goal.days} días cumplidos esta semana. ${w.days.map((d, i) => `${DAY_NAME[i]} ${d.state === 'met' ? 'cumplido' : d.state === 'active' ? 'activo' : d.state === 'noplan' ? 'sin plan' : 'sin registro'}`).join(', ')}.`
       : `${title}: sin meta.`;
     const actWeek = kind === 'act' ? data.idx.acts.filter((a) => a.date >= monday && a.date <= weekDays(monday)[6]) : [];
     const totals = kind === 'act'
       ? `Esta semana: ${num(w.total, 0)} min · ${actWeek.length} ${actWeek.length === 1 ? 'sesión' : 'sesiones'}`
       : `Esta semana: ${w.total} ${w.total === 1 ? 'comida marcada' : 'comidas marcadas'}`;
     const todayLine = w.goal
-      ? (kind === 'meal' ? `Hoy: ${t.value} de ${t.need} ${t.need === 1 ? 'comida' : 'comidas'}` : `Hoy: ${t.value} de ${t.need} min`)
+      ? (kind === 'meal' ? (t.state === 'noplan' ? 'Hoy: sin plan' : `Hoy: ${t.value} de ${t.need} ${t.need === 1 ? 'comida' : 'comidas'}`) : `Hoy: ${t.value} de ${t.need} min`)
       : (kind === 'meal' ? `Hoy: ${t.value} ${t.value === 1 ? 'comida' : 'comidas'}` : `Hoy: ${t.value} min`);
     return h('div', { class: `plato-week-row${w.goal && w.met >= w.goal.days ? ' is-done' : ''}`, dataset: { kind } },
       h('div', { class: 'plato-week-head' },

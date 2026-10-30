@@ -1,6 +1,6 @@
 // export.js — everything AHT Fitness holds about one patient: printable A4 (portrait) + a JSON file.
 // Nutritionist only. Reads the same APIs as the patient page, so the same rules lock it. Changes nothing.
-import { requireRole, view, list, photoUrl, q, SLOT_LABEL, dateOnly } from './api.js';
+import { requireRole, view, list, photoUrl, q, SLOT_LABEL, dateOnly, snacksOf } from './api.js';
 import { h, offlineBanner, age, shortDate, timeOf, num } from './ui.js';
 import { weightChart } from './charts.js';
 import { weekList, hasDiet } from './week.js';
@@ -119,7 +119,7 @@ async function render() {
         : h('p', { class: 'doc-empty', text: 'Sin mediciones.' })),
 
     section(diet?.title ? `Dieta: ${diet.title}` : 'Dieta',
-      diet && hasDiet(diet.meals) ? weekList(diet.meals) : h('p', { class: 'doc-empty', text: 'Sin dieta asignada.' })),
+      diet && hasDiet(diet.meals, snacksOf(diet)) ? weekList(diet.meals, snacksOf(diet)) : h('p', { class: 'doc-empty', text: 'Sin dieta asignada.' })),
 
     section(`Comidas registradas (${logs.length})`,
       logs.length ? h('div', { class: 'doc-logs' }, ...photoCards) : h('p', { class: 'doc-empty', text: 'Sin comidas registradas.' })),
@@ -221,7 +221,7 @@ jsonBtn.addEventListener('click', () => {
     measurements: measurements.map((m) => ({
       date: dateOnly(m.date), weight_kg: m.weight_kg, body_fat_pct: m.body_fat_pct || null, waist_cm: m.waist_cm || null,
     })),
-    diet: diet ? { title: diet.title || '', meals: diet.meals || {}, updated: diet.updated } : null,
+    diet: diet ? { title: diet.title || '', snacks_per_day: snacksOf(diet), meals: diet.meals || {}, updated: diet.updated } : null,
     meal_logs: logs.map((l) => ({
       date: l.date, meal: l.slot, meal_label: SLOT_LABEL[l.slot], note: l.note || '',
       sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo || null, checked_without_photo: !l.photo && l.slot !== 'extra',
@@ -229,7 +229,7 @@ jsonBtn.addEventListener('click', () => {
     })),
     weekly_goals: {
       service: patient.service || null,
-      current: { meals: { per_day: patient.meal_goal_per_day, days: patient.meal_goal_days }, activity: { minutes_per_day: patient.activity_goal_min, days: patient.activity_goal_days } },
+      current: { meals: { per_day: 'all', days: patient.meal_goal_days }, activity: { minutes_per_day: patient.activity_goal_min, days: patient.activity_goal_days } },
       history: patient.goal_history || [],
       last_8_weeks: Object.fromEntries(kindsFor(patient).map((k) => [k === 'meal' ? 'meals' : 'activity',
         weeklyChart(k, patient, { diet, idx: indexLogs(logs, acts) }).weeks.map((w) => ({ week_of: w.monday, days_met: w.met, goal_days: w.goal?.days ?? null, goal_per_day: w.goal?.per ?? null, total: w.total }))])),

@@ -3,6 +3,7 @@
 import { requireRole, list, update, remove, signOut, q } from './api.js';
 import { h, icon, toast, formError, busy, offlineBanner, shortDate } from './ui.js';
 import { weekList, daysFilled } from './week.js';
+import { snacksOf } from './api.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -24,8 +25,8 @@ async function load() {
     return;
   }
   listEl.replaceChildren(...templates.map((t) => {
-    const n = daysFilled(t.meals);
-    const preview = h('section', { class: 'plato-week-preview', hidden: true }, weekList(t.meals || {})); // hidden = no empty gap
+    const n = daysFilled(t.meals, snacksOf(t));
+    const preview = h('section', { class: 'plato-week-preview', hidden: true }, weekList(t.meals || {}, snacksOf(t))); // hidden = no empty gap
     const toggle = h('button', {
       class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'aria-expanded': 'false',
       onclick: () => {

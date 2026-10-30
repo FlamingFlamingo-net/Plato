@@ -95,7 +95,7 @@ async function loadAll() {
   const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : ''}`, fields: 'id,patient', perPage: 500 });
   const [ps, diets, recent, um, ua, up, tpls] = await Promise.all([
     list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history', sort: 'name', perPage: 500 }),
-    list('diets', { fields: 'patient,meals', perPage: 500 }),
+    list('diets', { fields: 'patient,meals,snacks', perPage: 500 }),
     list('meal_logs', { filter: `date >= ${q(localDate(since))} && patient.archived_at = ""`, fields: 'patient', perPage: 500 }),
     unseenOf('meal'), unseenOf('activity'), unseenOf('progress'),
     list('diet_templates', { fields: 'id', perPage: 500 }),
