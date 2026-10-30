@@ -152,11 +152,11 @@ Risk to remember when it goes online: limits count per address. Behind a proxy, 
 
 ---
 
-## Online (plan — not approved, nothing set up)
+## Online (live since 2026-10-29)
 
 **Host:** Fly.io, one always-on machine in Dallas (`dfw`, closest to Mexico) with one 3 GB disk.
-**Address:** `https://plato-<name>.fly.dev` (HTTPS included). Own domain later.
-**Cost:** about US$4–5 a month (512 MB machine ≈ $3.70, disk $0.45, traffic cents). Backups free (Cloudflare R2, 10 GB free).
+**Address:** `https://aht-fitness.fly.dev` (Fly app `aht-fitness`, HTTPS included; Fly app names can't be renamed). An own domain later means everyone reinstalls and signs in again, so decide it before many users join.
+**Cost:** about US$4–5 a month (Fly pricing page, checked 2026-10-28: 512 MB machine $3.69/month in the cheapest regions, Dallas not checked; disk $0.15/GB/month ≈ $0.45; traffic $0.02/GB). No free tier: a card is on the account. Backups free (Cloudflare R2, 10 GB free) — not set up yet.
 **Never delete:** the Fly volume `pb_data`. It holds every account, diet, and photo.
 
 | Topic | Decision |
@@ -166,10 +166,12 @@ Risk to remember when it goes online: limits count per address. Behind a proxy, 
 | Install button | Works: HTTPS is included. |
 | Photos | On the server disk (fine to a few GB). Cloud bucket later. |
 | Backups | Nightly PocketBase backup to a **separate** R2 bucket, keep 7. Keys typed by the owner in the admin screen. |
-| Rate limits | Count the real user address from Fly's `Fly-Client-IP` header, only on Fly. |
+| Rate limits | Count the real user address from Fly's `Fly-Client-IP` header, only on Fly (migration `1762214400`; checked live: the 11th wrong sign-in from one address is refused). |
+| Accounts | Nutritionist accounts are created by the admin in `/_/` (owner, 2026-10-29); public sign-up is closed (migration `1762214460`). Patients join with their nutritionist's invite link. |
+| Deploy | `fly deploy --app aht-fitness --ha=false` from the repo (`fly.toml`, `Dockerfile` bakes in `pb_public`, `pb_hooks`, `pb_migrations`; `.dockerignore` keeps local data, demo logins and tests out). Disk snapshots: daily, kept 5 days (Fly default). |
 | Admin | Owner creates the admin account over `fly ssh console`. The agent never sees the password. |
 | Email | Not needed in v1 (invites and resets are links). Needed before password-reset or admin 2-step codes. |
-| Data | Starts empty. No demo data online. Fake patients only until the privacy notice exists. |
+| Data | Starts empty. No demo data online. The owner chose to go live for real patients (no test copy); the privacy notice and consent (Legal L1/L2) are still missing and should exist before the first real patient joins. |
 
 Risks:
 - Health data is "sensitive" under Mexican law (LFPDPPP). Real patients need a privacy notice and their express consent. The notice must say the data is stored in the USA.
