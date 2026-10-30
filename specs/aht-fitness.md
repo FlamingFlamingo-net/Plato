@@ -713,7 +713,7 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 
 ---
 
-## Feature: Agenda — the nutritionist's own calendar (slice 1 approved 2026-10-28)
+## Feature: Agenda — the nutritionist's own calendar (slice 1 built 2026-10-28; slice 2 waits for going online)
 
 **What (owner, 2026-10-28):** AHT Fitness has **its own calendar**. The nutritionist creates appointments there, each **bound to a patient** ("Cita a las 3:00 p.m. con Julio Álvarez"). The **patient is told** in their app. The appointments are **mirrored to the nutritionist's personal Google Calendar**. Patients never book or type anything: the app is primarily for the nutritionist (owner). Reference: Nutrimind's "Mi agenda de citas" (month calendar with dots, Hoy/Semana/Mes counts, the day's list with time, patient and consultation type, Google Calendar sync). Replaces the earlier "Agenda link" idea.
 
@@ -722,16 +722,25 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
   - **Month calendar** (weeks Monday–Sunday, like the rest of the app), ‹ › to change month, **Hoy** button; a dot on days with appointments; the selected day highlighted.
   - **Counts:** Hoy · Esta semana · Este mes.
   - **Selected day:** its appointments in time order: **time**, patient (avatar initials + name, links to the patient), **consultation type** badge, duration, and the nutritionist's private note. **Editar**, **Cancelar cita**.
-  - **Nueva cita** (dialog): patient (searchable list of active patients), date, time, duration (default 60 min; 15–240), consultation type, private note (optional). Shows a warning (not a block) if it overlaps another appointment.
+  - **Nueva cita** (dialog): patient (list of active patients), date, time, consultation type, duration (**filled in from the type**, editable per appointment; 15–240 in steps of 5), private note (optional). Shows a warning (not a block) if it overlaps another appointment.
 - **From the patient page:** "Agendar cita" (same dialog, patient filled in) and the patient's next appointment shown in the header; past appointments listed on the patient page.
 - **Inicio:** the "Citas de hoy" line in Hoy unlocks ("2 citas hoy · la próxima a las 4:00 p.m. con Julio Álvarez"); the Agenda tab shows today's and tomorrow's appointments as cards.
-- **Consultation types:** a list per nutritionist in Ajustes, starting with: *Consulta nutricional presencial*, *Consulta nutricional en línea*, *Consulta de nutrición y entrenamiento*, *Seguimiento*, *Valoración inicial*. Editable (add, rename, remove unused).
+- **Consultation types:** a list per nutritionist in Ajustes, each with its **usual duration** (editable: add, rename, change minutes, remove). The client's list (2026-10-28; default = the longest of the range he gave):
+  | Type | Client's range | Default |
+  |---|---|---|
+  | Consulta nutricional inicial | 1 h | 60 min |
+  | Consulta nutricional seguimiento | 45–60 min | 60 min |
+  | Consulta de entrenamiento | 60 min | 60 min |
+  | Consulta de mediciones | 30 min | 30 min |
+  | Consulta de alto rendimiento deportivo | 60–90 min | 90 min |
 - **Patient side (read-only, nothing to type):**
   - Hoy shows **"Tu próxima cita: jueves 30 de octubre, 4:00 p.m. · Consulta nutricional presencial"** (no private note), with **Nueva** when it was created or changed since they last opened the app, and a dot on the Hoy tab.
   - A cancelled appointment shows **"Cancelada: tu cita del jueves 30"** until that day passes, so the patient isn't left waiting.
   - Real phone notifications (push) need the app online and installed: they belong to "Reminders" (after going online). Until then the patient sees it when they open the app.
 - **Closed accounts:** no new appointments; past ones stay read-only. Archived patients don't appear in "Nueva cita".
 - **Export:** the patient's appointments (date, time, type; never the private note unless "notas privadas" is ticked).
+
+**Built (slice 1):** `agenda.html` (month grid, dots, Hoy/Semana/Mes counts, keyboard: arrows/Home/End), the "Nueva cita / Editar cita" dialog with the overlap warning, Inicio's Agenda tab (today and tomorrow) and "Citas de hoy" line, the patient page strip ("Próxima cita", "Agendar cita", all appointments with notes), Ajustes → Tipos de consulta, the patient's "Tu próxima cita" / "Cita cancelada" card on Hoy (Nueva + nav dot, seen per phone), and appointments in the export (notes only when "notas privadas" is ticked). The private note lives in its own collection (`appointment_notes`) so the patient's API access can never return it. On phones the header drops "Plantillas" (still under Catálogo → Dietas) to make room for "Agenda". Checks: `tools/agenda_check.mjs`, API A1–A9.
 
 ### Slice 2 — Mirror to Google Calendar (after AHT Fitness is online)
 Google has to reach the AHT Fitness server, so this waits for the online step (Fly.io). Two ways, decided then:
@@ -741,8 +750,9 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 - One-way: AHT Fitness → Google. Changes made in Google don't come back.
 
 ### Data (server)
-- `appointments`: nutritionist, patient, starts_at (date-time, stored in UTC; shown in local time), duration_min, type (text from the nutritionist's list), note (private), cancelled_at, changed_at (for "Nueva" on the patient side). Nutritionist: full access to their own; patient: **read** their own (without the note: the patient view never returns it — a separate field rule/hook); nobody else.
-- `nutritionists.appointment_types` (JSON list).
+- `appointments`: nutritionist, patient, starts_at (date-time, stored in UTC; shown in local time), duration_min (15–240, steps of 5), type (text from the nutritionist's list), cancelled_at (server time), changed_at (server time; "Nueva" on the patient side). Nutritionist: full access to their own, only with their own active patients; patient: **read** their own; nobody else.
+- `appointment_notes`: one private note per appointment; nutritionist only (patients can't list, view or filter it). Deleted with the appointment.
+- `nutritionists.appointment_types` (JSON list of `{ name, minutes }`; checked by the hook: name 1–80, minutes 15–240 in steps of 5, max 30, duplicates dropped). Migration `1762128060` converts servers that stored plain names.
 
 ### Acceptance (slice 1)
 1. Creating "jueves 4:00 p.m., Julio Álvarez, Consulta presencial" puts a dot on Thursday, adds to Semana/Mes counts, and lists it on that day.
@@ -753,8 +763,8 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 6. Month navigation, Hoy, keyboard use of the calendar (arrow keys move days, Enter selects), and a phone layout that stacks calendar over the day list without sideways scroll.
 
 ### Decided (owner, 2026-10-28)
-1. Consultation types: the starting list above (editable in Ajustes).
-2. Default duration: 60 min (the owner will say if it changes).
+1. Consultation types: the client's list above (editable in Ajustes).
+2. Default duration: per type, the longest of the client's range.
 3. The patient sees only the next appointment and a cancelled notice; history stays on the nutritionist's side.
 4. Open for slice 2 (later): subscription link with a delay, or the direct connection.
 
