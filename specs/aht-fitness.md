@@ -112,7 +112,7 @@ Run on the current release. Mark each step pass or fail. Last run: 2026-10-19, h
 
 ## Open questions
 
-1. Product name? **Recommended:** keep "AHT Fitness" as the working name. Rename before launch.
+1. Product name? **Recommended:** keep "Plato" as the working name. Rename before launch. *(Answered 2026-10-27: renamed to the client's brand, "AHT Fitness".)*
 2. UI language? **Recommended:** Spanish (Mexico) only in v1. English later.
 3. Fixed meal slots? **Recommended:** yes, five: breakfast, morning snack, lunch, afternoon snack, dinner. The nutritionist can leave a slot empty.
 4. Does a diet repeat every week? **Recommended:** yes. One active diet per patient. A new diet replaces it.
@@ -466,7 +466,7 @@ A throwaway clickable mockup (fake data, outside the app) is shown to the client
 - The right column is the **Hoy** panel with a separate **Marcar todo como visto** button under it (a small gap between them), exactly as wide as Hoy. The bottom of the button lines up with the bottom of the tab grid.
 - The button is always in that spot (the layout does not jump between tabs). It marks as seen only what the selected tab shows, shows how many ("(6)"), and is greyed out when there is nothing to mark (e.g. Pendientes, Catálogo).
 - On a phone: tabs (2 columns), then Hoy, then the button.
-- Mockup file (not in the repo): `../AHT Fitness-mockups/home-dashboard.html (next to the repo)`.
+- Mockup file (not in the repo): `../Plato-mockups/home-dashboard.html` (next to the repo).
 
 ### Open questions (slice 3 only; slices 1 and 2 do not depend on them)
 
@@ -1041,9 +1041,9 @@ Slices (proposal): 1 library + program editor; 2 patient log with advice; 3 repo
 
 ## Client answers (2026-10-27)
 
-- **Product name:** "AHT Fitness" replaces "AHT Fitness" as the name of the project and the website. **Scope (owner, 2026-10-27):**
+- **Product name:** "AHT Fitness" replaces "Plato" as the name of the project and the website. **Scope (owner, 2026-10-27):**
   - Rename every name people see (page titles, header, installed-app name, messages, printouts and export, README, spec).
-  - Keep "plato" where it is the Spanish word for dish ("AHT Fitness de hoy", the plate graphic). The old tagline "tu dieta, plato a plato" becomes the client's slogan **"Construcción corporal con ciencia y estrategia"**.
+  - Keep "plato" where it is the Spanish word for dish ("Plato de hoy", the plate graphic). The old tagline "tu dieta, plato a plato" becomes the client's slogan **"Construcción corporal con ciencia y estrategia"**.
   - Keep internal code names (style prefix `plato-`, `/api/plato/` routes, the saved sign-in key, file names): nobody sees them, and changing the sign-in key would sign everyone out.
   - **Temporary icon:** a simple "AHT" monogram until the client's final logo (design phase).
   - GitHub repository name: optional, done by the owner in GitHub settings (the local link is updated after).
