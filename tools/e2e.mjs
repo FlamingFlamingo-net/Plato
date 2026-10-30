@@ -5,6 +5,7 @@ import { launch } from './cdp.mjs';
 import { execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
+import { createNutritionist } from './admin.mjs';
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8091';
 const OUT = process.argv[3] || './e2e-out';
@@ -33,17 +34,18 @@ let patientUrl = '';
 let invite = '';
 const pEmail = `zz-pac-${tag}@test.local`;
 
-// 1. Nutritionist signs up
-await step('1 nutritionist signs up', async () => {
+// 1. The admin makes the nutritionist's account (public sign-up is closed); she signs in
+await step('1 nutritionist signs in', async () => {
+  const p = pw();
+  await createNutritionist(BASE, { name: 'Dra. Prueba E2E', clinic_name: 'Consultorio E2E', email: nEmail, password: p });
   await nutri.goto(`${BASE}/`);
   await nutri.click('#tab-nutri');
-  await nutri.click('#to-signup');
-  await nutri.fill('#s-name', 'Dra. Prueba E2E');
-  await nutri.fill('#s-clinic', 'Consultorio E2E');
-  await nutri.fill('#s-email', nEmail);
-  await nutri.fill('#s-password', pw());
-  await nutri.click('#nutri-signup [type=submit]');
-  await nutri.waitUrl('/home.html'); // sign-up lands on Inicio (slice 3)
+  const closed = await nutri.eval(`!document.getElementById('to-signup') && !document.getElementById('nutri-signup')`);
+  check('1 the start page offers no public sign-up', closed);
+  await nutri.fill('#n-email', nEmail);
+  await nutri.fill('#n-password', p);
+  await nutri.click('#nutri-signin [type=submit]');
+  await nutri.waitUrl('/home.html'); // nutritionists land on Inicio
   await nutri.goto(`${BASE}/patients.html`);
   await nutri.waitFor(`document.querySelector('.plato-empty-state')`);
   check('1 nutritionist signs up and sees an empty patient list', true);
@@ -189,10 +191,11 @@ await step('A2 refresh', async () => {
 // Acceptance 3: a second nutritionist cannot see the first one's patient
 await step('A3 second nutritionist', async () => {
   const other = await browser.newPage({ width: 1280, height: 900 });
+  const oe = `zz-other-${tag}@test.local`, op = pw();
+  await createNutritionist(BASE, { name: 'Otro Nutri', email: oe, password: op });
   await other.goto(`${BASE}/`);
-  await other.click('#tab-nutri'); await other.click('#to-signup');
-  await other.fill('#s-name', 'Otro Nutri'); await other.fill('#s-email', `zz-other-${tag}@test.local`); await other.fill('#s-password', pw());
-  await other.click('#nutri-signup [type=submit]');
+  await other.click('#tab-nutri'); await other.fill('#n-email', oe); await other.fill('#n-password', op);
+  await other.click('#nutri-signin [type=submit]');
   await other.waitUrl('/home.html');
   await other.goto(`${BASE}/patients.html`);
   await other.waitFor(`document.querySelector('.plato-empty-state')`);

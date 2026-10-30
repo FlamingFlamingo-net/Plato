@@ -15,6 +15,8 @@ import uuid
 from datetime import date, timedelta
 from pathlib import Path
 
+from pbadmin import create_nutritionist
+
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8090"
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else Path(__file__).resolve().parent.parent / "seed")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -59,10 +61,8 @@ def food_photo(colors):
 
 pw_nutri = secrets.token_urlsafe(12)
 nutri_email = "laura.demo@plato.local"
-call("POST", "/api/collections/nutritionists/records", {
-    "email": nutri_email, "password": pw_nutri, "passwordConfirm": pw_nutri,
-    "name": "Laura Méndez", "clinic_name": "Consultorio Demo",
-})
+# Nutritionist accounts are made by the admin (PB_CONTAINER = the server's container, default pb-check).
+create_nutritionist(BASE, nutri_email, pw_nutri, "Laura Méndez", "Consultorio Demo")
 tn = call("POST", "/api/collections/nutritionists/auth-with-password", {"identity": nutri_email, "password": pw_nutri})
 token_n, nid = tn["token"], tn["record"]["id"]
 

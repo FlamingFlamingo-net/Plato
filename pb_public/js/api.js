@@ -122,14 +122,6 @@ export async function signIn(collection, email, password) {
   return r.record;
 }
 
-export async function signUpNutritionist({ name, clinic_name, email, password }) {
-  await request(col('nutritionists'), {
-    method: 'POST', auth: false,
-    body: { name, clinic_name, email, password, passwordConfirm: password },
-  });
-  return signIn('nutritionists', email, password);
-}
-
 // Validates the stored token and refreshes the record. Offline: keep the stored session.
 export async function refresh() {
   const s = session();

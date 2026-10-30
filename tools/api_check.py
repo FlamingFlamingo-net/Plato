@@ -17,6 +17,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from datetime import date
+from pbadmin import create_nutritionist
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8091"
 results = []
@@ -75,9 +76,7 @@ def pw():
 def nutri(name):
     email = f"zz-{uuid.uuid4().hex[:8]}@test.local"
     p = pw()
-    s, r = call("POST", "/api/collections/nutritionists/records",
-                {"email": email, "password": p, "passwordConfirm": p, "name": name})
-    assert s == 200, r
+    create_nutritionist(BASE, email, p, name)   # accounts are made by the admin
     s, r = call("POST", "/api/collections/nutritionists/auth-with-password", {"identity": email, "password": p})
     assert s == 200, r
     return r["token"], r["record"]["id"]
@@ -668,6 +667,15 @@ s, r = call("PATCH", f"{PR}/{gb['id']}", {"activity_goal_days": 7}, tb)
 check("G5 another nutritionist cannot change them", s == 404, s)
 s, mine = call("GET", f"{PR}/{pm['id']}", token=tpm)
 check("G5 the patient reads their goals", s == 200 and mine.get("service") and "goal_history" in mine, s)
+
+# ---- closed sign-up: nutritionist accounts are made by the admin ----
+ce = f"zz-{uuid.uuid4().hex[:8]}@test.local"; cp_ = pw()
+s, r = call("POST", "/api/collections/nutritionists/records", {"email": ce, "password": cp_, "passwordConfirm": cp_, "name": "ZZ Intruso"})
+check("S1 a guest cannot create a nutritionist account", s in (400, 403), (s, r))
+s, r = call("POST", "/api/collections/nutritionists/records", {"email": ce, "password": cp_, "passwordConfirm": cp_, "name": "ZZ Intruso"}, ta)
+check("S1 a nutritionist cannot create another one", s in (400, 403), (s, r))
+s, r = call("POST", "/api/collections/nutritionists/records", {"email": ce, "password": cp_, "passwordConfirm": cp_, "name": "ZZ Intruso"}, tpm)
+check("S1 a patient cannot create one", s in (400, 403), (s, r))
 
 # ---- agenda, slice 1 (spec "Feature: Agenda — the nutritionist's own calendar") ----
 AP, AN = "/api/collections/appointments/records", "/api/collections/appointment_notes/records"

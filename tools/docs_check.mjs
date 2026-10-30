@@ -6,6 +6,7 @@ import { launch } from './cdp.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
+import { createNutritionist } from './admin.mjs';
 import { fileURLToPath } from 'node:url';
 
 const [BASE, TOKENS, OUT] = process.argv.slice(2);
@@ -111,10 +112,10 @@ let other;
 await step('P5', async () => {
   other = await browser.newPage({ width: 1280, height: 900 });
   const email = `zz-other-${randomBytes(3).toString('hex')}@test.local`, pw = randomBytes(12).toString('base64url');
+  await createNutritionist(BASE, { name: 'ZZ Otra', email, password: pw });
   await other.goto(`${BASE}/`);
-  await other.click('#tab-nutri'); await other.click('#to-signup');
-  await other.fill('#s-name', 'ZZ Otra'); await other.fill('#s-email', email); await other.fill('#s-password', pw);
-  await other.click('#nutri-signup [type=submit]');
+  await other.click('#tab-nutri'); await other.fill('#n-email', email); await other.fill('#n-password', pw);
+  await other.click('#nutri-signin [type=submit]');
   await other.waitUrl('/home.html');
   await other.goto(`${BASE}/diet-print.html?id=${anaId}`);
   await other.waitFor(`document.getElementById('status').textContent.startsWith('No encontrado')`);
