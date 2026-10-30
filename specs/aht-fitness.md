@@ -753,6 +753,47 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 - **What Google sees:** the event title "Cita: Julio Álvarez — Consulta nutricional presencial", the time and duration. The private note is **not** sent. (Patient names in his Google account: noted for Legal L1/L2, Google as a processor.)
 - One-way: AHT Fitness → Google. Changes made in Google don't come back.
 
+**Decided (owner, 2026-10-30): option 1, the private subscription link.** The direct connection stays possible later (it reuses nothing of this but loses nothing either). Approved as written (owner: cancelled ones disappear; range 30 days back to 12 months ahead).
+
+#### Slice 2 — Google Calendar subscription link (built 2026-10-30, app v21)
+**What:** the nutritionist gets a **secret calendar address**. Added once in Google Calendar, his AHT Fitness appointments show up there as a separate calendar ("AHT Fitness — citas"), on his computer and his phone. Read-only in Google; updated when Google refreshes it.
+
+**Screens**
+- **Ajustes → "Tu agenda en Google Calendar"** (new card under "Tipos de consulta"):
+  - Off: one line on what it does + **Activar enlace**.
+  - On: the address in a read-only field, **Copiar enlace**, and the steps:
+    1. Abre Google Calendar **en una computadora** (la app del teléfono no permite agregar por enlace).
+    2. Junto a "Otros calendarios", toca **+** → **Desde URL**.
+    3. Pega el enlace → **Agregar calendario**. Listo: también aparece en tu teléfono.
+  - The honest notes: "Google actualiza este calendario cada varias horas (Google decide cuándo). Las citas nuevas o cambiadas pueden tardar en aparecer allá; aquí siempre están al momento." and "Trata este enlace como una contraseña: quien lo tenga ve los nombres y horarios de tus citas."
+  - **Cambiar enlace** (makes a new address; the old one stops working at once; he must add the new one in Google) and **Desactivar** (no address works). Both ask for confirmation.
+- **Agenda page:** a small line under the calendar: "Ver en Google Calendar: actívalo en Ajustes" (off) or "Sincronizado con Google Calendar (se actualiza cada varias horas)" (on).
+
+**What Google receives (the calendar file)**
+- One event per appointment: title **"Cita: Julio Álvarez — Consulta nutricional inicial"**, start and end (UTC; Google shows his time zone), and a link "Abrir en AHT Fitness" to that day in the agenda (`agenda.html?appt=ID`, needs his sign-in).
+- **Never:** the private note, the patient's email, phone or any health data.
+- Range: from 30 days ago to 12 months ahead. **Cancelled appointments are left out** (they disappear from Google on its next refresh). Each appointment keeps one id, so a changed time moves the same event in Google instead of duplicating it.
+- Standard iCalendar (`text/calendar`, RFC 5545: escaped text, folded lines), calendar name "AHT Fitness — citas".
+
+**Data (server)**
+- `calendar_feeds` (new, nutritionist only, one per nutritionist): `token` (40+ random characters, made by the server), `enabled`. In its own collection, like the private notes, so patients (who can read their nutritionist's profile) never see it.
+- Route `GET /api/plato/calendar/{token}.ics`: no sign-in (Google fetches it), answers only for an enabled token, otherwise "not found". Same rate limits as the other `/api/plato/` routes.
+- Routes (nutritionist signed in): turn on (makes a token), change (new token), turn off.
+
+**Risks**
+- Anyone with the address sees names and times: it's a secret like a password; **Cambiar enlace** is the fix if it leaks.
+- Patient names end up in his Google account (Google as a processor): one more item for Legal L1/L2.
+- Google's refresh delay is outside our control.
+
+**Acceptance (slice 2)**
+1. Ajustes: **Activar enlace** shows an address, **Copiar enlace** copies it.
+2. The address returns a valid calendar with the upcoming appointment ("Cita: Ana López Ríos — …", right start/end), checked by an iCalendar parser.
+3. The private note, cancelled appointments and appointments of other nutritionists never appear in it.
+4. A wrong or turned-off token: "not found". **Cambiar enlace**: the old address stops working, the new one works.
+5. Patients and other nutritionists can't read anyone's token (API).
+6. Real check (owner): add the address in his Google Calendar on a computer; the appointments appear (after Google's refresh).
+
+
 ### Data (server)
 - `appointments`: nutritionist, patient, starts_at (date-time, stored in UTC; shown in local time), duration_min (15–240, steps of 5), type (text from the nutritionist's list), cancelled_at (server time), changed_at (server time; "Nueva" on the patient side). Nutritionist: full access to their own, only with their own active patients; patient: **read** their own; nobody else.
 - `appointment_notes`: one private note per appointment; nutritionist only (patients can't list, view or filter it). Deleted with the appointment.
