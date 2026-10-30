@@ -671,7 +671,7 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 
 ---
 
-## Feature: Snacks per diet + meal goal = all planned meals (approved 2026-10-28)
+## Feature: Snacks per diet + meal goal = all planned meals (built 2026-10-30)
 
 **What:** a diet has **3 main meals plus 0–4 snacks (colaciones), 2 by default** (client, 2026-10-27). The weekly meal goal becomes **"all the meals of your plan, D days a week"**: a day counts when every meal planned for that day is checked.
 
@@ -708,6 +708,8 @@ Slice 1 (checklist + extras: server, screens, tests, spec), then slice 2 (servic
 4. Existing patients keep their days; their goal text becomes "todas las de tu plan"; last week's numbers stay as they were.
 5. Templates save and apply their snack number. Print and export show the new snacks.
 6. Phone 390 px: 7 rows fit; no sideways scroll.
+
+**Built:** "Colaciones al día 0–4" in the diet editor (hidden rows keep their text), templates save and apply the number, Hoy/plate/Registrar/print/export follow the planned meals (up to 7), the meal goal counts all planned meals and a day without plan shows a dashed dot and "Hoy: sin plan". "Cambiar metas" no longer asks for meals a day. Migration `1762300800` (existing diets and templates → 2; each patient gets an "all" entry from the migration week; older weeks keep their number), hook `snacks.pb.js` (default 2 on create). Checks: `tools/snack_check.mjs` (26), API N1–N3, G1/G3 updated, goal_check W1/W4 updated.
 
 ### Decided (owner, 2026-10-28)
 1. The 4th position is **"Colación previa al desayuno"**.
