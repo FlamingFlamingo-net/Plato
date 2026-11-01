@@ -815,6 +815,104 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
+## Feature: Appointment reminders + clinic time zone (approved 2026-10-30; slice 1 built, slice 2 next)
+
+**What (owner, 2026-10-30):** the patient gets a normal phone notification before each appointment, and when the nutritionist moves or cancels it. Nothing else sends notifications: **extreme importance only**. It must be non-intrusive and easy: one tap to turn on, nothing to set up. "Tu próxima cita" on Hoy (built with the Agenda) stays as the fallback for anyone without notifications.
+
+### Decided (owner, 2026-10-30)
+- Only appointment notifications, only to the patient. No meal, activity or nutritionist notifications (owner: "extreme importance only").
+- Real notifications (web push), not "add to calendar" (too much to ask of a normal user). "Tu próxima cita" stays as the fallback.
+- Also notify when an appointment is moved or cancelled.
+- Clinic time zone: detected automatically, appointments entered and shown in clinic time, both times shown only when the patient's phone is in another zone.
+
+### Slice 1 — clinic time zone (no notifications yet)
+**Why:** an appointment is one exact moment (stored in UTC). Each screen shows it in that device's own zone. That is right for the clock on the wall, but it confuses two cases:
+- A patient in another zone sees another hour for an in-person appointment (Ciudad Juárez follows the US clock changes; Chihuahua city does not: one hour apart in winter, when a 4:00 p.m. Chihuahua appointment is 3:00 p.m. in Juárez).
+- A nutritionist who travels would enter and see appointments in the zone of the trip.
+
+**Rules**
+- Each nutritionist has a **clinic time zone** (`nutritionists.timezone`, an IANA name such as `America/Chihuahua`).
+- Empty at first. The first time the nutritionist opens the app after this update, the app fills it with the computer's zone. Existing appointments do not change (they are exact moments).
+- **Ajustes → Tu perfil y portada:** "Zona horaria del consultorio", a list of zones (Mexico first), changeable.
+- **Nutritionist screens** (Agenda, Inicio, the patient page): appointments are entered and shown in **clinic time**. When the computer is in another zone, the Agenda says "Horario del consultorio (Chihuahua)".
+- **Patient screens** (Hoy, "Tu próxima cita"): the patient's own time. When the phone's zone gives another hour than the clinic's for that appointment, add the clinic time: "jueves 3:00 p.m. (4:00 p.m. hora del consultorio)" (Juárez in winter). If the day differs too, the clinic day is named.
+- The Google Calendar link (Agenda slice 2) does not change: Google shows the exact moment in the Google account's zone.
+- No time-zone setting for patients: their phone already knows it.
+
+**Acceptance (slice 1)**
+1. A nutritionist without a zone opens Inicio: the zone is saved from the computer; Ajustes shows it.
+2. Clinic `America/Chihuahua`, computer in `America/Tijuana` (emulated): creating "4:00 p.m." stores the moment of 4:00 p.m. Chihuahua; the Agenda, the dialog and the patient page show 4:00 p.m. and "Horario del consultorio (Chihuahua)". *(Changed during build: Mexico City has the same offset as Chihuahua all year, so it cannot show the difference.)*
+3. Patient phone in `America/Tijuana`: "Tu próxima cita: …, 2:00 p.m. (4:00 p.m. hora del consultorio)". Same zone as the clinic: only "4:00 p.m.". *(Changed during build: Juárez equals Chihuahua until November, so the test uses Tijuana all year.)*
+4. Changing the clinic zone does not move existing appointments (same exact moment, shown in the new zone).
+5. A patient cannot change the clinic zone (API refuses); a malformed zone is refused. *(Changed during build: patients already read their nutritionist's profile, which now holds the zone; it is not sensitive.)*
+
+**Slice 1 — built (2026-10-30, app v22):** `nutritionists.timezone` (migration `1762473600`), filled on the first open from the computer's zone and changeable in Ajustes → Tu perfil y portada (Mexico's 12 zones first with Spanish names and the UTC offset, then every other zone). New `js/zone.js` (browser `Intl` only, no library) converts clinic wall-clock times to exact moments, including clock-change days (a skipped time lands just after the jump). Nutritionist screens (Agenda, dialog, Inicio, patient page, export) enter and show clinic time; the Agenda and the dialog say "Horario del consultorio (…)" when the computer is in another zone. The patient's Hoy shows their own time plus the clinic time when it differs. **Result (throwaway server):** `tools/zone_check.mjs` 16/16 (zones emulated through Chrome DevTools); every earlier suite passes.
+
+### Slice 2 — appointment notifications
+**Patient screens**
+- **Hoy, on the "Tu próxima cita" card**, once, when the phone can receive notifications and they are not on:
+  "¿Te avisamos antes de tus citas?" **Activar avisos** · **Ahora no**.
+  - **Activar avisos** asks the phone for permission (this is the phone's own question). Yes: "Listo: te avisaremos un día antes y una hora antes." No: the card hides the invitation.
+  - **Ahora no** hides it on that phone. A small link "Avisos de citas" under the card turns them on later.
+- **iPhone without the app installed:** the invitation says "Para recibir avisos, instala la app: Compartir → Agregar a pantalla de inicio." (Apple allows notifications only to installed apps, iOS 16.4 or later.)
+- When on: a small line "Avisos de citas: activados · Desactivar" under the card.
+- A closed account: notifications stop at once (its phones are removed).
+
+**The notifications** (the phone writes the time in its own zone, plus the clinic time when the zones differ, as in slice 1)
+| When | Text |
+|---|---|
+| 24 hours before | **Mañana tienes cita** — jueves 4:00 p.m. · Consulta de mediciones |
+| 1 hour before | **Tu cita es en 1 hora** — 4:00 p.m. · Consulta de mediciones |
+| The nutritionist moves it | **Tu cita cambió** — ahora: viernes 10:00 a.m. |
+| The nutritionist cancels it | **Tu cita se canceló** — jueves 4:00 p.m. |
+
+- Tapping a notification opens the app on Hoy.
+- Never the private note, never another patient's data. The nutritionist's name only as "tu nutrióloga/o".
+- An appointment created less than 24 hours ahead: no day-before reminder. Less than 1 hour ahead: no reminders. A new appointment gets no "new appointment" notification (the patient sees **Nueva** on Hoy); only changes and cancellations notify.
+- A moved appointment: the reminders follow the new time (sent again if the new time is far enough ahead).
+- An appointment in the past, cancelled, or of a closed account: nothing.
+- A notification that the phone could not receive (phone off) arrives when it is back online, up to the appointment time; after that it is dropped.
+
+**Nutritionist screens**
+- Patient page, appointments card: "Avisos: activados" or "Avisos: no activados" (the patient decides; the nutritionist cannot turn them on).
+
+**How it works (server)**
+- PocketBase hooks cannot sign and encrypt web-push messages (no ECDSA/ECDH/HKDF in the hook tools). **One small Go file** (`main.go`, Go standard library only, no outside packages) builds the server with a `$webpush.send(subscription, payload)` tool for the hooks. The Dockerfile builds it; the hooks keep all the rules.
+- The server makes its own push keys on first start (stored in a superuser-only table). Nobody types a key; the owner does nothing.
+- `push_subscriptions` (patient-owned): one row per phone (`endpoint`, keys). The patient adds and removes their own; nobody else reads them. The endpoint must be a known push service (Google, Apple, Mozilla, Microsoft), so the server never sends requests to other addresses.
+- A server job every 5 minutes sends the due reminders. Each appointment remembers what was sent (`reminded_day_at`, `reminded_hour_at`, server-set), so nothing is sent twice. A change or cancellation sends at once and resets the reminders.
+- A phone that the push service says is gone (404/410) is removed.
+- The message carries only: kind, exact moment, minutes, type, clinic zone. The phone writes the text.
+
+**Risks**
+- A patient can deny or turn off notifications: they still have "Tu próxima cita" on Hoy.
+- iPhone: only with the app installed from Safari; older iPhones (before iOS 16.4) get nothing.
+- Delivery is usually within seconds to minutes; the push services do not promise an exact second. The job runs every 5 minutes, so a reminder can be up to 5 minutes late.
+- The server build changes (Go file): a deploy builds the server instead of downloading it. Same PocketBase version; the hooks and data do not change.
+- Notification text on the lock screen: "Mañana tienes cita" and the consultation type are visible to anyone who sees the phone. No health data, no notes.
+
+**Acceptance (slice 2)**
+1. Encryption and signing pass the web-push standard's test vector (RFC 8291) and a fake push service decrypts a real message from the server (automated).
+2. With a fake push service: a patient with notifications on and an appointment 24 h + 3 min ahead gets "Mañana tienes cita" within the next run; the 1-hour one 1 hour before; each only once.
+3. Moving the appointment sends "Tu cita cambió" at once and the reminders follow the new time; cancelling sends "Tu cita se canceló" and no reminders after.
+4. Another patient's phone gets nothing; the message never holds the private note.
+5. A patient cannot read or add another patient's phone; an endpoint that is not a known push service is refused; a gone phone (410) is removed.
+6. Closing the account removes its phones; nothing is sent after.
+7. Hoy: the invitation shows once, **Ahora no** hides it, iPhone-not-installed shows the install hint (emulated).
+8. **Real phones (owner/client), not checked yet:** an Android phone with Chrome and an iPhone with the app installed get the day-before and 1-hour notifications and a "Tu cita cambió".
+
+### Build order
+1. Slice 1: migration (`nutritionists.timezone`), Ajustes field, clinic-time entry and display, patient's double time. App update.
+2. Slice 2a (server): `main.go` + Dockerfile + `$webpush`, keys table, `push_subscriptions`, the job, the change/cancel hooks; tests with a fake push service.
+3. Slice 2b (screens): Hoy invitation and line, service-worker notification display, nutritionist "Avisos" line. App update.
+4. Deploy, then the client validation PDF gets the new steps.
+
+### Later
+- The nutritionist chooses the reminder times (e.g. 48 h, 2 h).
+- Quiet hours for change notices made late at night.
+
+---
+
 ## Feature: Photo feedback (built)
 
 **What:** on a patient's photo (meal or progress), the nutritionist leaves **feedback**: a short **comment** (text) and a **rating of 1 to 3 stars**. The patient sees it on their phone. Replaces the Later item "Comments on a meal photo".
