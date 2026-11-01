@@ -815,7 +815,7 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
-## Feature: Appointment reminders + clinic time zone (approved 2026-10-30; slice 1 built, slice 2 next)
+## Feature: Appointment reminders + clinic time zone (approved 2026-10-30; slices 1 and 2 built)
 
 **What (owner, 2026-10-30):** the patient gets a normal phone notification before each appointment, and when the nutritionist moves or cancels it. Nothing else sends notifications: **extreme importance only**. It must be non-intrusive and easy: one tap to turn on, nothing to set up. "Tu próxima cita" on Hoy (built with the Agenda) stays as the fallback for anyone without notifications.
 
@@ -900,6 +900,11 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 6. Closing the account removes its phones; nothing is sent after.
 7. Hoy: the invitation shows once, **Ahora no** hides it, iPhone-not-installed shows the install hint (emulated).
 8. **Real phones (owner/client), not checked yet:** an Android phone with Chrome and an iPhone with the app installed get the day-before and 1-hour notifications and a "Tu cita cambió".
+
+**Slice 2 — built (2026-10-31, app v23):**
+- Server: PocketBase 0.40.5 is now compiled from `main.go` (same setup as PocketBase's own standard server) with one extra hook tool, `$webpush` (`webpush.go`: RFC 8291 encryption + RFC 8292 VAPID with the Go standard library; `go.sum` pins PocketBase's modules). The Dockerfile builds it in a Go 1.27 stage; the image stays Alpine (61 MB). The hooks keep every rule: `push.pb.js` + `push_lib.js` (key route, the nutritionist's "Avisos" route, the 5-minute job, change/cancel notices, endpoint checks), and closing an account removes its phones. Migration `1762560000`: `push_keys` (superusers only), `push_subscriptions` (the patient's own), `appointments.reminded_day_at/reminded_hour_at` (server-set only).
+- Screens: Hoy shows the invitation once under "Tu próxima cita" (**Activar avisos** / **Ahora no** → a small "Avisos de citas" link), "Avisos de citas: activados · Desactivar", the iPhone install hint, and a "blocked in the phone's settings" line. The service worker writes the notification text in the phone's zone (plus the clinic time) and opens Hoy on tap. The nutritionist's patient page shows "Avisos: activados / no activados".
+- **Result (throwaway server):** Go tests 3/3 (the RFC 8291 example byte for byte, a send to a fake push service with signature check, bad input); `tools/push_check.mjs` 37/37 (a fake push service on the test host; each "phone" decrypts with its own keys and checks the server's signature: day/hour once each, moved/cancelled at once, reminders follow a move, nothing for a new appointment or a type change, nothing to other patients, no notes or names in the message, gone phones removed, closed accounts forgotten, superuser-only job); `tools/reminder_check.mjs` 21/21 (screens + the notification texts in an emulated Tijuana zone). Every earlier suite passes on the compiled server. **Not checked yet:** real phones (acceptance 8).
 
 ### Build order
 1. Slice 1: migration (`nutritionists.timezone`), Ajustes field, clinic-time entry and display, patient's double time. App update.
