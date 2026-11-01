@@ -8,7 +8,7 @@ import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
 import { weekOf, indexLogs, mondayOf, addDays } from './goals.js';
-import { loadRange, timeOf as apptTime, timeRange, dayKey } from './appointments.js';
+import { loadRange, timeOf as apptTime, timeRange, dayKey, todayKey } from './appointments.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -106,7 +106,7 @@ async function loadAll() {
   recentMeals = new Set(recent.map((m) => m.patient));
   unseen = { meal: um, activity: ua, progress: up };
   templateCount = tpls.length;
-  try { upcoming = (await loadRange(localDate(), addDays(localDate(), 1))).filter((a) => !a.cancelled_at); } catch { upcoming = []; }
+  try { upcoming = (await loadRange(todayKey(), addDays(todayKey(), 1))).filter((a) => !a.cancelled_at); } catch { upcoming = []; }
   // Last full week (Monday to Sunday before this one)
   const lastMon = addDays(mondayOf(), -7), lastSun = addDays(lastMon, 6);
   const wf = `date >= ${q(lastMon)} && date <= ${q(lastSun)} && patient.archived_at = ""`;
@@ -257,7 +257,7 @@ function renderToday() {
         h('span', { text: `${tc.length === 1 ? 'cita' : 'citas'} hoy${next ? ` · la próxima a las ${apptTime(next.starts_at)} con ${next.expand?.patient?.name || 'tu paciente'}` : ''}` }),
         h('a', { class: 'plato-home-today-link', href: '/agenda.html', text: 'Ver agenda' })); })());
 }
-const todayAppts = () => upcoming.filter((a) => dayKey(a.starts_at) === localDate());
+const todayAppts = () => upcoming.filter((a) => dayKey(a.starts_at) === todayKey());
 
 // ---------- Cards ----------
 const photoDialog = document.getElementById('photo-dialog');
@@ -377,7 +377,7 @@ function pendingCards() {
 
 // ---------- Agenda tab: today's and tomorrow's appointments ----------
 function agendaCards() {
-  const today = localDate(), tomorrow = addDays(today, 1);
+  const today = todayKey(), tomorrow = addDays(today, 1);
   const group = (ymd, title) => {
     const items = upcoming.filter((a) => dayKey(a.starts_at) === ymd);
     return h('li', { class: 'plato-agenda-day' },

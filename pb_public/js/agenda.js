@@ -6,14 +6,15 @@ import { requireRole, list, view, signOut, localDate } from './api.js';
 import { myFeed } from './settings-calendar.js';
 import { h, icon, offlineBanner } from './ui.js';
 import { mondayOf, addDays } from './goals.js';
-import { loadRange, notesFor, appointmentDialog, cancelAppointment, deleteAppointment, timeRange, timeOf, dayKey } from './appointments.js';
+import { loadRange, notesFor, appointmentDialog, cancelAppointment, deleteAppointment, timeRange, timeOf, dayKey, todayKey, clinicHint } from './appointments.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
 document.getElementById('sign-out').addEventListener('click', signOut);
 
 const params = new URL(location.href).searchParams;
-const today = localDate();
+const today = todayKey();
+if (clinicHint()) document.getElementById('clinic-hint').replaceChildren(icon('clock', 14), ` ${clinicHint()}`), document.getElementById('clinic-hint').hidden = false;
 let selected = /^\d{4}-\d{2}-\d{2}$/.test(params.get('day') || '') ? params.get('day') : today;
 let month = selected.slice(0, 7);                   // YYYY-MM shown
 let appts = [];                                      // the shown grid's range

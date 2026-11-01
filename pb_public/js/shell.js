@@ -3,6 +3,7 @@ import { requireRole, view, list, q, signOut, dateOnly } from './api.js';
 import { lastSeen } from './feedback.js';
 import { hasNewAppointment } from './next-appt.js';
 import { h, icon, offlineBanner, isMinor } from './ui.js';
+import { setClinicZone } from './zone.js';
 
 export async function patientShell(current) {
   offlineBanner();
@@ -43,5 +44,6 @@ export async function patientShell(current) {
 
   let nutritionist = null;
   try { nutritionist = await view('nutritionists', me.nutritionist); } catch { /* offline or removed */ }
+  setClinicZone(nutritionist?.timezone);
   return { me, nutritionist, minor };
 }

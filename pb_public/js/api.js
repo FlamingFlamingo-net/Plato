@@ -6,6 +6,7 @@
 //   hooks: POST /api/plato/invite {patient} · GET /api/plato/invite/{token} · POST /api/plato/join {token,email,password}
 //          POST /api/plato/patients/{id}/close · POST /api/plato/patients/{id}/reopen (nutritionist; archive / un-archive)
 //   PocketBase answers 404 (not 403) when a rule refuses a view/update/delete.
+import { deviceZone, validZone, useClinicZone } from './zone.js';
 
 const KEY = 'plato.auth';
 
@@ -153,6 +154,11 @@ export async function requireRole(collection) {
   const rec = await refresh();
   // A patient whose session stopped working (account closed or access reset) gets a short explanation.
   if (!rec) { location.replace(collection === 'patients' ? '/?ended=1' : '/'); return new Promise(() => {}); }
+  if (collection === 'nutritionists') {
+    // Clinic time zone: empty until the first open after the update, then this computer's zone (Ajustes changes it).
+    if (!validZone(rec.timezone)) { try { Object.assign(rec, await update('nutritionists', rec.id, { timezone: deviceZone() })); } catch { /* offline: try next time */ } }
+    useClinicZone(rec.timezone);
+  }
   return rec;
 }
 

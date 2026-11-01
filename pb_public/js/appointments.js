@@ -1,9 +1,11 @@
 // appointments.js — agenda helpers shared by the Agenda page, the patient page, Inicio and the patient's Hoy
 // (spec "Feature: Agenda — the nutritionist's own calendar", slice 1).
-// Times are stored in UTC and shown in the device's local time. The private note lives in appointment_notes,
+// Times are stored in UTC. Nutritionist screens show and enter them in the clinic's zone; patient screens in the
+// phone's zone, plus the clinic time when it differs (zone.js). The private note lives in appointment_notes,
 // which patients can't read at all.
-import { list, create, update, remove, q, localDate } from './api.js';
+import { list, create, update, remove, q } from './api.js';
 import { h, toast, formError, busy } from './ui.js';
+import { displayZone, clinicZone, timeIn, dayLabelIn, ymdIn, hhmmIn, zonedToDate, offsetMin, zoneCity } from './zone.js';
 
 // The client's consultation types; minutes = default duration (the longest he gave for each).
 export const DEFAULT_TYPES = [
@@ -18,21 +20,33 @@ export const DEFAULT_MINUTES = 60;
 export const typesOf = (list) => (Array.isArray(list) && list.length ? list : DEFAULT_TYPES)
   .map((x) => (typeof x === 'string' ? { name: x, minutes: DEFAULT_MINUTES } : x)).filter((x) => x && x.name);
 
-const tf = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
-const df = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
 export const toDate = (pb) => new Date(String(pb).replace(' ', 'T'));
-export const timeOf = (pb) => tf.format(toDate(pb));
-export const dayLabel = (pb) => { const s = df.format(toDate(pb)); return s[0].toUpperCase() + s.slice(1); };
-export const dayKey = (pb) => localDate(toDate(pb));               // local YYYY-MM-DD of an appointment
-export const toPb = (ymd, hhmm) => new Date(`${ymd}T${hhmm}:00`).toISOString().replace('T', ' ');
+export const timeOf = (pb) => timeIn(toDate(pb), displayZone());
+export const dayLabel = (pb) => dayLabelIn(toDate(pb), displayZone());
+export const dayKey = (pb) => ymdIn(toDate(pb), displayZone());      // YYYY-MM-DD of an appointment (clinic or phone zone)
+export const todayKey = () => ymdIn(new Date(), displayZone());
+export const toPb = (ymd, hhmm) => zonedToDate(ymd, hhmm, displayZone()).toISOString().replace('T', ' ');
 export const endOf = (a) => new Date(toDate(a.starts_at).getTime() + a.duration_min * 60000);
-const pad = (n) => String(n).padStart(2, '0');
-export const hhmmOf = (pb) => { const d = toDate(pb); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+export const hhmmOf = (pb) => hhmmIn(toDate(pb), displayZone());
+const pbOf = (d) => d.toISOString().replace('T', ' ');
+
+// Patient screens: " (4:00 p.m. hora del consultorio)" when the phone's zone gives another hour for that moment.
+export function clinicNote(pb) {
+  const z = clinicZone(), d = toDate(pb);
+  if (!z || displayZone() || offsetMin(d, z) === offsetMin(d, undefined)) return '';
+  const sameDay = ymdIn(d, z) === ymdIn(d, undefined);
+  return ` (${sameDay ? '' : `${dayLabelIn(d, z).toLowerCase()}, `}${timeIn(d, z)} hora del consultorio)`;
+}
+// Nutritionist screens: "Horario del consultorio (Chihuahua)" when this computer is in another zone.
+export function clinicHint() {
+  const z = displayZone();
+  return z && offsetMin(new Date(), z) !== offsetMin(new Date(), undefined) ? `Horario del consultorio (${zoneCity(z)})` : '';
+}
 
 // Appointments starting in [fromYmd, toYmd] (local days, inclusive), sorted by time. Nutritionist view.
 export async function loadRange(fromYmd, toYmdIncl, { patient = '' } = {}) {
-  const from = new Date(`${fromYmd}T00:00:00`).toISOString().replace('T', ' ');
-  const to = new Date(`${toYmdIncl}T23:59:59`).toISOString().replace('T', ' ');
+  const from = pbOf(zonedToDate(fromYmd, '00:00', displayZone()));
+  const to = pbOf(new Date(zonedToDate(toYmdIncl, '23:59', displayZone()).getTime() + 59999));
   const f = `starts_at >= ${q(from)} && starts_at <= ${q(to)}${patient ? ` && patient = ${q(patient)}` : ''}`;
   return list('appointments', { filter: f, sort: 'starts_at', perPage: 500, expand: 'patient' });
 }
@@ -44,7 +58,7 @@ export async function notesFor(ids) {
 }
 
 // "4:00 p.m. – 5:00 p.m."
-export const timeRange = (a) => `${timeOf(a.starts_at)} – ${tf.format(endOf(a))}`;
+export const timeRange = (a) => `${timeOf(a.starts_at)} – ${timeIn(endOf(a), displayZone())}`;
 
 // Overlap warning (not a block): other non-cancelled appointments that cross [start, end).
 export function overlaps(all, startPb, minutes, exceptId) {
@@ -54,7 +68,7 @@ export function overlaps(all, startPb, minutes, exceptId) {
 
 let dlg;
 // Nueva cita / Editar cita. patients: active patients [{id,name}]; types: list; appt: existing (edit) or null.
-export function appointmentDialog({ me, patients, types, appt = null, note = null, patientId = '', day = localDate(), onSaved }) {
+export function appointmentDialog({ me, patients, types, appt = null, note = null, patientId = '', day = todayKey(), onSaved }) {
   dlg?.remove();
   const editing = !!appt;
   const typeList = typesOf(types);
@@ -86,7 +100,7 @@ export function appointmentDialog({ me, patients, types, appt = null, note = nul
       h('button', { class: 'btn', type: 'submit', id: 'ap-save' }, editing ? 'Guardar cambios' : 'Agendar cita')));
   dlg = h('dialog', { class: 'dialog plato-ap-dialog', id: 'ap-dialog', 'aria-labelledby': 'ap-title' },
     h('div', {}, h('header', {}, h('h2', { id: 'ap-title', text: editing ? 'Editar cita' : 'Nueva cita' }),
-      h('p', { text: 'Tu paciente la verá en su app (sin tu nota).' })), form));
+      h('p', { text: `Tu paciente la verá en su app (sin tu nota).${clinicHint() ? ` ${clinicHint()}.` : ''}` })), form));
   document.body.append(dlg);
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', () => dlg.remove());

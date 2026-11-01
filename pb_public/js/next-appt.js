@@ -5,7 +5,7 @@
 import { list, q, localDate } from './api.js';
 import { h, icon } from './ui.js';
 import { lastSeen, markSeen } from './feedback.js';
-import { dayLabel, timeOf, dayKey, endOf } from './appointments.js';
+import { dayLabel, timeOf, dayKey, endOf, clinicNote } from './appointments.js';
 
 const startOfToday = () => new Date(`${localDate()}T00:00:00`).toISOString().replace('T', ' ');
 
@@ -30,7 +30,7 @@ export async function mountNextAppointment(el, me) {
   const cancelled = rows.filter((a) => a.cancelled_at && dayKey(a.starts_at) >= localDate());
   const parts = [];
   if (next) {
-    const when = `${dayLabel(next.starts_at)}${dayKey(next.starts_at) === localDate() ? ' (hoy)' : ''}, ${timeOf(next.starts_at)}`;
+    const when = `${dayLabel(next.starts_at)}${dayKey(next.starts_at) === localDate() ? ' (hoy)' : ''}, ${timeOf(next.starts_at)}${clinicNote(next.starts_at)}`;
     parts.push(h('div', { class: 'plato-next-appt', id: 'next-appt-card' },
       h('span', { class: 'plato-next-appt-icon' }, icon('calendar', 20)),
       h('div', {},
@@ -43,7 +43,7 @@ export async function mountNextAppointment(el, me) {
       h('span', { class: 'plato-next-appt-icon' }, icon('alert', 20)),
       h('div', {},
         h('p', { class: 'plato-next-appt-label' }, 'Cita cancelada', isNew(c) ? h('span', { class: 'badge plato-new-badge', text: 'Nueva' }) : null),
-        h('strong', { text: `Tu cita del ${dayLabel(c.starts_at).toLowerCase()}, ${timeOf(c.starts_at)}` }),
+        h('strong', { text: `Tu cita del ${dayLabel(c.starts_at).toLowerCase()}, ${timeOf(c.starts_at)}${clinicNote(c.starts_at)}` }),
         h('p', { class: 'plato-muted plato-small', text: 'Se canceló. Si necesitas otra fecha, habla con quien lleva tu plan.' }))));
   }
   el.replaceChildren(...parts);

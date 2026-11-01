@@ -1,8 +1,8 @@
 // patient-appts.js — the appointments strip on the nutritionist's patient page (spec "Feature: Agenda", slice 1):
 // next appointment, "Agendar cita", and every appointment of this patient (newest first, with the private note).
-import { list, q, localDate } from './api.js';
+import { list, q } from './api.js';
 import { h, icon } from './ui.js';
-import { appointmentDialog, cancelAppointment, notesFor, dayLabel, timeOf, timeRange, dayKey } from './appointments.js';
+import { appointmentDialog, cancelAppointment, notesFor, dayLabel, timeOf, timeRange, dayKey, todayKey } from './appointments.js';
 
 export function mountPatientAppointments(el, { me, patient, closed }) {
   let all = [], notes = {};
@@ -27,7 +27,7 @@ export function mountPatientAppointments(el, { me, patient, closed }) {
         : h('p', { class: 'plato-muted', text: closed ? 'Sin citas próximas.' : 'Sin citas próximas.' }),
       closed ? null : h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', id: 'p-new-appt', onclick: () => open() }, 'Agendar cita'));
     const rows = all.map((a) => {
-      const past = dayKey(a.starts_at) < localDate();
+      const past = dayKey(a.starts_at) < todayKey();
       return h('li', { class: a.cancelled_at ? 'is-cancelled' : past ? 'is-past' : '' },
         h('span', { class: 'plato-p-appt-when' }, h('strong', { text: dayLabel(a.starts_at) }), h('span', { text: timeRange(a) })),
         h('span', { class: 'badge plato-appt-type', text: a.type }),

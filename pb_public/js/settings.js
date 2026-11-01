@@ -4,6 +4,8 @@ import { toast, offlineBanner, formError, busy } from './ui.js';
 import { shrink } from './photo.js';
 import { mountTypes } from './settings-types.js';
 import { mountCalendar } from './settings-calendar.js';
+import { allZones, zoneCity, utcLabel, useClinicZone } from './zone.js';
+import { h } from './ui.js';
 
 offlineBanner();
 let me = await requireRole('nutritionists');
@@ -19,6 +21,12 @@ const coverImg = document.getElementById('cover-preview');
 const coverEmpty = document.getElementById('cover-empty');
 const fields = { name: 'pr-name', clinic_name: 'pr-clinic', whatsapp: 'pr-whatsapp', instagram: 'pr-instagram' };
 for (const [k, id] of Object.entries(fields)) document.getElementById(id).value = me[k] || '';
+// Clinic time zone: Mexico first, then the rest (each with its current UTC offset).
+const zoneSel = document.getElementById('pr-zone');
+const zoneOpt = (z) => h('option', { value: z, selected: z === me.timezone }, `${zoneCity(z)} (${utcLabel(z)})${z.includes('/') && !z.startsWith('America/') ? ` · ${z.split('/')[0]}` : ''}`);
+const zones = allZones();
+zoneSel.replaceChildren(h('optgroup', { label: 'México' }, ...zones.slice(0, 12).map(zoneOpt)), h('optgroup', { label: 'Otras zonas' }, ...zones.slice(12).map(zoneOpt)));
+if (me.timezone && !zones.includes(me.timezone)) zoneSel.prepend(zoneOpt(me.timezone));
 async function showCover() {
   if (!me.cover) return;
   coverImg.src = await photoUrl(me, '1600x0', 'cover');
@@ -42,6 +50,7 @@ pf.addEventListener('submit', async (e) => {
   if (!pf.reportValidity()) return;
   const fd = new FormData();
   for (const [k, id] of Object.entries(fields)) fd.set(k, document.getElementById(id).value.trim());
+  fd.set('timezone', zoneSel.value);
   if (coverBlob) fd.set('cover', coverBlob, 'portada.jpg');
   try {
     me = await busy(document.getElementById('profile-save'), () => update('nutritionists', me.id, fd));
@@ -49,6 +58,7 @@ pf.addEventListener('submit', async (e) => {
   coverBlob = null;
   coverIn.value = '';
   document.getElementById('who').textContent = me.name;
+  useClinicZone(me.timezone);
   toast('Perfil guardado. Así se ve en tu inicio.');
 });
 

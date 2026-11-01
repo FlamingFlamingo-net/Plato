@@ -53,6 +53,10 @@
             <div class="field"><label for="pr-whatsapp">WhatsApp <span class="plato-muted">(opcional)</span></label><input class="input" id="pr-whatsapp" maxlength="20" inputmode="tel" pattern="[0-9 +\(\)\-]*" placeholder="614 000 0000"></div>
             <div class="field"><label for="pr-instagram">Instagram <span class="plato-muted">(opcional)</span></label><input class="input" id="pr-instagram" maxlength="31" pattern="@?[A-Za-z0-9\._]*" placeholder="@tuconsultorio"></div>
           </div>
+          <div class="field"><label for="pr-zone">Zona horaria del consultorio</label>
+            <select class="select" id="pr-zone" aria-describedby="pr-zone-help"></select>
+            <p class="plato-muted plato-small" id="pr-zone-help" style="margin:0">Tus citas se agendan y se ven en esta hora. Si tu paciente está en otra zona, su app le muestra las dos horas.</p>
+          </div>
         </section>
         <footer class="plato-actions" style="justify-content:flex-end"><button class="btn" type="submit" id="profile-save">Guardar perfil</button></footer>
       </form>
