@@ -42,6 +42,8 @@ routerAdd("POST", "/api/plato/patients/{id}/close", (e) => {
     patient.refreshTokenKey(); // ends every open session on every device
     tx.save(patient);
     lib.voidInvites(tx, patient.id);
+    // Appointment notifications stop at once: forget this account's phones.
+    for (const s of tx.findRecordsByFilter("push_subscriptions", "patient = {:p}", "", 50, 0, { p: patient.id })) tx.delete(s);
   });
   return e.json(200, { archived_at: at });
 });

@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 
 let suToken = null;
-async function superuser(BASE, box) {
+export async function superuser(BASE, box) {
   if (suToken) return suToken;
   const email = 'zz-admin@test.local', pw = `Zz${randomBytes(12).toString('hex')}`;
   execFileSync('docker', ['exec', box, '/pb/pocketbase', 'superuser', 'upsert', email, pw]);
