@@ -105,6 +105,10 @@ export async function launch({ port = 9333, profileDir }) {
         await s('DOM.setFileInputFiles', { nodeId, files: [path] });
       },
       async timezone(id) { await s('Emulation.setTimezoneOverride', { timezoneId: id }); },
+      async userAgent(ua) { await s('Emulation.setUserAgentOverride', { userAgent: ua }); },
+      async beforeLoad(source) { await s('Page.addScriptToEvaluateOnNewDocument', { source }); },
+      // setting: 'granted' | 'denied' | 'prompt' for this page's browser context (e.g. notifications)
+      async permission(name, setting, origin) { await send('Browser.setPermission', { permission: { name }, setting, origin, browserContextId }); },
       async offline(on) {
         await s('Network.emulateNetworkConditions', { offline: on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
       },

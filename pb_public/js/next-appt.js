@@ -6,6 +6,7 @@ import { list, q, localDate } from './api.js';
 import { h, icon } from './ui.js';
 import { lastSeen, markSeen } from './feedback.js';
 import { dayLabel, timeOf, dayKey, endOf, clinicNote } from './appointments.js';
+import { mountPushInvite } from './push.js';
 
 const startOfToday = () => new Date(`${localDate()}T00:00:00`).toISOString().replace('T', ' ');
 
@@ -46,7 +47,10 @@ export async function mountNextAppointment(el, me) {
         h('strong', { text: `Tu cita del ${dayLabel(c.starts_at).toLowerCase()}, ${timeOf(c.starts_at)}${clinicNote(c.starts_at)}` }),
         h('p', { class: 'plato-muted plato-small', text: 'Se canceló. Si necesitas otra fecha, habla con quien lleva tu plan.' }))));
   }
-  el.replaceChildren(...parts);
+  // "Avisos de citas" (slice 2 of the reminders spec): only next to an upcoming appointment.
+  const push = next ? h('div', { id: 'push-box' }) : null;
+  el.replaceChildren(...parts, ...(push ? [push] : []));
   el.hidden = !parts.length;
   if (parts.length) markSeen('appointment');
+  if (push) mountPushInvite(push, me);
 }

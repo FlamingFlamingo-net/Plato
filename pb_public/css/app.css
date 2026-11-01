@@ -587,3 +587,11 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 
 /* Clinic time zone (spec "Appointment reminders + clinic time zone", slice 1) */
 .plato-clinic-hint { margin: 0.15rem 0 0; display: flex; align-items: center; gap: 0.3rem; }
+
+/* Appointment notifications (spec "Appointment reminders + clinic time zone", slice 2) */
+.plato-push { margin: 0; }
+.plato-push-invite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.6rem 0.9rem; border: 1px dashed var(--border); border-radius: var(--radius-lg, 0.75rem);
+  p { margin: 0; font-size: 0.9rem; } }
+#push-on .btn, #push-later .btn { padding-inline: 0.25rem; height: auto; }
+.plato-push-badge { white-space: nowrap; &.is-off { color: var(--muted-foreground); } }

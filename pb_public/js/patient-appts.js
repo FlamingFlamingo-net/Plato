@@ -1,11 +1,12 @@
 // patient-appts.js — the appointments strip on the nutritionist's patient page (spec "Feature: Agenda", slice 1):
 // next appointment, "Agendar cita", and every appointment of this patient (newest first, with the private note).
-import { list, q } from './api.js';
+import { list, q, request } from './api.js';
 import { h, icon } from './ui.js';
 import { appointmentDialog, cancelAppointment, notesFor, dayLabel, timeOf, timeRange, dayKey, todayKey } from './appointments.js';
 
 export function mountPatientAppointments(el, { me, patient, closed }) {
-  let all = [], notes = {};
+  let all = [], notes = {}, pushOn = null;
+  request(`/api/plato/patients/${patient.id}/push`).then((r) => { pushOn = !!r.enabled; render(); }).catch(() => {});
   const load = async () => {
     try {
       all = await list('appointments', { filter: `patient = ${q(patient.id)}`, sort: '-starts_at', perPage: 200 });
@@ -25,6 +26,9 @@ export function mountPatientAppointments(el, { me, patient, closed }) {
       next
         ? h('p', {}, h('span', { text: 'Próxima cita: ' }), h('strong', { text: `${dayLabel(next.starts_at)}, ${timeOf(next.starts_at)}` }), h('span', { class: 'plato-muted', text: ` · ${next.type}` }))
         : h('p', { class: 'plato-muted', text: closed ? 'Sin citas próximas.' : 'Sin citas próximas.' }),
+      pushOn === null || closed ? null : h('span', { class: `badge plato-push-badge${pushOn ? '' : ' is-off'}`, id: 'p-push', 'data-variant': pushOn ? null : 'outline',
+        title: pushOn ? 'Recibe avisos de sus citas en su teléfono.' : 'Sus avisos de citas no están activados (los activa tu paciente en su app).' },
+        pushOn ? 'Avisos: activados' : 'Avisos: no activados'),
       closed ? null : h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', id: 'p-new-appt', onclick: () => open() }, 'Agendar cita'));
     const rows = all.map((a) => {
       const past = dayKey(a.starts_at) < todayKey();
