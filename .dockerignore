@@ -7,3 +7,4 @@ specs
 *.md
 docker-compose.yml
 fly.toml
+*_test.go

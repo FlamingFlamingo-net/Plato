@@ -1,10 +1,8 @@
 services:
   pocketbase:
     build:
-      context: .
-      args:
-        PB_VERSION: "0.40.5"
-    image: pocketbase-local:0.40.5
+      context: .                   # compiles the server from main.go (Dockerfile), like Fly does
+    image: aht-fitness-local
     container_name: pocketbase
     restart: unless-stopped
     ports:
