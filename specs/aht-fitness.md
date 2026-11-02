@@ -918,6 +918,82 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
+## Feature: Archive and restore catalogue items (built 2026-11-01, app v24)
+
+**What (owner, 2026-10-31):** every item in the **Catálogo** can be **archived**: it leaves the normal lists, searches and pickers, and it can be **restored** at any time. Nothing is deleted by archiving.
+
+### Decided (owner, 2026-10-31: "aos" to all three)
+1. **Patients: one archive, not two.** The existing "Cerrar cuenta" is the patient archive. It is renamed **"Archivar paciente"**, and its text says it also ends the patient's access to the app. "Reactivar" becomes **"Restaurar"**. Behaviour does not change (built in "Feature: Close a patient's account").
+2. **Diet templates** get archive / restore (below).
+3. **A rule for the whole catalogue:** each list that is built later (Ingredientes, Recetas, Planes de comidas, Cuestionarios, Planes de ejercicio) gets archive / restore when it is built: archived items are hidden from pickers and searches; anything that already uses them keeps working.
+4. **Archived items have their own tab in each list (owner, 2026-10-31).** Every catalogue page opens on its active items; a second tab holds the archived ones. Same look on every list.
+
+### The archive tabs (every catalogue list)
+- Under the page title: two tabs, **Activos (N)** | **Archivados (N)** (feminine where the list is: *Activas* / *Archivadas* for plantillas). The page opens on the active tab.
+- The archived tab shows the archived items, newest archived first, each with **Restaurar** (and **Borrar** where the list allows deleting). Nothing on that tab is used anywhere else in the app.
+- The tab is part of the address (`?view=archived`), so Back, a reload and a bookmark keep it. Links (Catálogo cards, the header) open the active tab.
+- Real tabs for keyboard and screen readers: arrow keys move between them, the selected one is announced, counts are part of the name ("Archivados, 3").
+- Actions that create things (**Nuevo paciente**) show only on the active tab.
+- The tab counts come from the server (a count, nothing downloaded), so they are right even when the list is long.
+- Phone 390 px: the two tabs fit on one line; no sideways scroll.
+
+### Sorting (every catalogue list; owner, 2026-10-31)
+- A small **"Ordenar"** select next to the tabs, with the sorts every list shares:
+  | Option | Order |
+  |---|---|
+  | **Nombre (A–Z)** | default on the active tab; accents and capitals ignored (Álvarez with the A's) |
+  | Nombre (Z–A) | |
+  | Más nuevos primero | when the item was added |
+  | Más antiguos primero | |
+  | **Archivados recientemente** | only on the archived tab, and its default |
+- The choice is remembered per list and per tab on this computer, and is part of the address (`?sort=`), so Back and a reload keep it.
+- The sort runs on the device over the whole list (lists load whole, up to 500). *(Changed during build: the server's database cannot compare names ignoring accents and capitals; revisit with paging when a list can pass 500.)*
+- Changing the sort keeps the focus on the select; screen readers hear the new order ("Ordenado por nombre, A a Z").
+- **Not now (backlog):** sorts that only make sense for one list (diets by kcal, patients by last activity or by goal), added with each list's own data.
+
+### Patients (wording only)
+| Where | Today | After |
+|---|---|---|
+| Patient page, Acceso tab: card title and button | Cerrar cuenta | **Archivar paciente** |
+| Its explanation | (closing text) | "Archivar a tu paciente lo quita de tus listas y **cierra su acceso a la app** (su sesión termina en todos sus teléfonos). Sus datos quedan guardados. Puedes restaurarlo cuando quieras; después le mandas un enlace nuevo." |
+| Confirm dialog | ¿Cerrar la cuenta? / Cerrar cuenta | **¿Archivar a {nombre}?** / **Archivar** |
+| Archived patient: banner and card | Cuenta cerrada el … | **Archivado el …** |
+| Button | Reactivar | **Restaurar** |
+| Patient list | buttons "Activos" / "Archivados" | the archive tabs: **Activos (N)** \| **Archivados (N)** |
+| Toasts | "Cuenta cerrada. Sus datos quedan guardados." / reactivated | "Paciente archivado. Sus datos quedan guardados." / "Paciente restaurado. Mándale un enlace nuevo." |
+- "Borrar definitivamente" stays only for archived patients, as today.
+- The patient's own screen ("Tu sesión terminó") does not change.
+
+### Diet templates
+**Rules**
+- `diet_templates.archived_at` (date, empty = active). Archiving sets the server time; restoring clears it.
+- **Plantillas page:** the archive tabs, **Activas (N)** | **Archivadas (N)**. Active ones get **Archivar** next to Cambiar nombre / Borrar; archived ones have **Restaurar** and **Borrar**. No confirmation for archiving (it is undone with one tap); a toast says "Plantilla archivada. Está en la pestaña Archivadas." 
+- **"Usar plantilla"** (patient's diet tab) lists only active templates. If all are archived: "No tienes plantillas activas. Restaura una en Plantillas."
+- **"Guardar como plantilla"** with the name of an archived template: the existing "¿Reemplazar?" question says it is archived; replacing it **restores** it with the new week.
+- **Catálogo card "Dietas":** counts active templates; adds "· N archivadas" when N > 0.
+- Patients whose diet came from an archived template see no change (diets are copies).
+- Other nutritionists cannot archive, restore or see my templates (unchanged rules).
+
+**Acceptance**
+1. Archive a template: it leaves the Activas tab and the "Usar plantilla" picker; the tabs show "Activas (N−1)" and "Archivadas (1)", and it is listed there; the Catálogo count drops by one and says "· 1 archivada".
+2. Restore it: back in both lists and the count.
+3. A patient's diet made from it does not change when it is archived, restored or deleted.
+4. "Guardar como plantilla" with an archived name: asks first, says it is archived, replacing restores it with the new week.
+5. Another nutritionist cannot archive or restore my template (API refuses); a patient cannot list templates (unchanged).
+6. Patients: the Acceso tab says "Archivar paciente" and that access ends; archiving and restoring work exactly as before (every close-account test still passes with the new words).
+7. Sorting, both pages and both tabs: each option orders the list as named (Ángel before Beatriz, newest first, …); the choice survives a reload and is kept per tab; the archived tab starts on "Archivados recientemente".
+8. Both pages: the tabs open on the active one; `?view=archived` opens the archived one and survives a reload; arrow keys move between the tabs; "Nuevo paciente" shows only on Activos.
+9. Phone 390 px: tabs, the sort select and buttons fit, no sideways scroll.
+
+**Built (2026-11-01):** `js/list-tabs.js` (tabs with counts, "Ordenar", address + per-tab memory, arrow keys) on Mis pacientes and Plantillas; `diet_templates.archived_at` (migration `1762646400`, server time in `pb_hooks/catalog.pb.js`; new templates start active); Archivar / Restaurar on templates; "Usar plantilla" offers only active ones (and says where archived ones are); saving over an archived name says so and restores it; Catálogo shows "· N archivados/archivadas"; the patient wording above. Found during the phone check and fixed: patient rows with several badges overflowed on a phone (names cut to "An…"); badges now wrap under the name. **Result (throwaway server):** `tools/archive_check.mjs` 28/28; `tools/close_check.mjs` 12/12 with the new words; every other suite passes.
+
+### Later
+- Archive / restore for each future catalogue list, when built (decision 3).
+- Search inside Archivados when lists grow.
+- Type-specific sorting (backlog card): diets by kcal, patients by last activity or goal, etc.
+
+---
+
 ## Feature: Photo feedback (built)
 
 **What:** on a patient's photo (meal or progress), the nutritionist leaves **feedback**: a short **comment** (text) and a **rating of 1 to 3 stars**. The patient sees it on their phone. Replaces the Later item "Comments on a meal photo".
