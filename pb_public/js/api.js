@@ -116,6 +116,8 @@ export function list(name, { filter = '', sort = '', perPage = 200, fields = '',
   if (expand) q.set('expand', expand);
   return request(`${col(name)}?${q}`).then((r) => r.items);
 }
+// How many records match (the server counts; nothing is downloaded).
+export const count = (name, filter = '') => request(`${col(name)}?${new URLSearchParams({ perPage: '1', fields: 'id', ...(filter ? { filter } : {}) })}`).then((r) => r.totalItems);
 export const view = (name, id) => request(`${col(name)}/${enc(id)}`);
 export const create = (name, body) => request(col(name), { method: 'POST', ...(body instanceof FormData ? { form: body } : { body }) });
 export const update = (name, id, body) => request(`${col(name)}/${enc(id)}`, { method: 'PATCH', ...(body instanceof FormData ? { form: body } : { body }) });

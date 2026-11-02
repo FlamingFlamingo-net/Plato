@@ -1,5 +1,6 @@
 // patients.js — the nutritionist's patient list with a "new photos" count, and the New patient dialog.
-import { requireRole, list, createPatient, signOut, q, localDate } from './api.js';
+import { requireRole, list, count, createPatient, signOut, q, localDate } from './api.js';
+import { listState, mountListBar, sortItems } from './list-tabs.js';
 import { serviceCards, mondayOf, weekOf, indexLogs, kindsFor } from './goals.js';
 import { h, icon, toast, formError, busy, offlineBanner, age, shortDate } from './ui.js';
 
@@ -12,15 +13,18 @@ document.getElementById('sign-out').addEventListener('click', signOut);
 const listEl = document.getElementById('list');
 const statusEl = document.getElementById('status');
 
-// Two views: active patients (default) and archived (closed accounts, read-only).
+// Two tabs: active patients (default) and archived (read-only), each with its own sort (list-tabs.js).
 const params = new URL(location.href).searchParams;
-const archivedView = params.get('view') === 'archived';
-for (const [id, on] of [['view-active', !archivedView], ['view-archived', archivedView]]) {
-  const a = document.getElementById(id);
-  if (on) { a.setAttribute('aria-current', 'page'); a.removeAttribute('data-variant'); }
-}
-document.getElementById('new-patient').hidden = archivedView;
 if (params.has('deleted')) { toast('Paciente borrado definitivamente.'); history.replaceState(null, '', '/patients.html?view=archived'); }
+const state = listState('patients');
+let archivedView = state.view === 'archived';
+const bar = mountListBar(document.getElementById('list-bar'), {
+  key: 'patients', state, panel: 'list-panel',
+  labels: { active: 'Activos', archived: 'Archivados', recent: 'Archivados recientemente', what: 'pacientes' },
+  onChange: () => { archivedView = state.view === 'archived'; load(); },
+});
+const refreshCounts = () => Promise.all([count('patients', 'archived_at = ""'), count('patients', 'archived_at != ""')])
+  .then(([active, archived]) => bar.setCounts({ active, archived })).catch(() => {});
 
 // The birth date is required (age limits) and cannot be in the future.
 document.getElementById('pf-birth').max = new Date().toLocaleDateString('en-CA');
@@ -28,9 +32,11 @@ document.getElementById('pf-birth').max = new Date().toLocaleDateString('en-CA')
 const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
 async function load() {
+  document.getElementById('new-patient').hidden = archivedView;
+  refreshCounts();
   try {
     const [patients, unseen, unseenActs, unseenProgress] = await Promise.all([
-      list('patients', { sort: archivedView ? '-archived_at' : 'name', fields: 'id,name,sex,birth_date,joined,archived_at,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history',
+      list('patients', { perPage: 500, fields: 'id,name,sex,birth_date,joined,archived_at,created,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history',
         filter: archivedView ? 'archived_at != ""' : 'archived_at = ""' }),
       archivedView ? [] : list('meal_logs', { filter: 'seen_at = "" && patient.archived_at = "" && (photo != "" || slot = "extra")', fields: 'patient', perPage: 500 }),
       archivedView ? [] : list('activity_logs', { filter: 'seen_at = "" && patient.archived_at = ""', fields: 'patient', perPage: 500 }),
@@ -42,8 +48,9 @@ async function load() {
     for (const a of unseenActs) actCounts[a.patient] = (actCounts[a.patient] || 0) + 1;
     const progCounts = {};
     for (const p of unseenProgress) progCounts[p.patient] = (progCounts[p.patient] || 0) + 1;
-    render(patients, counts, actCounts, progCounts);
-    if (!archivedView) weekBadges(patients).catch(() => {});
+    const sorted = sortItems(patients, state.sort);
+    render(sorted, counts, actCounts, progCounts);
+    if (!archivedView) weekBadges(sorted).catch(() => {});
   } catch (e) {
     statusEl.textContent = e.message;
   }
@@ -54,8 +61,8 @@ function render(patients, counts, actCounts = {}, progCounts = {}) {
   statusEl.textContent = patients.length ? `${patients.length} ${patients.length === 1 ? 'paciente' : 'pacientes'}` : '';
   if (!patients.length && archivedView) {
     listEl.append(h('li', { class: 'plato-empty-state' },
-      h('strong', { text: 'No hay cuentas cerradas' }),
-      h('span', { text: 'Cuando cierres la cuenta de un paciente, aparecerá aquí con sus datos de solo lectura.' })));
+      h('strong', { text: 'No hay pacientes archivados' }),
+      h('span', { text: 'Cuando archives a un paciente, aparecerá aquí con sus datos de solo lectura. Puedes restaurarlo cuando quieras.' })));
     return;
   }
   if (!patients.length) {
@@ -75,7 +82,7 @@ function render(patients, counts, actCounts = {}, progCounts = {}) {
       h('a', { class: 'plato-patient-link', href: `/patient.html?id=${encodeURIComponent(p.id)}` },
         h('span', { class: 'plato-avatar', 'aria-hidden': 'true', text: initials(p.name) }),
         h('span', { class: 'plato-patient-meta' }, h('strong', { text: p.name }), h('span', { class: 'plato-muted plato-small', text: bits })),
-        p.archived_at ? h('span', { class: 'badge', 'data-variant': 'outline', text: `Cerrada el ${shortDate(p.archived_at)}` })
+        p.archived_at ? h('span', { class: 'badge', 'data-variant': 'outline', text: `Archivado el ${shortDate(p.archived_at)}` })
           : p.joined ? null : h('span', { class: 'badge', 'data-variant': 'outline', text: 'Sin app' }),
         n ? h('span', { class: 'badge plato-badge-new' }, icon('camera', 14), `${n} ${n === 1 ? 'foto nueva' : 'fotos nuevas'}`) : null,
         na ? h('span', { class: 'badge plato-badge-new' }, icon('activity', 14), `${na} ${na === 1 ? 'actividad nueva' : 'actividades nuevas'}`) : null,

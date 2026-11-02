@@ -1,6 +1,8 @@
-// templates.js — the nutritionist's diet templates: preview, rename, delete.
+// templates.js — the nutritionist's diet templates: preview, rename, archive / restore, delete.
+// Tabs Activas | Archivadas and "Ordenar" (list-tabs.js; spec "Feature: Archive and restore catalogue items").
 // Templates are made from a patient's Dieta tab ("Guardar como plantilla"); v1 edits them through a patient too.
-import { requireRole, list, update, remove, signOut, q } from './api.js';
+import { requireRole, list, count, update, remove, signOut, q } from './api.js';
+import { listState, mountListBar, sortItems } from './list-tabs.js';
 import { h, icon, toast, formError, busy, offlineBanner, shortDate } from './ui.js';
 import { weekList, daysFilled } from './week.js';
 import { snacksOf } from './api.js';
@@ -12,11 +14,34 @@ document.getElementById('sign-out').addEventListener('click', signOut);
 
 const listEl = document.getElementById('list');
 const statusEl = document.getElementById('status');
+const state = listState('templates');
+const bar = mountListBar(document.getElementById('list-bar'), {
+  key: 'templates', state, panel: 'list-panel',
+  labels: { active: 'Activas', archived: 'Archivadas', recent: 'Archivadas recientemente', what: 'plantillas' },
+  onChange: () => load(),
+});
+const refreshCounts = () => Promise.all([count('diet_templates', 'archived_at = ""'), count('diet_templates', 'archived_at != ""')])
+  .then(([active, archived]) => bar.setCounts({ active, archived })).catch(() => {});
+const now = () => new Date().toISOString().replace('T', ' ');
+async function setArchived(t, on, button) {
+  try { await busy(button, () => update('diet_templates', t.id, { archived_at: on ? now() : '' })); } catch (e) { toast(e.message, 'error'); return; }
+  toast(on ? 'Plantilla archivada. Está en la pestaña Archivadas.' : 'Plantilla restaurada. Ya puedes usarla otra vez.');
+  load();
+}
 
 async function load() {
+  const archived = state.view === 'archived';
+  refreshCounts();
   let templates;
-  try { templates = await list('diet_templates', { sort: 'title', perPage: 200 }); } catch (e) { statusEl.textContent = e.message; return; }
-  statusEl.textContent = templates.length ? `${templates.length} ${templates.length === 1 ? 'plantilla' : 'plantillas'}` : '';
+  try { templates = await list('diet_templates', { filter: archived ? 'archived_at != ""' : 'archived_at = ""', perPage: 500 }); } catch (e) { statusEl.textContent = e.message; return; }
+  templates = sortItems(templates, state.sort, { name: 'title' });
+  statusEl.textContent = templates.length ? `${templates.length} ${templates.length === 1 ? 'plantilla' : 'plantillas'}${archived ? (templates.length === 1 ? ' archivada' : ' archivadas') : ''}` : '';
+  if (!templates.length && archived) {
+    listEl.replaceChildren(h('li', { class: 'plato-empty-state' },
+      h('strong', { text: 'No hay plantillas archivadas' }),
+      h('span', { text: 'Archiva las que ya no uses: dejan de aparecer en “Usar plantilla” y puedes restaurarlas cuando quieras.' })));
+    return;
+  }
   if (!templates.length) {
     listEl.replaceChildren(h('li', { class: 'plato-empty-state' },
       h('strong', { text: 'Aún no tienes plantillas' }),
@@ -39,10 +64,13 @@ async function load() {
       h('header', { class: 'plato-row plato-row--between' },
         h('div', {},
           h('h2', { text: t.title }),
-          h('p', { text: `${n} ${n === 1 ? 'día' : 'días'} con comidas · cambiada ${shortDate(t.updated)}` })),
+          h('p', { text: `${n} ${n === 1 ? 'día' : 'días'} con comidas · ${t.archived_at ? `archivada ${shortDate(t.archived_at)}` : `cambiada ${shortDate(t.updated)}`}` })),
         h('div', { class: 'plato-row' },
           toggle,
-          h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: () => openRename(t) }, 'Cambiar nombre'),
+          t.archived_at
+            ? h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'data-action': 'restore', onclick: (ev) => setArchived(t, false, ev.currentTarget) }, icon('undo', 16), 'Restaurar')
+            : h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: () => openRename(t) }, 'Cambiar nombre'),
+          t.archived_at ? null : h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', 'data-action': 'archive', onclick: (ev) => setArchived(t, true, ev.currentTarget) }, icon('archive', 16), 'Archivar'),
           h('button', {
             class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': `Borrar plantilla: ${t.title}`,
             onclick: async (ev) => {

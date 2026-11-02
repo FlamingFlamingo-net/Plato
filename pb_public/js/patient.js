@@ -1,8 +1,9 @@
 // patient.js — one patient, seen by their nutritionist: measurements, diet, meal photos, private notes, access link.
 import { localMonday,
-  requireRole, view, list, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
+  requireRole, view, list, count, create, update, remove, newInvite, closeAccount, reopenAccount, photoUrl, signOut, q,
   SLOTS, SLOT_LABEL, WEEKDAYS, localDate, dateOnly, isCheck, slotsFor, snacksOf, DEFAULT_SNACKS,
 } from './api.js';
+import { sortItems } from './list-tabs.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, isMinor, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
 import { weekList, cleanMeals, daysFilled } from './week.js';
@@ -44,11 +45,11 @@ function renderHead() {
     patient.sex === 'female' ? 'Mujer' : 'Hombre',
     a != null ? `${a} años` : null,
     patient.height_cm ? `${num(patient.height_cm)} cm` : null,
-    closed ? `Cuenta cerrada el ${shortDate(patient.archived_at)}` : patient.joined ? 'Usa la app' : 'Aún sin app',
+    closed ? `Archivado el ${shortDate(patient.archived_at)}` : patient.joined ? 'Usa la app' : 'Aún sin app',
   ].filter(Boolean).join(' · ');
   renderAge();
   document.getElementById('closed-banner').hidden = !closed;
-  if (closed) document.getElementById('closed-title').textContent = `Cuenta cerrada el ${longDate(patient.archived_at).toLowerCase()}`;
+  if (closed) document.getElementById('closed-title').textContent = `Paciente archivado el ${longDate(patient.archived_at).toLowerCase()}`;
 }
 renderHead();
 mountPatientAppointments(document.getElementById('p-appts'), { me, patient, closed });
@@ -273,7 +274,7 @@ document.getElementById('save-template').addEventListener('click', () => {
 async function saveTemplate(mode) {
   const title = stName.value.trim();
   const body = { title, meals: cleanMeals(meals), snacks };
-  if (mode === 'replace') return update('diet_templates', stExisting.id, body);
+  if (mode === 'replace') return update('diet_templates', stExisting.id, { ...body, archived_at: '' });   // replacing an archived one restores it
   if (mode === 'copy') {
     const taken = new Set((await list('diet_templates', { fields: 'title', perPage: 500 })).map((t) => t.title));
     let n = 1, name;
@@ -300,7 +301,9 @@ stForm.addEventListener('submit', async (e) => {
     [stExisting] = await list('diet_templates', { filter: `title = ${q(title)}`, perPage: 1 });
   } catch (err) { formError(stForm, err.message); return; }
   if (stExisting) {
-    document.getElementById('st-conflict-title').textContent = `Ya tienes una plantilla llamada “${title}”.`;
+    document.getElementById('st-conflict-title').textContent = stExisting.archived_at
+      ? `Ya tienes una plantilla archivada llamada “${title}”. Si la reemplazas, vuelve a tus plantillas activas.`
+      : `Ya tienes una plantilla llamada “${title}”.`;
     showConflict(true);
     document.getElementById('st-replace').focus();
     return;
@@ -327,10 +330,12 @@ document.getElementById('use-template').addEventListener('click', async () => {
   utStatus.textContent = 'Cargando…';
   utDialog.showModal();
   try {
-    utTemplates = await list('diet_templates', { sort: 'title', perPage: 200 });
+    utTemplates = sortItems(await list('diet_templates', { filter: 'archived_at = ""', perPage: 500 }), 'name', { name: 'title' });
   } catch (err) { utStatus.textContent = err.message; return; }
   if (!utTemplates.length) {
-    utStatus.textContent = 'Aún no tienes plantillas. Abre la dieta de un paciente y toca “Guardar como plantilla”.';
+    let archived = 0;
+    try { archived = await count('diet_templates', 'archived_at != ""'); } catch { archived = 0; }
+    utStatus.textContent = archived ? 'No tienes plantillas activas. Restaura una en Plantillas → Archivadas.' : 'Aún no tienes plantillas. Abre la dieta de un paciente y toca “Guardar como plantilla”.';
     return;
   }
   utStatus.hidden = true;
@@ -669,13 +674,13 @@ const openDelete = confirmDialog({
 document.getElementById('close-open').addEventListener('click', openClose);
 document.getElementById('delete-open').addEventListener('click', openDelete);
 document.getElementById('reopen').addEventListener('click', async (ev) => {
-  if (!confirm(`¿Reactivar la cuenta de ${patient.name}? Después crea un enlace nuevo para tu paciente.`)) return;
+  if (!confirm(`¿Restaurar a ${patient.name}? Vuelve a tus pacientes activos; después crea un enlace nuevo para tu paciente.`)) return;
   try { await busy(ev.currentTarget, () => reopenAccount(patient.id)); } catch (e) { toast(e.message, 'error'); return; }
   location.href = `/patient.html?id=${encodeURIComponent(patient.id)}&tab=access&reopened=1`;
 });
 const params = new URL(location.href).searchParams;
-if (params.has('closed')) toast('Cuenta cerrada. Sus datos quedan guardados.');
-if (params.has('reopened')) toast('Cuenta reactivada. Crea un enlace nuevo para tu paciente.');
+if (params.has('closed')) toast('Paciente archivado. Sus datos quedan guardados.');
+if (params.has('reopened')) toast('Paciente restaurado. Mándale un enlace nuevo.');
 if (params.has('closed') || params.has('reopened')) {
   const u = new URL(location.href);
   u.searchParams.delete('closed');

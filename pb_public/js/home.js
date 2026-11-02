@@ -1,7 +1,7 @@
 // home.js — the nutritionist's home (spec "Feature: Patient activity dashboard", slice 3).
 // Banner (own photo + live text) · tabs with counts · Hoy summary · cards for the selected tab.
 // Not live: refreshes when you come back to the tab, and with "Actualizar" (decision 1).
-import { requireRole, list, update, photoUrl, signOut, q, SLOT_LABEL, localDate, dateOnly, isCheck } from './api.js';
+import { requireRole, list, count, update, photoUrl, signOut, q, SLOT_LABEL, localDate, dateOnly, isCheck } from './api.js';
 import { h, icon, toast, busy, offlineBanner, longDate, shortDate, timeOf } from './ui.js';
 import { activitySummary } from './activity.js';
 import { POSE_LABEL } from './progress-photos.js';
@@ -49,7 +49,7 @@ let unseen = { meal: [], activity: [], progress: [] };
 let withDiet = new Set();
 let recentMeals = new Set();
 let behind = { meal: [], act: [] }; // last full week below the goal (spec "Weekly goals": grouped, never per-patient rows)
-let templateCount = 0;
+let templateCount = 0, templateArchived = 0, patientArchived = 0;
 let upcoming = [];   // today's and tomorrow's appointments (not cancelled)
 let pools = null;      // per type: { items, cursor, done }
 let limit = PAGE;
@@ -93,19 +93,22 @@ async function loadAll() {
   const since = new Date(); since.setDate(since.getDate() - 2); // today and the 2 days before = "3 days"
   // Bare checks (no photo) are not counted as new: they would flood the counts (spec "Weekly goals", slice 1).
   const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : ''}`, fields: 'id,patient', perPage: 500 });
-  const [ps, diets, recent, um, ua, up, tpls] = await Promise.all([
+  const [ps, diets, recent, um, ua, up, tpls, archivedPatients] = await Promise.all([
     list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history', sort: 'name', perPage: 500 }),
     list('diets', { fields: 'patient,meals,snacks', perPage: 500 }),
     list('meal_logs', { filter: `date >= ${q(localDate(since))} && patient.archived_at = ""`, fields: 'patient', perPage: 500 }),
     unseenOf('meal'), unseenOf('activity'), unseenOf('progress'),
-    list('diet_templates', { fields: 'id', perPage: 500 }),
+    list('diet_templates', { fields: 'id,archived_at', perPage: 500 }),
+    count('patients', 'archived_at != ""').catch(() => 0),
   ]);
   patients = ps;
   pmap = Object.fromEntries(ps.map((p) => [p.id, p]));
   withDiet = new Set(diets.map((d) => d.patient));
   recentMeals = new Set(recent.map((m) => m.patient));
   unseen = { meal: um, activity: ua, progress: up };
-  templateCount = tpls.length;
+  templateCount = tpls.filter((x) => !x.archived_at).length;
+  templateArchived = tpls.length - templateCount;
+  patientArchived = archivedPatients;
   try { upcoming = (await loadRange(todayKey(), addDays(todayKey(), 1))).filter((a) => !a.cancelled_at); } catch { upcoming = []; }
   // Last full week (Monday to Sunday before this one)
   const lastMon = addDays(mondayOf(), -7), lastSun = addDays(lastMon, 6);
@@ -355,11 +358,11 @@ function catalogCards() {
     h('span', { class: 'plato-home-tab-text' }, h('strong', { text: name, title: name }), h('small', { text: `Próximamente · ${why}`, title: `Próximamente · ${why}` })),
     h('span', { class: 'plato-home-tab-lock' }, icon('lock', 16))));
   return [
-    live('Pacientes', `${patients.length} ${patients.length === 1 ? 'activo' : 'activos'}`, '/patients.html', 'user'),
+    live('Pacientes', `${patients.length} ${patients.length === 1 ? 'activo' : 'activos'}${patientArchived ? ` · ${patientArchived} ${patientArchived === 1 ? 'archivado' : 'archivados'}` : ''}`, '/patients.html', 'user'),
     soon('Ingredientes', 'cuando elijamos la fuente de datos', 'list'),
     soon('Recetas', 'con el catálogo de alimentos', 'book'),
     soon('Planes de comidas', 'un día de comidas, con el catálogo', 'clock'),
-    live('Dietas', `${templateCount} ${templateCount === 1 ? 'plantilla semanal' : 'plantillas semanales'}`, '/templates.html', 'calendar'),
+    live('Dietas', `${templateCount} ${templateCount === 1 ? 'plantilla semanal' : 'plantillas semanales'}${templateArchived ? ` · ${templateArchived} ${templateArchived === 1 ? 'archivada' : 'archivadas'}` : ''}`, '/templates.html', 'calendar'),
     soon('Cuestionarios', 'con los formularios de Google del cliente', 'message'),
     soon('Planes de ejercicio', 'con la hoja de Excel del cliente', 'activity'),
   ];

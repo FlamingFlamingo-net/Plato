@@ -31,7 +31,7 @@ const typeAndCheck = async (sel, value, btn) => { await nutri.fill(sel, value); 
 await step('S1', async () => {
   await nutri.goto(`${BASE}/patient.html?id=${carlosId}&tab=access`);
   await nutri.waitFor(`!document.getElementById('close-card').hidden`);
-  check('S1 active patient: "Cerrar cuenta" card shown, archived card hidden', await nutri.eval(`document.getElementById('archived-card').hidden && !document.getElementById('invite-card').hidden`));
+  check('S1 active patient: "Archivar paciente" card (says access ends) shown, archived card hidden', await nutri.eval(`document.getElementById('archived-card').hidden && !document.getElementById('invite-card').hidden && document.getElementById('close-open').textContent.trim() === 'Archivar paciente' && document.getElementById('close-card').textContent.includes('cierra su acceso a la app')`));
   await nutri.click('#close-open');
   await nutri.waitFor(`document.getElementById('close-dialog').open`);
   const label = await nutri.text('#cd-label');
@@ -43,8 +43,8 @@ await step('S1', async () => {
   await nutri.click('#cd-confirm');
   await nutri.waitFor(`location.search.includes('tab=access') && !location.search.includes('closed=1') && !document.getElementById('archived-card').hidden`);
   const banner = await nutri.eval(`!document.getElementById('closed-banner').hidden && document.getElementById('closed-title').textContent`);
-  check('S1 after closing: banner "Cuenta cerrada el …", Reactivar / Borrar shown, invite hidden',
-    /^Cuenta cerrada el /.test(banner) && await nutri.eval(`document.getElementById('invite-card').hidden && document.getElementById('close-card').hidden`), banner);
+  check('S1 after archiving: banner "Paciente archivado el …", Restaurar / Borrar shown, invite hidden',
+    /^Paciente archivado el /.test(banner) && await nutri.eval(`document.getElementById('invite-card').hidden && document.getElementById('close-card').hidden`), banner);
   await nutri.screenshot(`${OUT}/closed-access.png`, { full: false });
 });
 
@@ -58,8 +58,8 @@ await step('S2', async () => {
   const archived = await listNames(nutri);
   const badge = await nutri.eval(`document.querySelector('.plato-patient-link .badge')?.textContent || ''`);
   const newHidden = await nutri.eval(`document.getElementById('new-patient').hidden`);
-  check('S2 Carlos leaves the main list and appears under Archivados with "Cerrada el …"',
-    !active.includes('Carlos Ruiz Peña') && archived.join() === 'Carlos Ruiz Peña' && /^Cerrada el /.test(badge) && newHidden, `${active} | ${archived} | ${badge}`);
+  check('S2 Carlos leaves the main list and appears under Archivados with "Archivado el …"',
+    !active.includes('Carlos Ruiz Peña') && archived.join() === 'Carlos Ruiz Peña' && /^Archivado el /.test(badge) && newHidden, `${active} | ${archived} | ${badge}`);
   await nutri.screenshot(`${OUT}/archived-list.png`, { full: false });
 });
 

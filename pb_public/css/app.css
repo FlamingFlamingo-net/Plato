@@ -595,3 +595,24 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   p { margin: 0; font-size: 0.9rem; } }
 #push-on .btn, #push-later .btn { padding-inline: 0.25rem; height: auto; }
 .plato-push-badge { white-space: nowrap; &.is-off { color: var(--muted-foreground); } }
+
+/* Catalogue lists: archive tabs + Ordenar (spec "Archive and restore catalogue items") */
+.plato-list-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem;
+  margin-bottom: 0.9rem; border-bottom: 1px solid var(--border); }
+.plato-list-tabs { display: flex; gap: 0.25rem; margin-bottom: -1px; }
+.plato-list-tab { padding: 0.5rem 0.85rem; font-size: 0.9rem; font-weight: 500; color: var(--muted-foreground);
+  background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap;
+  &:hover { color: var(--foreground); }
+  &[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--primary); }
+  &:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; border-radius: 0.375rem; } }
+.plato-list-tab-count { font-variant-numeric: tabular-nums; color: var(--muted-foreground); font-weight: 400; }
+.plato-list-sort { display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.4rem; .select { width: auto; min-width: 12rem; } }
+
+/* Phones: the sort sits under the tabs (the line stays under the tabs); patient rows wrap their badges. */
+@media (max-width: 40rem) {
+  .plato-list-bar { border-bottom: 0; gap: 0.6rem; }
+  .plato-list-tabs { width: 100%; border-bottom: 1px solid var(--border); }
+  .plato-list-sort { padding-bottom: 0; .select { flex: 1; min-width: 0; } }
+  .plato-patient-link { flex-wrap: wrap; row-gap: 0.5rem; }
+  .plato-patient-meta { flex: 1 1 calc(100% - 3.5rem); }
+}
