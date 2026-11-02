@@ -636,8 +636,9 @@ pt = pw()
 s, gt = call("POST", PR, {"name": "ZZ Meta Entreno", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id,
                           "password": pt, "passwordConfirm": pt, "service": "training"}, ta)
 check("G1 Entrenamiento: activity 30 min x 5 on, meals off", s == 200 and gt["activity_goal_days"] == 5 and gt["meal_goal_days"] == 0, (s, gt))
+# Like the screen, send the local Monday: on a Sunday evening in Mexico the server's UTC week is already the next one.
 s, gb = call("POST", PR, {"name": "ZZ Meta Ambos", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id,
-                          "password": pt, "passwordConfirm": pt, "service": "both"}, ta)
+                          "password": pt, "passwordConfirm": pt, "service": "both", "goal_week": str(monday(date.today()))}, ta)
 check("G1 Nutrición + entrenamiento: both on", s == 200 and gb["activity_goal_days"] == 5 and gb["meal_goal_days"] == 5, (s, gb))
 s, r = call("POST", PR, {"name": "ZZ Meta Hist", "sex": "male", "birth_date": "1990-01-01 12:00:00.000Z", "nutritionist": a_id,
                          "password": pt, "passwordConfirm": pt, "goal_history": [{"from": "2020-01-06"}]}, ta)
