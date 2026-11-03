@@ -679,6 +679,7 @@ document.getElementById('reopen').addEventListener('click', async (ev) => {
   location.href = `/patient.html?id=${encodeURIComponent(patient.id)}&tab=access&reopened=1`;
 });
 const params = new URL(location.href).searchParams;
+if (params.has('weightfail')) toast('Paciente creado, pero el peso no se guardó. Agrégalo en Mediciones.', 'error');
 if (params.has('closed')) toast('Paciente archivado. Sus datos quedan guardados.');
 if (params.has('reopened')) toast('Paciente restaurado. Mándale un enlace nuevo.');
 if (params.has('closed') || params.has('reopened')) {

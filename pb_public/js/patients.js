@@ -1,5 +1,5 @@
 // patients.js — the nutritionist's patient list with a "new photos" count, and the New patient dialog.
-import { requireRole, list, count, createPatient, signOut, q, localDate } from './api.js';
+import { requireRole, list, count, create, createPatient, signOut, q, localDate } from './api.js';
 import { listState, mountListBar, sortItems } from './list-tabs.js';
 import { serviceCards, mondayOf, weekOf, indexLogs, kindsFor } from './goals.js';
 import { h, icon, toast, formError, busy, offlineBanner, age, shortDate } from './ui.js';
@@ -133,7 +133,12 @@ form.addEventListener('submit', async (e) => {
   const d = Object.fromEntries(new FormData(form));
   try {
     const p = await busy(form.querySelector('[type=submit]'), () => createPatient({ ...d, name: d.name.trim(), service: serviceBox.value() }));
-    location.href = `/patient.html?id=${encodeURIComponent(p.id)}&tab=overview&new=1`;
+    // Optional weight (owner, 2026-11-01): saved as the first measurement, dated today.
+    let weightFailed = false;
+    if (d.weight_kg) {
+      try { await create('measurements', { patient: p.id, date: `${localDate()} 12:00:00.000Z`, weight_kg: Number(d.weight_kg) }); } catch { weightFailed = true; }
+    }
+    location.href = `/patient.html?id=${encodeURIComponent(p.id)}&tab=overview&new=1${weightFailed ? '&weightfail=1' : ''}`;
   } catch (err) {
     formError(form, err.message);
   }

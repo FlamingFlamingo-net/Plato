@@ -918,6 +918,24 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
+## Feature: Weight and height on "Nuevo paciente" (built 2026-11-01, app v25)
+
+**Owner (2026-11-01):** the new-patient form asks for weight too. Weight and height are **optional**: measuring takes extra steps, so both can stay empty. Age stays required (the birth date, "Feature: Age limits").
+- "Nuevo paciente": **Estatura (cm)** and **Peso (kg)** side by side (1–400 kg, steps of 0.1), with one line under both: "Estatura y peso son opcionales: puedes medir después. El peso se guarda como su primera medición de hoy." *(Changed during build: "(opcional)" in each label wrapped on a phone and pushed the boxes out of line; the shared line says it once.)*
+- A typed weight becomes the patient's **first measurement, dated today**: it shows in Mediciones, the weight chart, the patient's Progreso and the export. Empty: no measurement, as before.
+- If the patient saves but the weight does not (connection lost between the two), the patient page says so: "Paciente creado, pero el peso no se guardó. Agrégalo en Mediciones."
+- No server change: measurements keep their rules (weight required on a measurement; only the patient's nutritionist adds them).
+
+**Acceptance**
+1. A patient made with 72.5 kg and 168 cm: one measurement today with 72.5 kg; height 168 on the patient.
+2. A patient made with both empty: saved, no measurement, no height.
+3. 0 or 401 kg: the form refuses it before saving.
+4. Phone 390 px: the dialog fits, no sideways scroll; the two boxes line up.
+
+**Result (throwaway server):** `tools/newpatient_check.mjs` 11/11; every other suite passes.
+
+---
+
 ## Feature: Archive and restore catalogue items (built 2026-11-01, app v24)
 
 **What (owner, 2026-10-31):** every item in the **Catálogo** can be **archived**: it leaves the normal lists, searches and pickers, and it can be **restored** at any time. Nothing is deleted by archiving.

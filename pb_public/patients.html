@@ -55,8 +55,12 @@
           </div>
           <div class="plato-grid-2" style="grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))">
             <div class="field"><label for="pf-birth">Fecha de nacimiento</label><input class="input" id="pf-birth" name="birth_date" type="date" required></div>
-            <div class="field"><label for="pf-height">Estatura (cm)</label><input class="input" id="pf-height" name="height_cm" type="number" min="40" max="250" step="0.5" inputmode="decimal"></div>
           </div>
+          <div class="plato-row plato-row--fields">
+            <div class="field"><label for="pf-height">Estatura (cm)</label><input class="input" id="pf-height" aria-describedby="pf-weight-help" name="height_cm" type="number" min="40" max="250" step="0.5" inputmode="decimal"></div>
+            <div class="field"><label for="pf-weight">Peso (kg)</label><input class="input" id="pf-weight" name="weight_kg" type="number" min="1" max="400" step="0.1" inputmode="decimal" aria-describedby="pf-weight-help"></div>
+          </div>
+          <p class="plato-muted plato-small" id="pf-weight-help" style="margin:0">Estatura y peso son opcionales: puedes medir después. El peso se guarda como su primera medición de hoy.</p>
         </section>
           <div id="pf-service"></div>
         <footer class="plato-actions">
