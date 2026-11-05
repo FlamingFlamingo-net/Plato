@@ -10,6 +10,7 @@ import { POSE_LABEL } from './progress-photos.js';
 import { feedbackText } from './feedback.js';
 import { kindsFor, indexLogs, weeklyChart, goalText, SERVICE_LABEL } from './goals.js';
 import { notesFor, dayLabel, timeRange } from './appointments.js';
+import { moodLabel } from './mood.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -31,17 +32,18 @@ let data;
 try {
   const patient = await view('patients', id);
   const pid = q(patient.id);
-  const [measurements, [diet], logs, notes, acts, progress] = await Promise.all([
+  const [measurements, [diet], logs, notes, acts, progress, moods] = await Promise.all([
     list('measurements', { filter: `patient = ${pid}`, sort: 'date,created' }),
     list('diets', { filter: `patient = ${pid}` }),
     list('meal_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
     list('patient_notes', { filter: `patient = ${pid}`, sort: 'created' }),
     list('activity_logs', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
     list('progress_photos', { filter: `patient = ${pid}`, sort: 'date,created', perPage: 500 }),
+    list('mood_logs', { filter: `patient = ${pid}`, sort: 'date', perPage: 500 }),
   ]);
   const appts = await list('appointments', { filter: `patient = ${pid}`, sort: 'starts_at', perPage: 500 });
   const apptNotes = await notesFor(appts.map((x) => x.id));
-  data = { patient, measurements, diet, logs, notes, acts, progress, appts, apptNotes };
+  data = { patient, measurements, diet, logs, notes, acts, progress, appts, apptNotes, moods };
   document.title = `Datos de ${patient.name} — AHT Fitness`;
   await render();
   statusEl.hidden = true;
@@ -135,6 +137,16 @@ async function render() {
         : h('p', { class: 'doc-empty', text: 'Sin actividad registrada.' })),
 
     goalsSection(),
+
+    section(`Cómo se ha sentido (${data.moods.length})`,
+      data.moods.length
+        ? h('table', { class: 'doc-table' },
+          h('thead', {}, h('tr', {}, ...['Fecha', 'Ánimo', 'Nota'].map((t) => h('th', { scope: 'col', text: t })))),
+          h('tbody', {}, ...data.moods.map((m) => h('tr', {},
+            h('td', { text: shortDate(m.date) }),
+            h('td', { text: moodLabel(m.mood) }),
+            h('td', { text: m.note || '—' })))))
+        : h('p', { class: 'doc-empty', text: 'Sin respuestas.' })),
 
     section(`Citas (${data.appts.length})`,
       data.appts.length
@@ -239,6 +251,7 @@ jsonBtn.addEventListener('click', () => {
       intensity: a.intensity || null, terrain: a.terrain || null, distance_km: a.distance_km || null,
       summary: activitySummary(a), note: a.note || '', sent_at: a.created, seen_at: a.seen_at || null,
     })),
+    mood_logs: data.moods.map((m) => ({ date: m.date, mood: m.mood, mood_label: moodLabel(m.mood), note: m.note || '', answered_at: m.created, changed_at: m.updated, seen_at: m.seen_at || null })),
     ...(withProgress.checked ? { progress_photos: progress.map((p) => ({
       date: p.date, pose: p.pose, pose_label: POSE_LABEL[p.pose], note: p.note || '',
       sent_at: p.created, seen_at: p.seen_at || null, photo_file: p.photo,

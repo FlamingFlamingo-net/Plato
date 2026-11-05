@@ -616,3 +616,26 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-patient-link { flex-wrap: wrap; row-gap: 0.5rem; }
   .plato-patient-meta { flex: 1 1 calc(100% - 3.5rem); }
 }
+
+/* Mood check-in (spec "Feature: Mood check-in"): one accent for the chosen face, no colours for good or bad days */
+.plato-mood { display: grid; gap: 0.75rem; padding: 1rem; margin-top: 1rem; }
+.plato-face { display: inline-flex; line-height: 0; }
+.plato-mood-faces { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.25rem; }
+.plato-mood-face { display: grid; justify-items: center; gap: 0.25rem; padding: 0.5rem 0.125rem; border-radius: var(--radius-lg, 0.75rem);
+  border: 1px solid transparent; color: var(--muted-foreground); cursor: pointer; font-size: 0.78rem; text-align: center; line-height: 1.15; }
+.plato-mood-face:hover { background: var(--muted); color: var(--foreground); }
+.plato-mood-face:has(input:checked) { border-color: var(--primary); color: var(--primary); background: color-mix(in oklab, var(--primary) 8%, transparent); font-weight: 600; }
+.plato-mood-face:has(input:focus-visible) { outline: 2px solid var(--ring, var(--primary)); outline-offset: 2px; }
+.plato-mood-answer { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin: 0; }
+.plato-mood-answer .plato-face { color: var(--primary); }
+.plato-mood-note { margin: 0; color: var(--muted-foreground); }
+.plato-mood-note-form { display: grid; gap: 0.5rem; }
+.plato-mood .btn[data-variant="link"] { padding-inline: 0; height: auto; }
+.plato-mood-card > section { display: grid; gap: 0.75rem; }
+.plato-mood-strip { list-style: none; margin: 0; padding: 0; max-width: 38rem; display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 0.15rem; }
+.plato-mood-strip li { display: grid; justify-items: center; gap: 0.2rem; font-size: 0.7rem; color: var(--muted-foreground); }
+.plato-mood-strip li .plato-face { color: var(--foreground); }
+.plato-mood-dot { width: 24px; height: 24px; display: grid; place-items: center; }
+.plato-mood-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.plato-mood-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.plato-mood-notes li { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }

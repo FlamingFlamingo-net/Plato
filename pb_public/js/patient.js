@@ -13,6 +13,7 @@ import { feedbackControls } from './feedback-dialog.js';
 import { loadGoalData, weekCard, weeklyChart, mondayOf, addDays, kindsFor, goalText, SERVICE_LABEL, serviceCards, hasNutrition, hasTraining } from './goals.js';
 import { weightChart } from './charts.js';
 import { mountPatientAppointments } from './patient-appts.js';
+import { loadMoods, moodStrip, weekSummary } from './mood.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -63,6 +64,15 @@ mForm.hidden = closed;
 async function loadMeasurements() {
   measurements = await list('measurements', { filter: `patient = ${pid}`, sort: 'date,created' });
   renderMeasurements();
+  renderMood().catch((e) => { document.getElementById('mood-sub').textContent = e.message; });
+}
+
+// Mood check-in (spec "Feature: Mood check-in"): the last 14 days, the week in words, the notes.
+async function renderMood() {
+  const from = new Date(); from.setDate(from.getDate() - 13);
+  const rows = await loadMoods(patient.id, localDate(from));
+  document.getElementById('mood-sub').textContent = weekSummary(rows);
+  document.getElementById('mood-body').replaceChildren(...moodStrip(rows));
 }
 
 function renderMeasurements() {

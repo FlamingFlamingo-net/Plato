@@ -8,15 +8,18 @@ import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
 import { weekOf, indexLogs, mondayOf, addDays } from './goals.js';
+import { face, moodLabel } from './mood.js';
 import { loadRange, timeOf as apptTime, timeRange, dayKey, todayKey } from './appointments.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
 document.getElementById('sign-out').addEventListener('click', signOut);
 
-const COLL = { meal: 'meal_logs', mealphoto: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos' };
+const COLL = { meal: 'meal_logs', mealphoto: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos', mood: 'mood_logs' };
 // Fotos shows meal logs with a photo only (checks have none); same collection, its own page cursor.
-const EXTRA_FILTER = { mealphoto: ' && photo != ""' };
+// Mood: only low days or days with a note reach Inicio (spec "Feature: Mood check-in"); good days add no noise.
+const MOOD_SHOWN = ' && (mood <= 2 || note != "")';
+const EXTRA_FILTER = { mealphoto: ' && photo != ""', mood: MOOD_SHOWN };
 const PAGE = 50;
 const initials = (s) => String(s || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 const nowIso = () => new Date().toISOString().replace('T', ' ');
@@ -45,7 +48,7 @@ renderBanner();
 // ---------- Data ----------
 let patients = [];
 let pmap = {};
-let unseen = { meal: [], activity: [], progress: [] };
+let unseen = { meal: [], activity: [], progress: [], mood: [] };
 let withDiet = new Set();
 let recentMeals = new Set();
 let behind = { meal: [], act: [] }; // last full week below the goal (spec "Weekly goals": grouped, never per-patient rows)
@@ -58,7 +61,7 @@ let loadedAt = 0;
 
 const typesFor = (tab, filter) => tab === 'activity' ? ['activity']
   : tab === 'photos' ? (filter === 'progress' ? ['progress'] : filter === 'meal' ? ['mealphoto'] : ['mealphoto', 'progress'])
-  : ['meal', 'activity', 'progress'];
+  : ['meal', 'activity', 'progress', 'mood'];
 
 async function fetchPage(type) {
   const p = pools[type];
@@ -92,12 +95,12 @@ async function visible(types) {
 async function loadAll() {
   const since = new Date(); since.setDate(since.getDate() - 2); // today and the 2 days before = "3 days"
   // Bare checks (no photo) are not counted as new: they would flood the counts (spec "Weekly goals", slice 1).
-  const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : ''}`, fields: 'id,patient', perPage: 500 });
-  const [ps, diets, recent, um, ua, up, tpls, archivedPatients] = await Promise.all([
+  const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : t === 'mood' ? MOOD_SHOWN : ''}`, fields: 'id,patient', perPage: 500 });
+  const [ps, diets, recent, um, ua, up, uo, tpls, archivedPatients] = await Promise.all([
     list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history', sort: 'name', perPage: 500 }),
     list('diets', { fields: 'patient,meals,snacks', perPage: 500 }),
     list('meal_logs', { filter: `date >= ${q(localDate(since))} && patient.archived_at = ""`, fields: 'patient', perPage: 500 }),
-    unseenOf('meal'), unseenOf('activity'), unseenOf('progress'),
+    unseenOf('meal'), unseenOf('activity'), unseenOf('progress'), unseenOf('mood'),
     list('diet_templates', { fields: 'id,archived_at', perPage: 500 }),
     count('patients', 'archived_at != ""').catch(() => 0),
   ]);
@@ -105,7 +108,7 @@ async function loadAll() {
   pmap = Object.fromEntries(ps.map((p) => [p.id, p]));
   withDiet = new Set(diets.map((d) => d.patient));
   recentMeals = new Set(recent.map((m) => m.patient));
-  unseen = { meal: um, activity: ua, progress: up };
+  unseen = { meal: um, activity: ua, progress: up, mood: uo };
   templateCount = tpls.filter((x) => !x.archived_at).length;
   templateArchived = tpls.length - templateCount;
   patientArchived = archivedPatients;
@@ -190,7 +193,7 @@ function groupCard(g) {
 // ---------- Tabs (upgrades 3, 4, 6, 7, 8) ----------
 const unseenCount = (types) => types.reduce((n, t) => n + unseen[t].length, 0);
 const TABS = [
-  { id: 'recent', label: 'Recientes', hint: 'Lo más nuevo', icon: 'clock', count: () => unseenCount(['meal', 'activity', 'progress']), unit: 'sin ver' },
+  { id: 'recent', label: 'Recientes', hint: 'Lo más nuevo', icon: 'clock', count: () => unseenCount(['meal', 'activity', 'progress', 'mood']), unit: 'sin ver' },
   { id: 'activity', label: 'Actividades', hint: 'Ejercicio registrado', icon: 'activity', count: () => unseenCount(['activity']), unit: 'sin ver' },
   { id: 'photos', label: 'Fotos', hint: 'Comidas y progreso', icon: 'image', count: () => unseenCount(['meal', 'progress']), unit: 'sin ver' },
   { id: 'catalog', label: 'Catálogo', hint: 'Tus listas', icon: 'book', count: () => 0 },
@@ -243,7 +246,7 @@ function select(id, focus) {
 
 // ---------- Hoy (upgrade 5) ----------
 function renderToday() {
-  const all = ['meal', 'activity', 'progress'].flatMap((t) => unseen[t]);
+  const all = ['meal', 'activity', 'progress', 'mood'].flatMap((t) => unseen[t]);
   const people = new Set(all.map((r) => r.patient)).size;
   const quiet = patients.filter((p) => p.joined && !recentMeals.has(p.id)).length;
   const noApp = patients.filter((p) => !p.joined).length;
@@ -284,13 +287,20 @@ function seenControl(l) {
     onclick: async (ev) => {
       try { await busy(ev.currentTarget, () => update(COLL[l.type], l.id, { seen_at: nowIso() })); } catch (e) { toast(e.message, 'error'); return; }
       markSeenLocally([l]);
-      toast('Marcada como vista. Tu paciente lo verá.');
+      toast(l.type === 'mood' ? 'Marcada como vista.' : 'Marcada como vista. Tu paciente lo verá.');
     },
   }, icon('eye', 16), 'Marcar vista');
 }
-const titleOf = (l) => l.type === 'meal' ? SLOT_LABEL[l.slot] : l.type === 'progress' ? `Foto de progreso · ${POSE_LABEL[l.pose]}` : 'Actividad física';
+const titleOf = (l) => l.type === 'meal' ? SLOT_LABEL[l.slot] : l.type === 'progress' ? `Foto de progreso · ${POSE_LABEL[l.pose]}` : l.type === 'mood' ? `Ánimo: ${moodLabel(l.mood)}` : 'Actividad física';
 
 function card(l) {
+  if (l.type === 'mood') {
+    return h('li', { class: 'plato-log-card plato-log-card--mood', dataset: { id: l.id } },
+      head(l),
+      h('span', { class: 'plato-row' }, face(l.mood, 22), h('strong', { text: 'Ánimo' }), h('span', { text: moodLabel(l.mood) })),
+      l.note ? h('p', { class: 'plato-log-note', text: `“${l.note}”` }) : null,
+      h('div', {}, seenControl(l)));
+  }
   if (l.type === 'activity') {
     return h('li', { class: 'plato-log-card plato-log-card--activity', dataset: { id: l.id } },
       head(l),

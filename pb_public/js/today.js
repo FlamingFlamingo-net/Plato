@@ -8,6 +8,7 @@ import { feedbackEl, lastSeen, markSeen, isNewSince } from './feedback.js';
 import { patientShell } from './shell.js';
 import { loadGoalData, weekCard, mondayOf, kindsFor } from './goals.js';
 import { mountNextAppointment } from './next-appt.js';
+import { mountMood } from './mood.js';
 
 const { me, nutritionist } = await patientShell('today');
 const today = localDate();
@@ -20,6 +21,7 @@ document.getElementById('greet').textContent = `¡Hola, ${me.name.split(' ')[0]}
 document.getElementById('date').textContent = longDate(today) + (nutritionist ? ` · Plan de ${nutritionist.name}` : '');
 if (params.has('welcome')) document.getElementById('welcome').hidden = false;
 mountNextAppointment(document.getElementById('next-appt'), me);
+const mood = mountMood(document.getElementById('mood'), me);
 if (params.has('logged')) toast('¡Bien! Comida registrada.');
 if (params.has('activity')) toast('¡Bien! Actividad registrada.');
 if (params.has('logged') || params.has('welcome') || params.has('activity')) history.replaceState(null, '', `/today.html${day === 'yesterday' ? '?day=yesterday' : ''}`);
@@ -63,6 +65,7 @@ let renderToken = 0;
 async function renderMeals() {
   const token = ++renderToken;
   const date = day === 'yesterday' ? yesterday : today;
+  mood.show(date, day);
   for (const b of dayBtns) b.setAttribute('aria-pressed', String(b.dataset.day === day));
   document.getElementById('date').textContent = (day === 'yesterday' ? 'Ayer, ' : '') + longDate(date) + (nutritionist ? ` · Plan de ${nutritionist.name}` : '');
   mealsEl.setAttribute('aria-label', day === 'yesterday' ? 'Comidas de ayer' : 'Comidas de hoy');
