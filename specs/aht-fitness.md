@@ -918,6 +918,28 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
+## Fix: Emails ignore capitals (BUILT — app v27)
+
+**Problem (owner, 2026-11-05):** a nutritionist account typed in the admin panel with a capital letter only signed in when typed with that exact capital. PocketBase compares emails letter for letter; patients' emails were already lowercased at join, but sign-in sent what was typed (a phone that capitalises "Ana@…" was refused). A second account differing only by capitals could also be created.
+
+**Decided (owner, 2026-11-05: "aos"):** store every email in lowercase automatically (not refuse capitals), sign-in ignores capitals, and clean up existing accounts once, the live one included.
+
+- **Saving:** every nutritionist/patient email is trimmed and lowercased however it is saved (admin panel, invite, API) — `pb_hooks/email_case.pb.js`. A second account that differs only by capitals is refused (same email).
+- **Sign-in:** the screen lowercases what is typed; the server also retries in lowercase when the exact text is not found (older cached copies of the app, and the API).
+- **Cleanup:** migration `1762819200_plato_email_lowercase.js` lowercases existing emails in SQL. Passwords do not change and **nobody is signed out** (a normal save of a changed email would sign the person out). Two accounts that differ only by capitals are left unchanged and logged.
+- The email boxes no longer auto-capitalise on phones.
+
+### Acceptance
+1. An account saved as `Zz.Caso@Example.com` (admin panel / API) is stored as `zz.caso@example.com`.
+2. Sign-in works typed as `Zz.Caso@Example.com`, `zz.caso@example.com` or `ZZ.CASO@EXAMPLE.COM`, with the old screen code too (server side); a wrong password still fails.
+3. Creating `zz.caso@example.com` again is refused.
+4. A patient joining as `Ana.X@Example.com` is stored lowercase and signs in with any capitals.
+5. Cleanup: an existing mixed-case account becomes lowercase, keeps its password, and its open session keeps working; two accounts differing only by capitals stay unchanged.
+
+**Result (throwaway server):** `tools/email_check.mjs` 12/12; `tools/email_migration_check.sh` 9/9 (old code + mixed-case data, then this code on the same data); every other suite passes. Live before the fix: 1 nutritionist email with capitals, no patient emails with capitals.
+
+---
+
 ## Feature: Mood check-in (BUILT — app v26)
 
 **What (owner, 2026-11-05):** once a day the patient answers **"¿Cómo te sentiste hoy?"** with one tap on 5 faces, plus an optional short note. The nutritionist sees the last 14 days on the patient page; only low days or days with a note reach Inicio. It is never a score: no goal, no streak, no judgement.
