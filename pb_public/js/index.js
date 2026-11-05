@@ -28,10 +28,10 @@ function onSubmit(form, action) {
 }
 
 onSubmit(document.getElementById('patient-signin'), async ({ email, password }) => {
-  await signIn('patients', email.trim(), password);
+  await signIn('patients', email.trim().toLowerCase(), password);
   location.href = '/today.html';
 });
 onSubmit(document.getElementById('nutri-signin'), async ({ email, password }) => {
-  await signIn('nutritionists', email.trim(), password);
+  await signIn('nutritionists', email.trim().toLowerCase(), password);
   location.href = '/home.html';
 });

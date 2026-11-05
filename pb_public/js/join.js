@@ -32,7 +32,7 @@ form.addEventListener('submit', async (e) => {
   form.password2.setCustomValidity(form.password2.value && form.password2.value !== form.password.value ? 'Las contraseñas no coinciden.' : '');
   if (!form.reportValidity()) return;
   try {
-    await busy(form.querySelector('[type=submit]'), () => join(token, form.email.value.trim(), form.password.value));
+    await busy(form.querySelector('[type=submit]'), () => join(token, form.email.value.trim().toLowerCase(), form.password.value));
   } catch (err) {
     formError(form, err.message);
     return;
