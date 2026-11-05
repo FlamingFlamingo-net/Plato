@@ -918,6 +918,58 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
+## Feature: Mood check-in (BUILT — app v26)
+
+**What (owner, 2026-11-05):** once a day the patient answers **"¿Cómo te sentiste hoy?"** with one tap on 5 faces, plus an optional short note. The nutritionist sees the last 14 days on the patient page; only low days or days with a note reach Inicio. It is never a score: no goal, no streak, no judgement.
+
+### Decided (owner, 2026-11-05: "aos" to all three)
+1. **5 faces + an optional note.** Muy mal · Mal · Regular · Bien · Muy bien (1–5); note up to 200 characters. More questions (energy, hunger, sleep) later, if asked.
+2. **Once a day, for today and yesterday** (the same window as meals: people forget in the evening). It can be changed while that day is still in the window. **No notification** (notifications are for extreme importance only).
+3. **Nutritionist:** a 14-day strip + the weekly average on the patient page, in the export too; **Inicio shows a check-in only when it is Mal / Muy mal or has a note.**
+
+### Patient screens (Hoy)
+- A small card under the day's meals: **"¿Cómo te sentiste hoy?"** and the 5 faces in a row. Each face is a drawn icon **with its word** under it (not colour only); one tap saves at once ("Guardado").
+- After answering: one line, "Hoy: [face] Bien · Cambiar", and **"Agregar una nota"** (opens a 200-character box; Guardar).
+- The **Hoy | Ayer** switch (meals) also shows yesterday's check-in, answerable or changeable the same way.
+- Neutral look: the same accent colour for whichever face is chosen; no red for "Muy mal", no praise for "Muy bien".
+- Closed account: nothing to answer (as with meals).
+- Phone 390 px: the 5 faces fit in one row with their words.
+
+### Nutritionist screens
+- **Patient page → Resumen:** a card **"Cómo se ha sentido"**: the last 14 days as faces (an empty dot for days without an answer), the **weekly average** in words ("Esta semana: Bien en promedio, 5 de 7 días respondidos"), and each note under its day. A text alternative lists the days for screen readers.
+- **Inicio:** a check-in becomes a card in **Recientes**, labelled **Ánimo**, **only when it is Mal / Muy mal or has a note**: "Ana: [face] Mal · “Dormí muy poco”". It counts as unseen until **Marcar vista** / **Marcar todo como visto**, like activity. Good days without a note add nothing to Inicio.
+- **Export:** a table "Cómo se ha sentido" (date, face word, note), JSON too.
+- The nutritionist cannot change a patient's answer.
+
+### Data (server)
+- `mood_logs`: `patient`, `date` (the patient's day, YYYY-MM-DD), `mood` (1–5), `note` (≤ 200), `seen_at`, `created`, `updated`. **One per patient per day** (a second save changes it).
+- The patient adds and changes **only their own**, only for **today or yesterday** (the same real time-zone limits as meals, UTC+14 / UTC−12); not on a closed account. They cannot set `seen_at`.
+- Their nutritionist reads them and sets only `seen_at` (when the check-in is shown on Inicio). Nobody else reads them.
+- Deleting: nobody (an answer is changed, not removed); permanently deleting a patient removes them (cascade), as with every record.
+
+### Acceptance
+1. Ana taps "Bien" on Hoy: saved at once; after a refresh Hoy says "Hoy: Bien · Cambiar". Changing to "Regular" replaces it (still one for today).
+2. She adds the note "Dormí muy poco": saved; the nutritionist sees it under that day on the patient page and as a card on Inicio.
+3. "Ayer": she can answer yesterday; the server refuses two days ago and tomorrow.
+4. Patient page: 14 faces/dots in order, the average in words, the days answered ("5 de 7").
+5. Inicio: "Mal" (no note) → a card; "Bien" (no note) → nothing; "Bien" with a note → a card. Marcar vista works and the counters follow.
+6. Carlos cannot read or write Ana's check-ins; another nutritionist cannot read them; Ana cannot set `seen_at` or answer for a closed account.
+7. Export: the table and the JSON hold the check-ins, the notes too.
+8. Phone 390 px: the faces fit in one row with their words; keyboard: the faces are a radio group (arrow keys, visible focus).
+
+**Approved** (owner, 2026-11-05: "1-yes").
+
+**Built:** migration `1762732800_plato_mood.js` (`mood_logs`, unique patient + date), `pb_hooks/mood.pb.js` (today/yesterday window; a patient's change clears `seen_at`), `js/mood.js` (faces, Hoy card, 14-day strip), Hoy, patient page Resumen, Inicio (Recientes, label "Ánimo"), export (table + `mood_logs` in JSON).
+*(Changed during build: after "Marcar vista" on an Ánimo card the message is just "Marcada como vista." — the patient does not see a "vista" mark for moods; "Muy mal" has sad brows and "Muy bien" an open smile so the ends read apart; the strip is capped at 38 rem on wide screens.)*
+
+**Result (throwaway server):** `tools/mood_check.mjs` 31/31; every other suite passes.
+
+### Later
+- More questions (energy, hunger, sleep, stress), if the client asks.
+- A longer history chart (8 weeks), like the goals chart.
+
+---
+
 ## Feature: Weight and height on "Nuevo paciente" (built 2026-11-01, app v25)
 
 **Owner (2026-11-01):** the new-patient form asks for weight too. Weight and height are **optional**: measuring takes extra steps, so both can stay empty. Age stays required (the birth date, "Feature: Age limits").
