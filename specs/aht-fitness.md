@@ -918,6 +918,54 @@ Google has to reach the AHT Fitness server, so this waits for the online step (F
 
 ---
 
+## Feature: Reportar un problema (BUILT — app v28)
+
+**What (owner, 2026-11-05):** nutritionists can report issues to the owner: a description, up to 3 images, and optionally permission to be contacted (phone and/or email). Not called "Retroalimentación": that already means the stars/comments on patient photos.
+
+### Decided (owner, 2026-11-05: "aos" on all five)
+1. **"Reportar un problema"**, for nutritionists only: in the nutritionist menu (always reachable) and in Ajustes. Patients never see it.
+2. **Form:** description required (10–2,000 characters; hint "Qué hiciste, qué esperabas y qué pasó"); up to **3 images** (JPG, PNG or WebP, ≤ 5 MB each) with thumbnails and a remove button each. **Sent automatically and shown on the form:** the page they came from, app version, device/browser, date.
+3. **"Permitir que te contactemos"** (checkbox, off by default): when on, Teléfono and Correo appear, **pre-filled** from the account email and profile WhatsApp, editable. **At least one required, both allowed.** Teléfono: 10–15 digits, optional leading `+` (spaces/dashes ignored). Correo: valid, saved lowercase. When off, **no contact details are saved** (the server clears them).
+4. **Owner receives them in the admin panel** (`/_/` → `issue_reports`), images included, with a status **Nuevo / En revisión / Resuelto**. Only the superuser sees every report. Email/push alerts to the owner: backlog card (needs a mail account the owner sets up).
+5. **After sending:** "Gracias. Recibimos tu reporte." (+ "Te contactaremos si hace falta." when the box was ticked). A list **"Tus reportes"** (date, first line, status). A sent report cannot be edited or deleted by the nutritionist.
+
+### Screens
+- **`report.html`** ("Reportar un problema"), opened from the menu item or from Ajustes; the menu link carries the current page (`?from=/patient.html`), only the path (no ids or names in the query string are kept: the path is cut at `?`).
+- Form order: Descripción → Imágenes (Agregar imagen, up to 3, thumbnails with "Quitar") → a muted box "Se enviará también: página, versión de la app, navegador, fecha" → "Permitir que te contactemos" + Teléfono / Correo → **Enviar reporte**.
+- Errors next to the field (Basecoat `field` + `aria-invalid`), focus moves to the first error; images over 5 MB or of another type are refused with a message before sending; a 4th image cannot be added.
+- **"Tus reportes"** under the form: newest first; each row shows the date, the first ~80 characters, the number of images, and a status badge (Nuevo / En revisión / Resuelto). Empty: "Aún no has enviado reportes."
+- Phone 390 px: everything fits; the thumbnails wrap.
+- Offline: "Sin conexión. Tu reporte no se envió." and the form keeps what was typed.
+
+### Data (server)
+- `issue_reports`: `nutritionist` (relation, set by the server to the signed-in nutritionist), `description` (10–2,000), `images` (file, max 3, ≤ 5 MB, image/jpeg|png|webp, protected), `page` (≤ 200), `app_version` (≤ 20), `user_agent` (≤ 400), `contact_ok` (bool), `contact_phone` (≤ 20), `contact_email` (email), `status` (select: nuevo | en_revision | resuelto, default nuevo), `owner_note` (text, admin only), `created`, `updated`.
+- **Create:** signed-in nutritionist only; `nutritionist` must be themself; cannot set `status` or `owner_note`. The hook: trims, clears contact fields when `contact_ok` is off, requires phone or email when on, normalises the phone (digits + optional leading `+`, 10–15 digits) and lowercases the email; **max 10 reports per nutritionist per 24 h**.
+- **List/view:** a nutritionist sees only their own (to show "Tus reportes" and its images). **Update/delete:** nobody but the superuser (admin panel).
+- Patients: no access at all. Deleting a nutritionist account removes their reports (cascade).
+- Fields show in Spanish-friendly order in the admin panel (status first after the description).
+
+### Acceptance
+1. A nutritionist sends a description + 2 images without contact: saved with page, version and browser; no phone/email stored; the success message; the report appears in "Tus reportes" as Nuevo with "2 imágenes".
+2. With "Permitir que te contactemos": the boxes appear pre-filled; clearing both → error "Escribe un teléfono o un correo"; phone only, email only and both are accepted; `+52 614-123-4567` is saved as `+526141234567`; the email is saved lowercase.
+3. Contact unticked after typing a phone: nothing is stored (also when the API is called directly with phone/email).
+4. Refused: description under 10 or over 2,000 characters, a 4th image, a 6 MB image, a PDF, a 9-digit phone, an 11th report in 24 h.
+5. The owner changes the status to Resuelto in the admin panel → the nutritionist sees "Resuelto" after a refresh.
+6. Another nutritionist sees none of these reports or images; a patient sees none and cannot create; nobody signed out reads anything; a nutritionist cannot change status, edit or delete a sent report, or send one in another nutritionist's name.
+7. Phone 390 px: fits, no sideways scroll; keyboard: every control reachable, visible focus, errors announced.
+
+**Approved** (owner, 2026-11-05: "yes").
+
+**Built:** migration `1762905600_plato_issue_reports.js`, `pb_hooks/report.pb.js`, `report.html` + `js/report.js`, a **Reportar** link (flag icon; the word hides on phones) in the header of every nutritionist page, and a "¿Algo no funciona?" card at the end of Ajustes.
+*(Changed during build: a photo over 5 MB is **reduced automatically** in the browser (like meal photos) instead of refused — refusing big phone photos helps no one; smaller images are sent as they are so screenshot text stays sharp; the server still refuses files over 5 MB. The page they came from is read from the browser's referrer (path only) instead of a `?from=` parameter, so no link needs changing. The owner's private note (`owner_note`) is hidden from the nutritionist.)*
+
+**Result (throwaway server):** `tools/report_check.mjs` 41/41; every other suite passes.
+
+### Later
+- Email or push alert to the owner for each new report (needs a mail account / owner push).
+- Patients reporting problems (to their nutritionist or to the owner).
+
+---
+
 ## Fix: Emails ignore capitals (BUILT — app v27)
 
 **Problem (owner, 2026-11-05):** a nutritionist account typed in the admin panel with a capital letter only signed in when typed with that exact capital. PocketBase compares emails letter for letter; patients' emails were already lowercased at join, but sign-in sent what was typed (a phone that capitalises "Ana@…" was refused). A second account differing only by capitals could also be created.
