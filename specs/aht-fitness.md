@@ -1524,3 +1524,18 @@ Per serving, per meal, per day: energy (kcal), protein, fat, carbohydrates, fibe
   6. Add manifest, service worker, Install button, no-connection message.
   7. Seed one fake nutritionist and two fake patients for the demo.
   8. Run the acceptance list on a laptop and a real phone. Record pass/fail here.
+
+## Design: Small-phone layouts (BUILT — app v32)
+
+Cards: header burger, Inicio tab labels, Inicio order. Layout only: no data, server or permission changes. Widths checked: 320 / 360 / 390 px.
+
+1. **Header on phones (under 40rem).** Brand on the left, one **Menú** button on the right (3-line icon, `aria-expanded`). It opens a panel under the header with: Inicio, Agenda, Pacientes, Plantillas, Ajustes, Reportar un problema, Salir. Closes with Escape, a tap outside, or choosing a link; focus returns to the button. Current page marked. Wide screens keep today's header.
+   - `patients.html`: the clinic name goes on its own line under "AHT Fitness" (ellipsis if long) so it never overlaps.
+   - Patient and sign-in pages are unchanged (they already fit).
+2. **Inicio buttons at small widths.** Under 520 px: 2 columns as today, but the label wraps to 2 lines instead of "Activida…" (never cut). Under 360 px: round icons hidden so the words fit; the count badge (e.g. Pendientes 4) stays.
+3. **Inicio order under 860 px.** "Hoy" first, then "Marcar todo como visto", then the 6 buttons, then the list right under the buttons (tapping a button changes what is visible below it). Visual order only; keyboard and screen-reader order follows the same sequence.
+
+Not changing: wide-screen layouts, the patient app, the Nueva cita dialog (done, v29).
+
+**Approved** (owner, 2026-11-06: "aos"; icons stay at 360 px and above). Built as 3 commits: Menú button (v30, `js/menu.js`, `tools/menu_check.mjs` 37), button labels (v31, `tools/tabs_check.mjs` 20), Inicio order (v32, `tools/homeorder_check.mjs` 14).
+*(Detail: the Inicio markup itself now lists Hoy before the buttons, so keyboard order matches; wide screens place the buttons left via the grid. The patient page also gets the Menú button (Reportar, Salir). Header is one line at 320/360/390 except where the clinic name sits under the brand.)*
