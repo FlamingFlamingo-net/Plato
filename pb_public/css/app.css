@@ -659,3 +659,16 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-report-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
 .plato-report-item { border: 1px solid var(--border); border-radius: var(--radius-lg, 0.75rem); padding: 0.6rem 0.85rem; }
 .plato-report-item p { margin: 0.25rem 0 0; overflow-wrap: anywhere; }
+
+/* Nueva/Editar cita on small phones: dialog fits the screen, fields never overflow, Agendar stays in view */
+.plato-ap-dialog { max-width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
+.plato-ap-dialog > div { width: 100%; max-width: min(34rem, calc(100vw - 1rem)); max-height: calc(100dvh - 1rem); display: flex; flex-direction: column; box-sizing: border-box; }
+.plato-ap-dialog form { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.plato-ap-dialog form > section { overflow-y: auto; min-height: 0; padding: 0.25rem 0.25rem 0.5rem; }
+.plato-ap-dialog .field, .plato-ap-dialog .input, .plato-ap-dialog .select, .plato-ap-dialog .textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.plato-ap-dialog .input, .plato-ap-dialog .select, .plato-ap-dialog .textarea { width: 100%; }
+.plato-ap-dialog .plato-actions { flex: none; padding-top: 0.5rem; border-top: 1px solid var(--border); background: var(--card, var(--background)); }
+@media (max-width: 30rem) {
+  .plato-ap-dialog .plato-row--fields { flex-direction: column; align-items: stretch; }
+  .plato-ap-dialog .plato-row--fields > .field { flex: none; width: 100%; }
+}
