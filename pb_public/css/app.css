@@ -691,3 +691,10 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-menu-row .plato-report-link span { display: inline; }
   .plato-menu-row > .btn[aria-current="page"] { background: var(--secondary); font-weight: 600; }
 }
+
+/* Inicio buttons: the label is never cut (spec "Design: Small-phone layouts"). It wraps; the hint line may still shorten. */
+.plato-home-tab-text strong { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; line-height: 1.2; }
+@media (max-width: 359px) {
+  .plato-home-tab .plato-home-tab-icon, .plato-catalog-card .plato-home-tab-icon { display: none; }
+  .plato-home-tab { padding-inline: 0.5rem; }
+}
