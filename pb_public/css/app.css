@@ -698,3 +698,10 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-home-tab .plato-home-tab-icon, .plato-catalog-card .plato-home-tab-icon { display: none; }
   .plato-home-tab { padding-inline: 0.5rem; }
 }
+
+/* Inicio order (spec "Design: Small-phone layouts"): Hoy, "Marcar todo como visto", then the buttons, then the list under them.
+   The markup is in that order too, so keyboard and screen-reader order match what is seen. Wide screens keep tabs left, Hoy right. */
+@media (min-width: 861px) {
+  .plato-home-panel > .plato-home-tabs { grid-column: 1; grid-row: 1; }
+  .plato-home-panel > .plato-home-side { grid-column: 2; grid-row: 1; }
+}
