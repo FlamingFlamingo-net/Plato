@@ -1,0 +1,5 @@
+{
+  "_comment": "Maps the column names of a source CSV to ours. Keys = OUR names, values = THEIR column header. Delete a key you do not have. 'extra:<nutrient>' columns (per 100 g) go to the flexible 'extra' list. 'groups' = 'Group:portion_g;Group:portion_g'. 'tags' = 'tag;tag'.",
+  "name": "name", "state": "state", "kcal": "kcal", "protein_g": "protein_g", "fat_g": "fat_g", "carbs_g": "carbs_g", "fiber_g": "fiber_g",
+  "piece_g": "piece_g", "density_g_ml": "density_g_ml", "groups": "groups", "tags": "tags"
+}
