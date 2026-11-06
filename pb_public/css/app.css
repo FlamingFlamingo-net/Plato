@@ -639,3 +639,23 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-mood-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
 .plato-mood-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
 .plato-mood-notes li { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+
+/* Reportar un problema (spec "Feature: Reportar un problema") */
+.plato-field-error { margin: 0; color: var(--destructive); font-size: 0.85rem; }
+.plato-report-images { border: 0; margin: 0; padding: 0; display: grid; gap: 0.5rem; justify-items: start; }
+.plato-report-images legend { font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; padding: 0; }
+.plato-report-images label.btn { cursor: pointer; }
+.plato-report-images label.btn:has(input:focus-visible) { outline: 2px solid var(--ring, var(--primary)); outline-offset: 2px; }
+.plato-report-images label.btn[aria-disabled] { opacity: 0.55; cursor: not-allowed; }
+.plato-report-thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.plato-report-thumbs:empty { display: none; }
+.plato-report-thumbs li { display: grid; justify-items: center; gap: 0.25rem; }
+.plato-report-thumbs img { width: 96px; height: 96px; object-fit: cover; border-radius: var(--radius-md, 0.5rem); border: 1px solid var(--border); }
+.plato-report-context { border: 1px solid var(--border); border-radius: var(--radius-lg, 0.75rem); padding: 0.75rem 1rem; background: var(--muted); font-size: 0.85rem; }
+.plato-report-context dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.2rem 0.75rem; margin: 0.4rem 0 0; }
+.plato-report-context dt { color: var(--muted-foreground); }
+.plato-report-context dd { margin: 0; overflow-wrap: anywhere; }
+.plato-report-contact { display: grid; gap: 0.75rem; }
+.plato-report-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.plato-report-item { border: 1px solid var(--border); border-radius: var(--radius-lg, 0.75rem); padding: 0.6rem 0.85rem; }
+.plato-report-item p { margin: 0.25rem 0 0; overflow-wrap: anywhere; }

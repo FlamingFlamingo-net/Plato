@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reportar un problema — AHT Fitness</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/report.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/home.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">AHT Fitness</a>
+    <div class="plato-row">
+      <span class="plato-muted plato-small plato-hide-sm" id="who"></span>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/home.html">Inicio</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/agenda.html">Agenda</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html">Ajustes</a>
+      <a class="btn plato-report-link" data-variant="ghost" data-size="sm" href="/report.html" aria-current="page" title="Reportar un problema" aria-label="Reportar un problema"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.33 2q2 0 3.67-.67a1 1 0 0 1 1 .2V15a1 1 0 0 1-.4.8A6 6 0 0 1 16 17c-3 0-5-2-8-2a6 6 0 0 0-4 1.5"/></svg><span class="plato-hide-sm">Reportar</span></a>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main" style="max-width:44rem">
+    <a class="plato-back" href="/home.html" id="back"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Volver</a>
+    <h1 class="plato-page-title">Reportar un problema</h1>
+    <p class="plato-muted" style="margin:0 0 1.25rem">¿Algo no funciona o se ve mal? Cuéntanos y lo revisamos.</p>
+
+    <div class="alert" id="sent" hidden role="status" tabindex="-1" style="margin-bottom:1rem">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      <h2 id="sent-title">Gracias. Recibimos tu reporte.</h2>
+      <section id="sent-sub"></section>
+    </div>
+
+    <form class="card" id="report-form" novalidate aria-labelledby="form-title">
+      <header><h2 id="form-title">Tu reporte</h2></header>
+      <section class="plato-form">
+        <div class="field">
+          <label for="r-desc">Descripción</label>
+          <textarea class="textarea" id="r-desc" name="description" rows="6" minlength="10" maxlength="2000" required
+            aria-describedby="r-desc-help r-desc-error" placeholder="Qué hiciste, qué esperabas y qué pasó."></textarea>
+          <p class="plato-muted plato-small" id="r-desc-help" style="margin:0">Qué hiciste, qué esperabas y qué pasó. <span id="r-desc-count">0</span>/2000</p>
+          <p class="plato-field-error" id="r-desc-error" hidden></p>
+        </div>
+
+        <fieldset class="plato-report-images">
+          <legend>Imágenes <span class="plato-muted">(hasta 3, opcional)</span></legend>
+          <ul class="plato-report-thumbs" id="thumbs" aria-label="Imágenes agregadas"></ul>
+          <label class="btn" data-variant="outline" data-size="sm" id="add-image-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Agregar imagen</span>
+            <input class="sr-only" type="file" id="r-image" accept="image/jpeg,image/png,image/webp" aria-describedby="r-image-help r-image-error">
+          </label>
+          <p class="plato-muted plato-small" id="r-image-help" style="margin:0">JPG, PNG o WebP. Las fotos grandes se reducen solas.</p>
+          <p class="plato-field-error" id="r-image-error" hidden></p>
+        </fieldset>
+
+        <div class="plato-report-context" id="context">
+          <strong>Se enviará también</strong>
+          <dl>
+            <dt>Página</dt><dd id="ctx-page">—</dd>
+            <dt>Versión de la app</dt><dd id="ctx-version">—</dd>
+            <dt>Navegador</dt><dd id="ctx-browser">—</dd>
+            <dt>Fecha</dt><dd id="ctx-date">—</dd>
+          </dl>
+        </div>
+
+        <div class="plato-report-contact">
+          <label for="r-contact" class="plato-row" style="gap:0.5rem;align-items:flex-start">
+            <input type="checkbox" class="input" id="r-contact" name="contact_ok" aria-controls="contact-fields">
+            <span class="plato-stack-sm">
+              <strong>Permitir que te contactemos</strong>
+              <span class="plato-muted plato-small">Por si necesitamos más detalles. Basta con un teléfono o un correo.</span>
+            </span>
+          </label>
+          <div id="contact-fields" class="plato-grid-2" hidden>
+            <div class="field">
+              <label for="r-phone">Teléfono</label>
+              <input class="input" id="r-phone" name="contact_phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" aria-describedby="r-phone-error">
+              <p class="plato-field-error" id="r-phone-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="r-email">Correo</label>
+              <input class="input" id="r-email" name="contact_email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" aria-describedby="r-email-error">
+              <p class="plato-field-error" id="r-email-error" hidden></p>
+            </div>
+            <p class="plato-field-error" id="r-contact-error" hidden style="grid-column:1/-1"></p>
+          </div>
+        </div>
+      </section>
+      <footer class="plato-actions"><button class="btn" type="submit" id="send">Enviar reporte</button></footer>
+    </form>
+
+    <section aria-labelledby="mine-title" style="margin-top:1.5rem">
+      <h2 class="plato-section-title" id="mine-title">Tus reportes</h2>
+      <p class="plato-muted" id="mine-status" role="status">Cargando…</p>
+      <ul class="plato-report-list" id="mine" aria-labelledby="mine-title"></ul>
+    </section>
+  </main>
+</body>
+</html>
