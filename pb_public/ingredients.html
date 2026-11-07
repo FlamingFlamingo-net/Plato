@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ingredientes — AHT Fitness</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/ingredients.js?v=1"></script>
+  <script type="module" src="/js/menu.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/home.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">AHT Fitness</a>
+    <div class="plato-row">
+      <span class="plato-muted plato-small plato-hide-sm" id="who"></span>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/home.html">Inicio</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/agenda.html">Agenda</a>
+      <a class="btn plato-hide-sm" data-variant="ghost" data-size="sm" href="/templates.html">Plantillas</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html">Ajustes</a>
+      <a class="btn plato-report-link" data-variant="ghost" data-size="sm" href="/report.html" title="Reportar un problema" aria-label="Reportar un problema"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.33 2q2 0 3.67-.67a1 1 0 0 1 1 .2V15a1 1 0 0 1-.4.8A6 6 0 0 1 16 17c-3 0-5-2-8-2a6 6 0 0 0-4 1.5"/></svg><span class="plato-hide-sm">Reportar</span></a>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main" style="max-width:64rem">
+    <a class="plato-back" href="/home.html?tab=catalog"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Catálogo</a>
+    <h1 class="plato-page-title" style="margin-bottom:0.25rem">Ingredientes</h1>
+    <p class="plato-muted" style="margin:0 0 1rem">Valores por 100 g. Es una lista de la plataforma: puedes buscar y poner etiquetas, no cambiar los números.</p>
+    <div class="alert" id="sample-banner" hidden role="note" style="margin-bottom:1rem">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <h2>Datos de ejemplo</h2>
+      <section>Los valores son inventados y no sirven para pacientes reales. Se reemplazan cuando carguemos la fuente oficial.</section>
+    </div>
+    <div class="plato-list-tabs" role="tablist" aria-label="Qué quieres ver" id="ing-tabs"></div>
+    <div role="tabpanel" id="ing-panel">
+      <div class="plato-ing-controls" id="ing-controls"></div>
+      <div class="plato-chips" id="tag-bar"></div>
+      <p id="status" class="plato-muted" role="status">Cargando…</p>
+      <div id="ing-view"></div>
+    </div>
+  </main>
+</body>
+</html>

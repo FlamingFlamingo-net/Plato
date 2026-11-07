@@ -21,7 +21,7 @@ for (const w of [320, 360, 390]) {
     if (pg === 'patients') await p.eval(`document.getElementById('clinic').textContent = 'Clínica de Nutrición y Entrenamiento Integral del Norte'`);
     await sleep(500);
     const r = await p.eval(`(() => { const hd = document.querySelector('.plato-top'), b = document.querySelector('.plato-menu-btn').getBoundingClientRect(), br = hd.querySelector('.plato-brand').getBoundingClientRect(), h = hd.getBoundingClientRect();
-      const row = document.getElementById('nav-menu'); return { h: Math.round(h.height), overlap: br.right > b.left + 0.5, btnIn: b.right <= innerWidth && b.left >= 0, brandIn: br.left >= 0 && br.right <= innerWidth, closed: getComputedStyle(row).display === 'none', exp: document.querySelector('.plato-menu-btn').getAttribute('aria-expanded'), scroll: document.documentElement.scrollWidth > innerWidth }; })()`);
+      const row = document.getElementById('nav-menu'); return { h: Math.round(h.height), overlap: br.right > b.left + 0.5, btnIn: b.right <= innerWidth && b.left >= 0, brandIn: br.left >= 0 && br.right <= innerWidth, closed: getComputedStyle(row).display === 'none', exp: document.querySelector('.plato-menu-btn').getAttribute('aria-expanded'), scroll: document.documentElement.scrollWidth > innerWidth || innerWidth > ${w} + 1 }; })()`);
     check(`${w}px ${pg.split('?')[0]}: one-line header (two lines only where the clinic name sits under the brand), brand and Menú do not overlap, closed at first, no sideways scroll`,
       r.h <= (pg.startsWith('patient') ? 80 : 66) && !r.overlap && r.btnIn && r.brandIn && r.closed && r.exp === 'false' && !r.scroll, JSON.stringify(r));
   }

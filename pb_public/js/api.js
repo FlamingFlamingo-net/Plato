@@ -108,8 +108,9 @@ export async function request(path, { method = 'GET', body, form, auth = true } 
 const enc = encodeURIComponent;
 const col = (name) => `/api/collections/${name}/records`;
 
-export function list(name, { filter = '', sort = '', perPage = 200, fields = '', expand = '' } = {}) {
+export function list(name, { filter = '', sort = '', perPage = 200, fields = '', expand = '', page = 1 } = {}) {
   const q = new URLSearchParams({ perPage: String(perPage), skipTotal: '1' });
+  if (page > 1) q.set('page', String(page));
   if (filter) q.set('filter', filter);
   if (sort) q.set('sort', sort);
   if (fields) q.set('fields', fields);

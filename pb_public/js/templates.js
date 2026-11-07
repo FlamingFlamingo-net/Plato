@@ -6,12 +6,16 @@ import { listState, mountListBar, sortItems } from './list-tabs.js';
 import { h, icon, toast, formError, busy, offlineBanner, shortDate } from './ui.js';
 import { weekList, daysFilled } from './week.js';
 import { snacksOf } from './api.js';
+import { loadTags, linksFor, mountTagChips, tagBadges, openTagDialog } from './tags.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
 document.getElementById('who').textContent = me.name;
 document.getElementById('sign-out').addEventListener('click', signOut);
 
+let tagList = null, chips = null;
+const pickedTags = new Set();
+const tagBarEl = document.getElementById('tag-bar');
 const listEl = document.getElementById('list');
 const statusEl = document.getElementById('status');
 const state = listState('templates');
@@ -35,6 +39,13 @@ async function load() {
   let templates;
   try { templates = await list('diet_templates', { filter: archived ? 'archived_at != ""' : 'archived_at = ""', perPage: 500 }); } catch (e) { statusEl.textContent = e.message; return; }
   templates = sortItems(templates, state.sort, { name: 'title' });
+  // Tags (spec "Tags"): chips narrow the list to templates that have ALL the picked tags; each card has its own.
+  tagList ||= await loadTags().catch(() => []);
+  const linkMap = await linksFor('template', templates.map((t) => t.id)).catch(() => new Map());
+  const tagCounts = new Map();
+  for (const m of linkMap.values()) for (const id of m.keys()) tagCounts.set(id, (tagCounts.get(id) || 0) + 1);
+  if (chips) chips.setCounts(tagCounts); else chips = mountTagChips(tagBarEl, { tags: tagList, counts: tagCounts, selected: pickedTags, onChange: () => load() });
+  if (pickedTags.size) templates = templates.filter((t) => [...pickedTags].every((id) => linkMap.get(t.id)?.has(id)));
   statusEl.textContent = templates.length ? `${templates.length} ${templates.length === 1 ? 'plantilla' : 'plantillas'}${archived ? (templates.length === 1 ? ' archivada' : ' archivadas') : ''}` : '';
   if (!templates.length && archived) {
     listEl.replaceChildren(h('li', { class: 'plato-empty-state' },
@@ -64,9 +75,11 @@ async function load() {
       h('header', { class: 'plato-row plato-row--between' },
         h('div', {},
           h('h2', { text: t.title }),
-          h('p', { text: `${n} ${n === 1 ? 'día' : 'días'} con comidas · ${t.archived_at ? `archivada ${shortDate(t.archived_at)}` : `cambiada ${shortDate(t.updated)}`}` })),
+          h('p', { text: `${n} ${n === 1 ? 'día' : 'días'} con comidas · ${t.archived_at ? `archivada ${shortDate(t.archived_at)}` : `cambiada ${shortDate(t.updated)}`}` }),
+          tagBadges(tagList, linkMap.get(t.id))),
         h('div', { class: 'plato-row' },
           toggle,
+          h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', 'data-action': 'tags', 'aria-label': `Etiquetas de ${t.title}`, onclick: () => openTagDialog({ kind: 'template', itemId: t.id, itemName: t.title, tags: tagList, myId: me.id, onClose: () => load() }) }, icon('plus', 16), 'Etiquetas'),
           t.archived_at
             ? h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'data-action': 'restore', onclick: (ev) => setArchived(t, false, ev.currentTarget) }, icon('undo', 16), 'Restaurar')
             : h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: () => openRename(t) }, 'Cambiar nombre'),

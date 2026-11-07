@@ -705,3 +705,53 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
   .plato-home-panel > .plato-home-tabs { grid-column: 1; grid-row: 1; }
   .plato-home-panel > .plato-home-side { grid-column: 2; grid-row: 1; }
 }
+
+/* Ingredients + tags (spec "Feature: Ingredients, slice (a)") */
+.plato-ing-controls { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto; gap: 0.5rem; margin: 1rem 0 0.75rem; align-items: center; }
+.plato-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.75rem; }
+.plato-tags { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; margin-left: 0.4rem; vertical-align: middle; }
+.plato-ing-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.plato-ing-table th, .plato-ing-table td { text-align: right; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.plato-ing-table thead th { color: var(--muted-foreground); font-weight: 500; font-size: 0.8rem; }
+.plato-ing-table th:first-child, .plato-ing-table td:first-child { text-align: left; }
+.plato-ing-first { font-weight: 400; }
+.plato-ing-name { font: inherit; font-weight: 600; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; color: var(--foreground); text-decoration: underline dotted; text-underline-offset: 3px; }
+.plato-ing-name:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.plato-ing-detail td { text-align: left; background: var(--muted); }
+.plato-ing-detail ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.2rem; }
+.plato-group { margin-bottom: 0.75rem; }
+.plato-group h2 { margin: 0; font-family: var(--font-heading); font-size: 1.05rem; }
+.plato-group header p { margin: 0.1rem 0 0; color: var(--muted-foreground); font-size: 0.85rem; }
+.plato-group-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.plato-group-list li { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dashed var(--border); padding: 0.2rem 0; }
+.plato-tag-dialog { max-width: calc(100vw - 1rem); }
+.plato-tag-dialog > div { width: 100%; max-width: min(28rem, calc(100vw - 1rem)); max-height: calc(100dvh - 1rem); display: flex; flex-direction: column; box-sizing: border-box; }
+.plato-tag-dialog section { overflow-y: auto; min-height: 0; }
+.plato-tag-list { display: grid; gap: 0.15rem; }
+.plato-tag-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.plato-tag-row label { display: flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.plato-tag-add { display: grid; gap: 0.5rem; justify-items: start; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.plato-tag-add .field { width: 100%; }
+@media (max-width: 40rem) {
+  .plato-ing-controls { grid-template-columns: 1fr 1fr; }
+  .plato-ing-controls > input, .plato-ing-controls > button { grid-column: 1 / -1; }
+  .plato-ing-table, .plato-ing-table tbody, .plato-ing-table tr, .plato-ing-table th, .plato-ing-table td { display: block; }
+  .plato-ing-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .plato-ing-table tbody > tr:not(.plato-ing-detail) { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.1rem 0.4rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+  .plato-ing-table tbody > tr:not(.plato-ing-detail) > th { grid-column: 1 / -1; text-align: left; border: 0; padding: 0 0 0.3rem; }
+  .plato-ing-table tbody > tr:not(.plato-ing-detail) > td { border: 0; padding: 0; text-align: left; display: grid; font-size: 0.85rem; }
+  .plato-ing-table td[data-label]::before { content: attr(data-label); font-size: 0.68rem; color: var(--muted-foreground); font-weight: 400; overflow-wrap: anywhere; }
+  .plato-ing-detail { display: block; border-bottom: 1px solid var(--border); }
+  .plato-ing-detail[hidden] { display: none; }
+  .plato-ing-detail td { border: 0; }
+  .plato-tags { margin-left: 0; display: flex; margin-top: 0.25rem; }
+}
+
+.plato-ing-controls > * { min-width: 0; box-sizing: border-box; }
+.plato-ing-controls > select, .plato-ing-controls > input { width: 100%; }
+.plato-ing-controls > button { white-space: nowrap; }
+.plato-ing-controls > select { max-width: 100%; }
+@media (max-width: 40rem) { #ing-tabs .plato-list-tab { min-width: 0; white-space: normal; text-align: center; flex: 1 1 auto; } }
+
+/* Patient page, Mediciones table: scroll inside its box instead of widening the whole page on a 320 px phone */
+.table-wrap { position: relative; max-width: 100%; overflow-x: auto; }   /* relative: the table's visually-hidden header texts are absolutely placed and would otherwise escape the clip */

@@ -19,7 +19,7 @@ for (const w of [320, 340, 359, 360, 390, 430, 520, 600, 860, 1366]) {
     const cut = tabs.filter((b) => { const s = b.querySelector('strong'); return s.scrollWidth > s.clientWidth + 1 || s.scrollHeight > s.clientHeight + 1 || b.scrollWidth > b.clientWidth + 1; }).map((b) => b.textContent.trim().slice(0, 14));
     const out = tabs.filter((b) => b.getBoundingClientRect().right > innerWidth).length;
     const icons = tabs.map((b) => getComputedStyle(b.querySelector('.plato-home-tab-icon')).display);
-    return { n: tabs.length, cut, out, icons: [...new Set(icons)], scroll: document.documentElement.scrollWidth > innerWidth, words: tabs.map((b) => b.querySelector('strong').textContent) }; })()`);
+    return { n: tabs.length, cut, out, icons: [...new Set(icons)], scroll: document.documentElement.scrollWidth > innerWidth || (innerWidth > ${w} + 1 && ${w} < 600), words: tabs.map((b) => b.querySelector('strong').textContent) }; })()`);
   check(`${w}px: ${r.n} buttons, no label cut or overflowing, no sideways scroll`, r.n >= 6 && !r.cut.length && !r.out && !r.scroll, JSON.stringify(r));
   check(`${w}px: icons ${w < 360 ? 'hidden' : 'shown'}`, r.icons.length === 1 && (w < 360 ? r.icons[0] === 'none' : r.icons[0] !== 'none'), JSON.stringify(r.icons));
   if (w === 320 || w === 360) await p.screenshot(`${OUT}/tabs-${w}.png`);

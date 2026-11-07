@@ -124,7 +124,7 @@ await step('H6', async () => {
   await nutri.click('#tab-catalog');
   await nutri.waitFor(`document.querySelectorAll('.plato-catalog-card').length === 7`);
   const c = await nutri.eval(`({ live: [...document.querySelectorAll('a.plato-catalog-card')].map(a => a.getAttribute('href')), locked: document.querySelectorAll('.plato-catalog-card.is-locked[aria-disabled="true"]').length })`);
-  check('H6 Catálogo: 7 lists; Pacientes and Dietas open, the 5 others are locked', c.live.join() === '/patients.html,/templates.html' && c.locked === 5, JSON.stringify(c));
+  check('H6 Catálogo: 7 lists; Pacientes, Ingredientes and Dietas open, the 4 others are locked', c.live.join() === '/patients.html,/ingredients.html,/templates.html' && c.locked === 4, JSON.stringify(c));
   await nutri.screenshot(`${OUT}/home-catalog.png`, { full: false });
   // Edge case: very long wording on one tile must not break the grid (all tiles same height, text capped at 2 lines)
   const tiles = (sel) => nutri.eval(`(() => {

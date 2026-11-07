@@ -109,7 +109,7 @@ await step('T7', async () => {
   await nutri.waitFor(`document.querySelector('#list .plato-week-preview:not([hidden]) .week-day')`);
   check('T7 Plantillas lists both templates with a week preview', true);
   await nutri.screenshot(`${OUT}/templates-page.png`, { full: false });
-  await nutri.eval(`[...document.querySelectorAll('#list > li.card')].find(li => li.querySelector('h2').textContent === 'Fase 1 (copia)').querySelectorAll('button')[1].click()`);
+  await nutri.eval(`[...[...document.querySelectorAll('#list > li.card')].find(li => li.querySelector('h2').textContent === 'Fase 1 (copia)').querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cambiar nombre').click()`);
   await nutri.waitFor(`document.getElementById('rn-dialog').open`);
   await nutri.fill('#rn-name', 'Fase 1');
   await nutri.click('#rn-save');
