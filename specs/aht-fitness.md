@@ -1539,3 +1539,73 @@ Not changing: wide-screen layouts, the patient app, the Nueva cita dialog (done,
 
 **Approved** (owner, 2026-11-06: "aos"; icons stay at 360 px and above). Built as 3 commits: Menú button (v30, `js/menu.js`, `tools/menu_check.mjs` 37), button labels (v31, `tools/tabs_check.mjs` 20), Inicio order (v32, `tools/homeorder_check.mjs` 14).
 *(Detail: the Inicio markup itself now lists Hoy before the buttons, so keyboard order matches; wide screens place the buttons left via the grid. The patient page also gets the Menú button (Reportar, Salir). Header is one line at 320/360/390 except where the clinic name sits under the brand.)*
+
+## Feature: Ingredients, slice (a) — with made-up data (BUILT — app v33)
+
+**Owner decisions (2026-11-06):** work with **made-up data** until the client delivers the official source; the structure must let the real data replace it; **load the made-up set on the live app** (the client must see the function, and it should push him to deliver the data); a **quick dummy test of food-exchange groups** (equivalentes), easy to delete later. Slice (a) only: dishes, meals and diets come after the owner has judged this.
+
+### What the nutritionist gets
+- **Catálogo → Ingredientes** (the locked tile opens, with its count). Page `ingredients.html`: search by name, filter by state (crudo / cocido / otro), **sort** (name A–Z default, kcal, proteína, grasa, carbohidratos; the same "Ordenar" control as the other lists), table **per 100 g**: kcal, proteína, grasas, carbohidratos, fibra. A row opens to show the rest: piece weight, density, extra nutrients, source and version.
+- **Banner on top while any ingredient is made-up:** "Datos de ejemplo: los valores son inventados y no sirven para pacientes reales." The banner is generated from the data (`dataset = ejemplo`), so it disappears by itself when the made-up rows are removed.
+- **Descargar lista (CSV)** (so an agent or the owner can see the exact names).
+- **Equivalentes (ejemplo)**: a second tab listing each exchange group (Cereales, Verduras, Frutas, Leguminosas, Carnes, Lácteos, Grasas) with its ingredients and the portion in grams that counts as one equivalent; an ingredient appears under every group it belongs to. Labelled "ejemplo" throughout.
+- **Etiquetas (tags)**: chips above the list ("Fibra", "Post-entreno"…); pick one or more to narrow the list to items with **all** of them. Each row shows its tags and a **Etiquetas** button to add or remove them. See "Tags" below.
+- Read-only. Nutritionists cannot add, edit or delete (platform data, decision 2). No archive on this list: it is shared, so one nutritionist hiding a row would hide it for everyone (exception to the archive rule, to confirm).
+- Patients: no access.
+
+### Built so the real data can replace it
+- **`ingredients`** (one table; migration): `name`, `state` (crudo|cocido|otro), `kcal`, `protein_g`, `fat_g`, `carbs_g`, `fiber_g` (per 100 g), `extra` (JSON `{ "sodio_mg": 120, … }` per 100 g, any extra nutrient the real source brings without changing the app), `piece_g`, `density_g_ml` (both optional), `groups` (JSON list, exchange test, optional: `[{"group":"Leguminosas","portion_g":90},{"group":"Carnes","portion_g":60}]`, so one ingredient can sit in several groups), `tags` is not a column (see Tags), `dataset` (`ejemplo` now), `source`, `version`.
+- Rules: nutritionists list/view; **no one but the owner (admin) creates, edits or deletes**; patients and visitors: nothing.
+- **Loader** `tools/load_ingredients.py` (run by the owner/agent with the admin login, never inside the app): reads a CSV, **checks first** (duplicates, missing values, numbers that are not numbers, a kcal that does not match 4/4/9 from the macros by more than 25%, reported as a warning), shows a summary, and only with `--apply` replaces **all rows of that `dataset`** in one go. `--remove-dataset ejemplo` deletes the made-up set (and the exchange test with it).
+- Column mapping: the loader has a small mapping file (`data/ingredients-columns.json`: "their column name → ours"), so the official CSV is loaded by editing the mapping, not code.
+- Later (slice b): dishes keep an ingredient's id; when a dataset is replaced they are matched by name+state and flagged "Valores actualizados" (open question Q6), anything unmatched is listed for the nutritionist instead of breaking.
+- **Made-up set:** `data/ingredients-ejemplo.csv`, about 60 everyday ingredients, values approximate and **invented by the assistant**; `source = EJEMPLO`, `version = 0`. Safe to commit (no client data).
+
+### Acceptance
+0. (Tags, below, have their own acceptance list.)
+1. Loader dry run on the example CSV prints a summary and changes nothing; `--apply` loads ~60 rows; run twice → still ~60 (replace, not duplicate).
+2. A broken CSV (bad number, duplicate name, missing name) is refused with the line number; nothing is loaded.
+3. The nutritionist sees the list, searches ("arroz"), filters by state, sorts by proteína; the banner shows; the CSV download has the same rows.
+4. The Equivalentes tab lists the 7 groups with portions, labelled "ejemplo".
+5. A nutritionist cannot create, edit or delete an ingredient (API); a patient and a visitor get nothing.
+6. `--remove-dataset ejemplo` empties the page: it shows "Aún no hay ingredientes" and the banner is gone.
+7. Phone 320/360/390: the table does not overflow (rows become stacked cards under 40rem).
+8. Live: after deploy the made-up set is loaded once with the loader, and the live page shows the banner.
+
+### Commit plan
+1. Server: migration + rules + loader + example CSV + API checks.
+2. Screens (list, tabs, banner, CSV download, Catálogo tile + count, SW bump) + `ingredients_check.mjs`.
+3. Spec. Deploy, then load the made-up set on live (counts only reported).
+
+### Risks
+- **Invented numbers on the live app.** Mitigation: banner on every ingredient screen, `source = EJEMPLO`, nothing reaches patients in this slice (no diet uses them yet).
+- Real data may need fields not listed (`extra` absorbs nutrients; unit conversions and cooked/raw pairs may need a follow-up).
+
+### Tags (owner, 2026-11-06: "aos" on all four)
+
+**What:** free labels (fibra, post-entreno, económico, sin lactosa…) with **no number behind them**, separate from the exchange groups (which have portions). A tag belongs to **one item only; nothing is inherited**: an ingredient tagged *fibra* does not make the dish or the diet *fibra*, and no screen copies tags from one level to another.
+
+**Where:** ingredients and **diet templates** (Catálogo → Dietas) in this slice; dishes when slice (b) is built (same mechanism). A diet saved for one patient is not a catalogue item and has no tags.
+
+**Who sees what**
+- **Starter tags** (platform): come with the dataset (a `tags` column in the CSV, separated by `;`), visible to every nutritionist, replaced with the dataset, cannot be edited by nutritionists. The example set carries ~6: fibra, alta en proteína, bajo en sodio, económico, sin gluten, sin lactosa (invented, like the numbers).
+- **My tags** (private): a nutritionist creates tags by hand ("Agregar etiqueta", 1–30 characters, no duplicates ignoring capitals and accents) and puts them on any ingredient (overlay: the numbers stay read-only) or on their own templates. Other nutritionists never see them. Deleting my tag removes it from everything.
+- Patients: never see tags.
+
+**Data:** `tags` (name, `nutritionist` empty for platform tags) and `item_tags` (nutritionist, tag, `kind` = ingredient | template (| dish later), `item` = record id). Rules: a nutritionist reads platform tags and their own, creates/removes only their own links and own tags; platform tags and links are admin-only; patients and visitors: nothing. A hook checks that the item exists and that a template belongs to that nutritionist, and refuses more than 200 own tags.
+
+**Tag acceptance**
+1. Create "Post-entreno" by hand, put it on 2 ingredients; the chip appears with the count 2; picking it narrows the list to those 2; picking it plus "fibra" shows only items with both.
+2. Tag a template "Alta proteína": the Dietas list can be filtered by it. The same tag name on an ingredient is a separate link.
+3. Tag an ingredient *fibra* (starter): no dish/template/diet changes; no tag appears anywhere else.
+4. Another nutritionist sees the starter tags but not "Post-entreno"; cannot attach to my template; cannot list my links (API).
+5. Delete my tag: gone from every item. Duplicate name (any capitals/accents) is refused with a message.
+6. `--remove-dataset ejemplo` removes the starter tags and their links; my own tags stay.
+7. Phone 320/360/390: chips wrap, nothing overflows.
+
+**Approved** (owner, 2026-11-06: "aos"; no archive on the shared list confirmed). Built in 2 commits: server (`1762992000_plato_ingredients_tags.js`, `pb_hooks/tags.pb.js`, `tools/load_ingredients.py`, `data/ingredients-ejemplo.csv`, `tools/ingapi_check.mjs` 28) and screens (`ingredients.html`, `js/ingredients.js`, `js/tags.js`, tags on Dietas, Catálogo tile; `tools/ingredients_check.mjs` 40).
+*(Changes during build: the example set is in `data/` (the `seed/` folder is git-ignored); number fields are optional in the table because PocketBase treats a required number as non-zero (the loader enforces them instead); tag names that differ only by a hyphen or a space are different tags; ticking a starter tag on an ingredient adds the nutritionist's own link next to the platform one; a slower older list refresh can no longer overwrite a newer one; the patient page's measurement table no longer widens the page on a 320 px phone (found by a stricter width check; the bug was already live).)*
+
+**Loading on live:** the loader needs an admin session; for the live app a temporary admin (random password, never shown) is created through the machine's console, used for one load, then deleted. Only counts are reported.
+
+**Parked:** dishes (slice b), diets using ingredients (slice c), real exchange tables, real data source.
