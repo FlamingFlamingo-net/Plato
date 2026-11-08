@@ -1,5 +1,5 @@
 // menu.js — nutritionist header on phones: the links fold into one "Menú" button (spec "Design: Small-phone layouts").
-// Progressive: the markup keeps every link; CSS (max-width 40rem) hides the row until the button opens it.
+// Progressive: the markup keeps every link; CSS (max-width 47.99rem) hides the row until the button opens it.
 const header = document.querySelector('header.plato-top:has(.plato-report-link)');
 const row = header?.querySelector(':scope > .plato-row');
 if (header && row) {
@@ -30,5 +30,5 @@ if (header && row) {
   document.addEventListener('click', (e) => { if (header.hasAttribute('data-menu-open') && !header.contains(e.target)) set(false); });
   row.addEventListener('click', (e) => { if (e.target.closest('a')) set(false); });
   // Leaving the phone layout (rotate / resize) closes it so nothing stays open invisibly.
-  matchMedia('(min-width: 40.01rem)').addEventListener('change', (e) => { if (e.matches) set(false); });
+  matchMedia('(min-width: 48rem)').addEventListener('change', (e) => { if (e.matches) set(false); });
 }

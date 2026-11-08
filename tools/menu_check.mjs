@@ -52,6 +52,27 @@ for (const w of [320, 360, 390]) {
   check(`${w}px: Salir inside the menu signs out`, true);
   first = false;
 }
+// The name and the links are separate blocks at EVERY width (owner comment on templates.html): links never wrap, the name never shares their row.
+for (const w of [480, 600, 767, 768, 900, 1023, 1024, 1100, 1366, 1920]) {
+  const p = await browser.newPage({ width: w, height: 800, mobile: false });
+  await p.goto(`${BASE}/manifest.webmanifest`);
+  await p.eval(`localStorage.setItem('plato.auth', ${JSON.stringify(JSON.stringify({ token: t.nutritionist.token, record: t.nutritionist.record, collection: 'nutritionists' }))})`);
+  for (const pg of ['templates', 'settings', 'report', 'patients', 'home', 'agenda']) {
+    await p.goto(`${BASE}/${pg}.html`);
+    await p.waitFor(`document.querySelector('.plato-menu-btn')`, 15000);
+    if (pg === 'patients') await p.eval(`document.getElementById('clinic').textContent = 'Clínica de Nutrición y Entrenamiento Integral del Norte'`);
+    await sleep(500);
+    const r = await p.eval(`(() => { const hd = document.querySelector('.plato-top'), R = (e) => e.getBoundingClientRect(), row = document.getElementById('nav-menu'), who = document.getElementById('who'), brand = hd.querySelector('.plato-brand'), btn = document.querySelector('.plato-menu-btn');
+      const folded = getComputedStyle(btn).display !== 'none'; const items = [...row.querySelectorAll(':scope > a, :scope > button')]; const tops = items.map((e) => Math.round(R(e).top));
+      const whoShown = !!who && getComputedStyle(who).display !== 'none';
+      const rowBox = R(row), nameBox = whoShown ? R(who) : null;
+      return { folded, oneLine: folded || (Math.max(...tops) - Math.min(...tops) <= 2), whoShown, whoInRow: !!who && row.contains(who),
+        nameClear: !whoShown || (nameBox.right <= rowBox.left + 0.5 && nameBox.left >= R(brand).right - 0.5), brandClear: folded || R(brand).right <= rowBox.left + 0.5, h: Math.round(R(hd).height), scroll: document.documentElement.scrollWidth > innerWidth, names: whoShown ? who.textContent.length : 0 }; })()`);
+    const expectFold = w < 768, expectName = w >= 1024 && pg !== 'home' && pg !== 'agenda';
+    check(`${w}px ${pg}: links ${expectFold ? 'folded into Menú' : 'on ONE line'}; name ${expectName ? 'shown, in its own block' : 'not shown'} and never in the links' row; nothing overlaps`,
+      r.folded === expectFold && r.oneLine && !r.whoInRow && r.whoShown === expectName && r.nameClear && r.brandClear && !r.scroll && r.h <= (pg === 'patients' && expectFold ? 80 : 66), JSON.stringify(r));
+  }
+}
 const d = await browser.newPage({ width: 1366, height: 900 });
 await d.goto(`${BASE}/manifest.webmanifest`);
 await d.eval(`localStorage.setItem('plato.auth', ${JSON.stringify(JSON.stringify({ token: t.nutritionist.token, record: t.nutritionist.record, collection: 'nutritionists' }))})`);

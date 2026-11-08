@@ -675,7 +675,14 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 
 /* Nutritionist header on phones: brand + one Menú button; the links open as a panel (js/menu.js) */
 .plato-menu-btn { display: none; }
-@media (max-width: 40rem) {
+/* The nutritionist's name is its own block between the brand and the links; it never shares a row with them (comment, templates.html).
+   The links never wrap: with no room for the name it is hidden; with no room for the links they fold into the Menú button. */
+.plato-top-who { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 0.5rem 1rem; }
+.plato-top > .plato-menu-row { flex: none; flex-wrap: nowrap; white-space: nowrap; }
+@media (max-width: 63.99rem) { .plato-top-who { display: none; } }
+@media (min-width: 48rem) { .plato-top:has(> .plato-menu-btn) > .plato-brand { min-width: 0; flex: 0 1 auto; white-space: nowrap; overflow: hidden; }
+  .plato-top:has(> .plato-menu-btn) > .plato-brand small { min-width: 0; overflow: hidden; text-overflow: ellipsis; } }
+@media (max-width: 47.99rem) {
   .plato-top:has(> .plato-menu-btn) { flex-wrap: nowrap; }
   .plato-top > .plato-brand { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; max-width: 100%; }
   .plato-top > .plato-brand small { flex: 0 0 100%; padding-left: 2.25rem; margin-top: -0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
