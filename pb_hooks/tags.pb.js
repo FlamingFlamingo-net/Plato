@@ -2,7 +2,7 @@
 // Tags (spec "Feature: Ingredients, slice (a)" → "Tags"): what the collection rules cannot express.
 // - a tag name is trimmed, spaces collapsed; two names that differ only in capitals/accents are the same tag
 // - max 200 own tags; a name that a platform tag already has is refused (use the starter one)
-// - a link needs an existing item (an ingredient, or the nutritionist's OWN template) and a tag the nutritionist can see
+// - a link needs an existing item (an ingredient, or the nutritionist's OWN template or dish) and a tag the nutritionist can see
 // - deleting an ingredient or a template removes its links
 // (Hooks run in separate JS runtimes: helpers are inside each handler.)
 
@@ -34,9 +34,9 @@ onRecordCreateRequest((e) => {
   let found = null;
   try {
     found = kind === "ingredient" ? e.app.findRecordById("ingredients", item)
-      : e.app.findFirstRecordByFilter("diet_templates", "id = {:id} && nutritionist = {:me}", { id: item, me });
+      : e.app.findFirstRecordByFilter(kind === "dish" ? "dishes" : "diet_templates", "id = {:id} && nutritionist = {:me}", { id: item, me });
   } catch (_) { found = null; }
-  if (!found) throw new BadRequestError(kind === "ingredient" ? "Ese ingrediente no existe." : "Esa plantilla no existe.");
+  if (!found) throw new BadRequestError(kind === "ingredient" ? "Ese ingrediente no existe." : kind === "dish" ? "Esa receta no existe." : "Esa plantilla no existe.");
   let tag = null;
   try { tag = e.app.findRecordById("tags", r.getString("tag")); } catch (_) { tag = null; }
   if (!tag || (tag.getString("nutritionist") && tag.getString("nutritionist") !== me)) throw new BadRequestError("Esa etiqueta no existe.");
@@ -54,3 +54,9 @@ onRecordAfterDeleteSuccess((e) => {
   for (const l of rows) e.app.delete(l);
   e.next();
 }, "diet_templates");
+
+onRecordAfterDeleteSuccess((e) => {
+  const rows = e.app.findRecordsByFilter("item_tags", "kind = 'dish' && item = {:id}", "", 500, 0, { id: e.record.id });
+  for (const l of rows) e.app.delete(l);
+  e.next();
+}, "dishes");
