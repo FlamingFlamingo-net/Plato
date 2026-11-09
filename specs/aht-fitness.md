@@ -1661,3 +1661,67 @@ Not changing: wide-screen layouts, the patient app, the Nueva cita dialog (done,
 **Checks:** a random 12 foods matched a fresh independent download from USDA exactly; `tools/ingapi_check.mjs` 36, `tools/ingredients_check.mjs` 48; the offline `fdc_fetch.py check` passes.
 *(Changes during build: USDA refuses searches containing `( ) % " /` so the tool strips them; Foundation foods report energy and fibre under other nutrient numbers (957/958, 293), handled; the first full run showed oysters/scallops/orange juice names differ in SR Legacy, wishlist corrected, orange juice left out.)*
 **Live load:** pending the temporary-admin approval; only counts are reported. The API key stays out of the repo; regenerating it is a backlog card.
+
+## Feature: Recetas (dishes), slice (b) — builder first (b1 BUILT v36; b2 import approved, not built)
+
+**Context (owner, 2026-11-07: "slice b"):** ingredients are live (USDA, 420 foods). Slice (b) of "Feature: Food catalogue and import" = the nutritionist's **dishes** (client's word: **Recetas**; spec word: platillo), built from ingredients, with the nutrition **computed by AHT Fitness**. Diets using dishes and anything the patient sees are slice (c).
+
+### Split into two builds
+- **b1 (this plan): build, list, search, tag, archive.** A form to make a dish by hand. Nothing else.
+- **b2 (later, own plan):** import from a `plato-import` JSON (paste / upload, check-first preview, all-or-nothing) as already specced above.
+
+### What the nutritionist gets (b1)
+- **Catálogo → Recetas** (the locked tile opens, with its count), page `dishes.html`, same look as Ingredientes and Dietas: tabs **Activas | Archivadas** with counts, **Ordenar** (name, newest, calories), search, tag chips, a card per dish (name, "1 taco", kcal / P / G / C per serving, tags).
+- **Nueva receta** (a dialog or a page; decided when building, must fit a 320 px phone): name; **serving unit** (taco, pieza, taza, porción, plato…) and a switch **"Se sirve por piezas"** (a diet can say × 3 later); optional notes (how it is made, up to 1,000 characters); **ingredients**: search the ingredient list, pick one, give an **amount** in **g**, **ml** (only when the ingredient has a density) or **a household portion that ingredient has** (e.g. "2 large" for an egg, "1 cup" for beans), remove a line, up to 40 lines.
+- **Live totals while building:** per serving: kcal, protein, fat, carbohydrates, fibre, with a line under each ingredient (its grams and kcal). Rounded for display, exact kept.
+- **Edit, duplicate ("Duplicar"), archive / restore, delete** (delete asks first). Archived dishes leave pickers and searches (catalogue rule). Tags on dishes use the same mechanism as ingredients and diet templates, **not inherited** from ingredients (decision of 2026-11-06).
+- Private to each nutritionist (decision 2 of the catalogue). Patients: no access in (b).
+
+### How the numbers work (the part that must be right)
+- Per ingredient line: `grams = amount` (g), or `ml × density`, or `amount × portion grams` (from that ingredient's `portions`). Nutrition = `grams / 100 × the ingredient's per-100 g value`. The dish total is the sum of the lines. A dish is entered **per serving**; "× 3" is a multiplication later, never a new dish.
+- **Raw vs cooked is the nutritionist's choice of ingredient row** (USDA has "rice, raw" and "rice, cooked" as separate foods). No conversion is invented.
+- A line whose ingredient lacks a needed field (ml without density, a portion that no longer exists) is refused with a plain message; never guessed.
+- **Computed on the server too:** a hook recalculates and stores `nutrition` (per serving) and `computed_at` on every save, because later a patient must be able to read a dish's numbers without reading the ingredient table. The screen computes the same live; a test proves the two agree on every example.
+- **When the ingredient data changes** (a dataset is replaced): ingredients keep their id (matched by FDC id), so dishes keep working; a hook on ingredient updates recalculates the dishes that use them and marks them **"Valores actualizados el …"** (decision 6). If an ingredient is deleted, the dish keeps its last numbers and shows **"Falta un ingrediente"** on that line; nothing breaks.
+
+### Data
+- **`dishes`**: `nutritionist`, `name` (unique per nutritionist), `serving_unit`, `multi_serving` (bool), `notes`, `items` (JSON, up to 40: `{ ingredient: id, name: snapshot, amount, unit }` where unit is `g`, `ml`, or a portion label), `nutrition` (JSON, per serving: kcal, protein_g, fat_g, carbs_g, fiber_g), `computed_at`, `values_updated_at`, `archived_at`. Rules: owner-only, like `diet_templates`.
+- Tag links get the kind `dish` (the migration adds the value).
+- Hooks: validate and recompute (above); archive time is the server's (same as templates).
+
+### Choices I propose (owner can change any)
+1. **Meals ("Comidas": dishes × servings) are not a separate saved list in (b).** The client's Catálogo has Recetas and Planes de comidas (a whole day), no "meals" list. In slice (c) a diet slot holds dishes with servings directly ("Taco × 3"). A saved combination can come later if asked for.
+2. **No photos or preparation steps on dishes yet** (notes only). Listed under "Later".
+3. **No global sharing of dishes yet** (decision 2 said "to spec later").
+4. **Dish names are free text**, Spanish or English as the nutritionist likes (only the ingredient names are English for now).
+
+### Acceptance (b1)
+1. Make "Taco de lomo" with 1 corn tortilla (portion "tortilla"), 50 g pork loin, 10 g cilantro: the totals equal the hand calculation from the ingredient numbers (checked in the test with exact values), per serving "1 taco".
+2. "2 large" eggs uses the egg's 50 g portion, so 100 g. 1 cup of black beans = 172 g. ml for oil uses its density; an ingredient with no density cannot be given in ml (message).
+3. Editing an amount updates the totals live and on save; the stored numbers equal the screen's.
+4. Duplicate makes "… (copia)"; a repeated name is refused; archive / restore / delete work; an archived dish leaves the Activas tab and returns on restore.
+5. A tag on a dish is its own: the tagged ingredient's tags do not appear on the dish and the reverse.
+6. Replace the ingredient dataset with a changed value: the dish's totals change and it shows "Valores actualizados". Delete an ingredient: the dish keeps its numbers and flags the line.
+7. Another nutritionist cannot see, tag or open my dishes (API); a patient cannot.
+8. Phone 320 / 360 / 390 px: the list, the builder and the ingredient picker fit; the save button is always in view.
+9. Search finds a dish by name; tag chips narrow the list; sorting by calories works.
+
+### Commit plan
+1. **Server:** migration (`dishes`, tag kind `dish`), hooks (validate, compute, recalc on ingredient change), API checks including the hand-computed examples.
+2. **Screens:** `dishes.html`, builder, list, tags, Catálogo tile (count), SW bump, `dishes_check.mjs`.
+3. **Spec.** Deploy after each app-changing commit as before; nothing is shown to patients.
+
+### Risks
+- **Wrong numbers hurt people.** Mitigation: the totals are plain sums of the stored per-100 g values, tested against hand calculations; the screen and the server must agree; every number traces to its source (USDA SR Legacy) through the ingredient.
+- **Raw vs cooked confusion.** Mitigation: the ingredient picker shows the state (crudo / cocido); no hidden conversion.
+- **Recalculation surprises.** Mitigation: the "Valores actualizados el …" note; recalculation only when the ingredient numbers really change.
+- **Big dish lists:** fine at hundreds; sorting and search stay in the browser like the other lists.
+
+### Later (not in b1)
+Import (b2); meals as saved combinations; photos and preparation steps; copy a dish to the global catalogue; per-serving targets; shopping list.
+
+### Preparing for the natural-language skill (owner, 2026-11-07: approved; "A")
+The idea: a skill lets a nutritionist describe dishes in plain language and produces the import file (b2) from the platform's own ingredient data. **Who runs it: A** = the nutritionist, in their own AI chat; they paste the instructions and the ingredient JSON, get a JSON file back and paste it into the app (catalogue decision 5). Shaped so a later "C" (the skill sends the JSON to our check route with the nutritionist's own sign-in) is possible; "B" (the app calls an AI itself) is its own plan and is not part of this.
+- **In b1:** (1) each stored dish line keeps the ingredient's `fdc_id` next to the record id, so lines are stable across data reloads; (2) `docs/plato-import.schema.json`, a JSON Schema of the import file (units, limits: up to 40 ingredient lines per dish, up to 50 dishes per file); (3) golden examples in `data/import-examples/` (a plain-language request beside the exact JSON it should give) that become the skill's test set; (4) an **agent export** of the ingredient list as JSON ("Descargar lista para IA" on Ingredientes): `fdc_id`, name, state, exact portion labels, whether a density exists, tags, plus the data set name, version and date so a skill can tell a stale copy.
+- **Rules for the skill:** reference ingredients by `fdc_id`; prefer grams, use a household portion only when the request says so ("2 huevos") with the label copied exactly from the export; never write nutrition numbers (they are ignored: the app computes them).
+- **In b2:** a server **check route** that takes the import JSON and returns a structured report (per problem a code, the path inside the file, a plain message, suggestions). The preview screen and any later skill use the same route (one set of rules). Saving stays all-or-nothing and only after a person has seen the preview. A name clash offers replace / save as copy / skip. A short instruction file for the skill ships with b2.
