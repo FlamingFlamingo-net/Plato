@@ -1,3 +1,4 @@
 pb_data/
 seed/
 tools/__pycache__/
+.fdc-cache/

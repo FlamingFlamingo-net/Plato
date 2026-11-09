@@ -1,0 +1,440 @@
+[
+ {
+  "fdcId": 173735,
+  "dataType": "SR Legacy",
+  "description": "Beans, black, mature seeds, cooked, boiled, without salt",
+  "foodNutrients": [
+   {
+    "nutrient": {
+     "number": "208"
+    },
+    "amount": 132.0
+   },
+   {
+    "nutrient": {
+     "number": "203"
+    },
+    "amount": 8.86
+   },
+   {
+    "nutrient": {
+     "number": "204"
+    },
+    "amount": 0.54
+   },
+   {
+    "nutrient": {
+     "number": "205"
+    },
+    "amount": 23.71
+   },
+   {
+    "nutrient": {
+     "number": "291"
+    },
+    "amount": 8.7
+   },
+   {
+    "nutrient": {
+     "number": "269"
+    },
+    "amount": 0.32
+   },
+   {
+    "nutrient": {
+     "number": "301"
+    },
+    "amount": 27.0
+   },
+   {
+    "nutrient": {
+     "number": "303"
+    },
+    "amount": 2.1
+   },
+   {
+    "nutrient": {
+     "number": "306"
+    },
+    "amount": 355.0
+   },
+   {
+    "nutrient": {
+     "number": "307"
+    },
+    "amount": 1.0
+   },
+   {
+    "nutrient": {
+     "number": "606"
+    },
+    "amount": 0.139
+   },
+   {
+    "nutrient": {
+     "number": "601"
+    },
+    "amount": 0.0
+   }
+  ],
+  "foodPortions": [
+   {
+    "gramWeight": 172.0,
+    "amount": 1.0,
+    "modifier": "cup",
+    "sequenceNumber": 1,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   }
+  ]
+ },
+ {
+  "fdcId": 748967,
+  "dataType": "Foundation",
+  "description": "Eggs, Grade A, Large, egg whole",
+  "foodNutrients": [
+   {
+    "nutrient": {
+     "number": "208"
+    },
+    "amount": 148.0
+   },
+   {
+    "nutrient": {
+     "number": "203"
+    },
+    "amount": 12.4
+   },
+   {
+    "nutrient": {
+     "number": "204"
+    },
+    "amount": 9.96
+   },
+   {
+    "nutrient": {
+     "number": "205"
+    },
+    "amount": 0.96
+   },
+   {
+    "nutrient": {
+     "number": "291"
+    },
+    "amount": 0.0
+   },
+   {
+    "nutrient": {
+     "number": "301"
+    },
+    "amount": 48.0
+   },
+   {
+    "nutrient": {
+     "number": "303"
+    },
+    "amount": 1.67
+   },
+   {
+    "nutrient": {
+     "number": "306"
+    },
+    "amount": 132.0
+   },
+   {
+    "nutrient": {
+     "number": "307"
+    },
+    "amount": 129.0
+   },
+   {
+    "nutrient": {
+     "number": "606"
+    },
+    "amount": 3.2
+   },
+   {
+    "nutrient": {
+     "number": "601"
+    },
+    "amount": 411.0
+   }
+  ],
+  "foodPortions": [
+   {
+    "gramWeight": 50.3,
+    "amount": 1.0,
+    "modifier": "whole without shell",
+    "sequenceNumber": 1,
+    "measureUnit": {
+     "id": 1099,
+     "name": "egg",
+     "abbreviation": "egg"
+    }
+   },
+   {
+    "gramWeight": 50.0,
+    "amount": 1.0,
+    "modifier": null,
+    "sequenceNumber": 1,
+    "measureUnit": {
+     "id": 1121,
+     "name": "RACC",
+     "abbreviation": "RACC"
+    }
+   }
+  ]
+ },
+ {
+  "fdcId": 173944,
+  "dataType": "SR Legacy",
+  "description": "Bananas, raw",
+  "foodNutrients": [
+   {
+    "nutrient": {
+     "number": "208"
+    },
+    "amount": 89.0
+   },
+   {
+    "nutrient": {
+     "number": "203"
+    },
+    "amount": 1.09
+   },
+   {
+    "nutrient": {
+     "number": "204"
+    },
+    "amount": 0.33
+   },
+   {
+    "nutrient": {
+     "number": "205"
+    },
+    "amount": 22.84
+   },
+   {
+    "nutrient": {
+     "number": "291"
+    },
+    "amount": 2.6
+   },
+   {
+    "nutrient": {
+     "number": "269"
+    },
+    "amount": 12.23
+   },
+   {
+    "nutrient": {
+     "number": "301"
+    },
+    "amount": 5.0
+   },
+   {
+    "nutrient": {
+     "number": "303"
+    },
+    "amount": 0.26
+   },
+   {
+    "nutrient": {
+     "number": "306"
+    },
+    "amount": 358.0
+   },
+   {
+    "nutrient": {
+     "number": "307"
+    },
+    "amount": 1.0
+   },
+   {
+    "nutrient": {
+     "number": "606"
+    },
+    "amount": 0.112
+   },
+   {
+    "nutrient": {
+     "number": "601"
+    },
+    "amount": 0.0
+   }
+  ],
+  "foodPortions": [
+   {
+    "gramWeight": 126.0,
+    "amount": 1.0,
+    "modifier": "NLEA serving",
+    "sequenceNumber": 8,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 152.0,
+    "amount": 1.0,
+    "modifier": "extra large (9\" or longer)",
+    "sequenceNumber": 7,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 136.0,
+    "amount": 1.0,
+    "modifier": "large (8\" to 8-7/8\" long)",
+    "sequenceNumber": 6,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 150.0,
+    "amount": 1.0,
+    "modifier": "cup, sliced",
+    "sequenceNumber": 2,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 101.0,
+    "amount": 1.0,
+    "modifier": "small (6\" to 6-7/8\" long)",
+    "sequenceNumber": 4,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 81.0,
+    "amount": 1.0,
+    "modifier": "extra small (less than 6\" long)",
+    "sequenceNumber": 3,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 118.0,
+    "amount": 1.0,
+    "modifier": "medium (7\" to 7-7/8\" long)",
+    "sequenceNumber": 5,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   },
+   {
+    "gramWeight": 225.0,
+    "amount": 1.0,
+    "modifier": "cup, mashed",
+    "sequenceNumber": 1,
+    "measureUnit": {
+     "id": 9999,
+     "name": "undetermined",
+     "abbreviation": "undetermined"
+    }
+   }
+  ]
+ },
+ {
+  "fdcId": 2644285,
+  "dataType": "Foundation",
+  "description": "Beans, black, canned, sodium added, drained and rinsed",
+  "foodNutrients": [
+   {
+    "nutrient": {
+     "number": "957"
+    },
+    "amount": 118.361
+   },
+   {
+    "nutrient": {
+     "number": "958"
+    },
+    "amount": 115.28233
+   },
+   {
+    "nutrient": {
+     "number": "203"
+    },
+    "amount": 6.9125
+   },
+   {
+    "nutrient": {
+     "number": "204"
+    },
+    "amount": 1.273
+   },
+   {
+    "nutrient": {
+     "number": "205"
+    },
+    "amount": 19.8135
+   },
+   {
+    "nutrient": {
+     "number": "293"
+    },
+    "amount": 6.688
+   },
+   {
+    "nutrient": {
+     "number": "301"
+    },
+    "amount": 43.31
+   },
+   {
+    "nutrient": {
+     "number": "303"
+    },
+    "amount": 1.688
+   },
+   {
+    "nutrient": {
+     "number": "306"
+    },
+    "amount": 253.1
+   },
+   {
+    "nutrient": {
+     "number": "307"
+    },
+    "amount": 217.9
+   }
+  ],
+  "foodPortions": [
+   {
+    "gramWeight": 130.0,
+    "amount": 1.0,
+    "modifier": null,
+    "sequenceNumber": 1,
+    "measureUnit": {
+     "id": 1121,
+     "name": "RACC",
+     "abbreviation": "RACC"
+    }
+   }
+  ]
+ }
+]
