@@ -59,10 +59,14 @@ if args.remove_dataset:
     print(f"Dataset '{ds}': {len(ings)} ingredients, {len(tags)} platform tags. " + ("Deleting..." if args.apply else "DRY RUN (add --apply to delete)."))
     if args.apply:
         for r in ings:
-            call("DELETE", f"/api/collections/ingredients/records/{r['id']}")
-        for r in tags:
-            call("DELETE", f"/api/collections/tags/records/{r['id']}")
-        print("Done. Nutritionists' own tags are untouched.")
+            call("DELETE", f"/api/collections/ingredients/records/{r['id']}")   # the server drops the links on them
+        kept = 0
+        for r in tags:   # a starter tag another dataset still uses stays
+            if call("GET", f"/api/collections/item_tags/records?perPage=1&fields=id&filter={urllib.parse.quote('tag = ' + chr(34) + r['id'] + chr(34))}")["totalItems"]:
+                kept += 1
+            else:
+                call("DELETE", f"/api/collections/tags/records/{r['id']}")
+        print(f"Done. {kept} starter tags stay because another dataset still uses them. Nutritionists' own tags are untouched.")
     sys.exit(0)
 
 if not args.csv:
@@ -71,7 +75,7 @@ cols = {k: v for k, v in json.loads(Path(args.columns).read_text(encoding="utf-8
 text = Path(args.csv).read_text(encoding="utf-8-sig")
 reader = csv.DictReader(io.StringIO(text))
 headers = reader.fieldnames or []
-errors, warnings, rows, seen = [], [], [], {}
+errors, warnings, rows, seen, seen_fdc = [], [], [], {}, {}
 for k in ["name", "state", "kcal", "protein_g", "fat_g", "carbs_g", "fiber_g"]:
     if cols.get(k) not in headers:
         errors.append(f"Missing column for '{k}' (looked for '{cols.get(k)}').")
@@ -132,6 +136,25 @@ for i, row in enumerate(reader, start=2):
             groups.append({"group": g.strip(), "portion_g": float(pg)})
         except ValueError:
             errors.append(f"Line {i}: groups must look like 'Cereales:30;Carnes:60' (got {part!r}).")
+    fdc = 0
+    raw_fdc = ((row.get(cols["fdc_id"]) if "fdc_id" in cols else "") or "").strip()
+    if raw_fdc:
+        if not raw_fdc.isdigit():
+            errors.append(f"Line {i}: fdc_id must be a whole number (got {raw_fdc!r}).")
+        else:
+            fdc = int(raw_fdc)
+            if fdc in seen_fdc:
+                errors.append(f"Line {i}: fdc_id {fdc} is repeated (first on line {seen_fdc[fdc]}).")
+            seen_fdc[fdc] = i
+    portions = []
+    for part in [x for x in (((row.get(cols["portions"]) if "portions" in cols else "") or "").split(";")) if x.strip()]:
+        lab, _, g = part.rpartition(":")
+        try:
+            if not lab.strip() or float(g) <= 0:
+                raise ValueError
+            portions.append({"label": lab.strip(), "grams": float(g)})
+        except ValueError:
+            errors.append(f"Line {i}: portions must look like 'cup:172;large:50' (got {part!r}).")
     tags, tn = [], set()
     for t in [x.strip() for x in ((row.get(cols.get("tags", "tags")) or "").split(";")) if x.strip()]:
         if len(t) > 30:
@@ -140,7 +163,7 @@ for i, row in enumerate(reader, start=2):
             tn.add(norm(t))
             tags.append(t)
     rows.append(dict(name=name, state=state, kcal=kcal, protein_g=p, fat_g=f, carbs_g=c, fiber_g=fi, extra=extra or None,
-                     piece_g=piece or 0, density_g_ml=dens or 0, groups=groups or None, dataset=args.dataset,
+                     piece_g=piece or 0, density_g_ml=dens or 0, groups=groups or None, fdc_id=fdc, portions=portions or None, dataset=args.dataset,
                      source=args.source or ("EJEMPLO (inventado)" if args.dataset == "ejemplo" else args.dataset),
                      version=args.version or ("0" if args.dataset == "ejemplo" else ""), _tags=tags))
 
@@ -161,11 +184,16 @@ if not args.apply:
     sys.exit(0)
 
 ds = args.dataset
-old = {(r["name"].lower(), r["state"]): r for r in all_rows("ingredients", f'dataset = "{ds}"')}
+def ident(name, state, fdc):
+    return ("fdc", fdc) if fdc else (name.lower(), state)   # a USDA row keeps its identity (and its tag links) even if its name is edited
+
+
+old = {ident(r["name"], r["state"], r.get("fdc_id") or 0): r for r in all_rows("ingredients", f'dataset = "{ds}"')}
 ids, keep = {}, set()
-body_keys = ("name", "state", "kcal", "protein_g", "fat_g", "carbs_g", "fiber_g", "extra", "piece_g", "density_g_ml", "groups", "dataset", "source", "version")
+body_keys = ("name", "state", "kcal", "protein_g", "fat_g", "carbs_g", "fiber_g", "extra", "piece_g", "density_g_ml", "groups", "fdc_id", "portions", "dataset", "source", "version")
 for r in rows:
-    k = (r["name"].lower(), r["state"])
+    k = ident(r["name"], r["state"], r["fdc_id"])
+    r["_k"] = k
     keep.add(k)
     body = {x: r[x] for x in body_keys}
     if k in old:
@@ -175,20 +203,21 @@ for r in rows:
 gone = [v for k, v in old.items() if k not in keep]
 for v in gone:
     call("DELETE", f"/api/collections/ingredients/records/{v['id']}")
-oldtags = {norm(t["name"]): t for t in all_rows("tags", f'dataset = "{ds}" && nutritionist = ""')}
+oldtags = {norm(t["name"]): t for t in all_rows("tags", 'nutritionist = ""')}   # starter tags are shared by name across datasets
 tagid = {}
 for n, name in tag_names.items():
     tagid[n] = oldtags[n]["id"] if n in oldtags else call("POST", "/api/collections/tags/records", {"name": name, "dataset": ds, "nutritionist": ""})["id"]
-for n, t in oldtags.items():
-    if n not in tag_names:
-        call("DELETE", f"/api/collections/tags/records/{t['id']}")
-have_rows = all_rows("item_tags", f'nutritionist = "" && kind = "ingredient" && tag.dataset = "{ds}"')
+mine = set(ids.values())
+have_rows = [l for l in all_rows("item_tags", 'nutritionist = "" && kind = "ingredient"') if l["item"] in mine]
 have = {(l["tag"], l["item"]) for l in have_rows}
-want = {(tagid[norm(t)], ids[(r["name"].lower(), r["state"])]) for r in rows for t in r["_tags"]}
+want = {(tagid[norm(t)], ids[r["_k"]]) for r in rows for t in r["_tags"]}
 for tg, it in sorted(want - have):
     call("POST", "/api/collections/item_tags/records", {"tag": tg, "item": it, "kind": "ingredient", "nutritionist": ""})
 for l in have_rows:
     if (l["tag"], l["item"]) not in want:
         call("DELETE", f"/api/collections/item_tags/records/{l['id']}")
+for n, tg in oldtags.items():   # this dataset's own tags that no longer exist in the file and are used by nothing
+    if tg.get("dataset") == ds and n not in tag_names and not call("GET", f"/api/collections/item_tags/records?perPage=1&fields=id&filter={urllib.parse.quote('tag = ' + chr(34) + tg['id'] + chr(34))}")["totalItems"]:
+        call("DELETE", f"/api/collections/tags/records/{tg['id']}")
 updated = len([k for k in keep if k in old])
 print(f"LOADED: {len(rows)} ingredients ({len(rows) - updated} new, {updated} updated, {len(gone)} removed), {len(tag_names)} tags, {len(want)} tag links.")

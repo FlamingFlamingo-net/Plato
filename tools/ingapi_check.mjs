@@ -104,6 +104,41 @@ r = loader(['--csv', `${OUT}/ex2.csv`, '--apply']);
 const after = (await api(`/api/collections/ingredients/records/${arroz.id}`)).json;
 check('L3 loading an updated file changes the numbers but keeps the row and my tag links', r.code === 0 && after.kcal === 131 && (await api(`/api/collections/item_tags/records?filter=${encodeURIComponent(`tag = "${post.json.id}" && item = "${arroz.id}"`)}`)).json.totalItems === 1, r.out.slice(-200));
 
+// ---------- USDA fields: fdc_id and portions ----------
+const H = 'name,state,kcal,protein_g,fat_g,carbs_g,fiber_g,fdc_id,portions,tags';
+const NL = String.fromCharCode(10);
+const usda = (rows) => `${H}${NL}${rows.join(NL)}${NL}`;
+const U = (csv, extra = []) => { writeFileSync(`${OUT}/usda.csv`, csv); return loader(['--csv', `${OUT}/usda.csv`, '--dataset', 'usdatest', '--source', 'USDA FoodData Central, SR Legacy', '--version', '2018', ...extra]); };
+r = U(usda(['"Egg, whole, cooked",cocido,155,12.6,10.6,1.1,0,748967,large:50,alta en proteína', 'Bananas raw,crudo,89,1.1,0.3,22.8,2.6,173944,"NLEA serving:126;cup, sliced:150",']), ['--apply']);
+const egg = (await api(`/api/collections/ingredients/records?filter=${encodeURIComponent('dataset = "usdatest" && fdc_id = 748967')}`, { token: SU })).json.items[0];
+check('U1 a USDA row keeps its fdc_id, a list of household portions, the source and the version',
+  r.code === 0 && egg && egg.fdc_id === 748967 && egg.portions.length === 1 && egg.portions[0].label === 'large' && egg.source.startsWith('USDA') && egg.version === '2018', `${r.out.slice(-200)} ${JSON.stringify(egg)}`);
+const banana = (await api(`/api/collections/ingredients/records?filter=${encodeURIComponent('dataset = "usdatest" && fdc_id = 173944')}`, { token: SU })).json.items[0];
+check('U1 portions with a space or comma in the label are kept (cup, sliced = 150 g)', banana && banana.portions.length === 2 && banana.portions[1].label === 'cup, sliced' && banana.portions[1].grams === 150, JSON.stringify(banana?.portions));
+const ids0 = egg.id;
+await link(post.json.id, ids0);
+r = U(usda(['"Egg, whole, cooked (hard-boiled)",cocido,155,12.6,10.6,1.1,0,748967,large:50;tbsp:8.5,alta en proteína', 'Bananas raw,crudo,89,1.1,0.3,22.8,2.6,173944,"NLEA serving:126;cup, sliced:150",']), ['--apply']);
+const egg2 = (await api(`/api/collections/ingredients/records/${ids0}`, { token: SU }));
+check('U2 a food renamed in the file stays the SAME row (matched by fdc_id): new name, same id, new portions, my tag link kept',
+  r.code === 0 && egg2.status === 200 && egg2.json.name.endsWith('(hard-boiled)') && egg2.json.portions.length === 2 && (await count('item_tags', `item = "${ids0}" && nutritionist = "${NID}"`)) === 1, `${r.out.slice(-200)} ${egg2.status}`);
+const bad3 = [
+  usda(['A,crudo,1,1,1,1,1,111,,', 'B,crudo,1,1,1,1,1,111,,']),
+  usda(['A,crudo,1,1,1,1,1,abc,,']),
+  usda(['A,crudo,1,1,1,1,1,111,cup-172,']),
+  usda(['A,crudo,1,1,1,1,1,111,cup:0,']),
+];
+const outs = bad3.map((c) => U(c, ['--apply']));
+const lineOf = (o) => o.out.split(NL).find((l) => l.includes('Line')) || '';
+check('U3 a repeated fdc_id, a non-numeric fdc_id and a broken portion are each refused with the line number, nothing changes',
+  outs.every((o) => o.code === 1 && /Line [0-9]/.test(o.out)) && /fdc_id 111 is repeated/.test(outs[0].out) && /fdc_id must be a whole number/.test(outs[1].out) && /portions must look like/.test(outs[2].out) && /portions must look like/.test(outs[3].out) && (await count('ingredients', 'dataset = "usdatest"')) === 2, outs.map(lineOf).join(' | '));
+check('U4 the ejemplo set has no fdc_id and no portions (0 and empty)', (await api(`/api/collections/ingredients/records?perPage=5&filter=${encodeURIComponent('dataset = "ejemplo"')}`, { token: SU })).json.items.every((x) => x.fdc_id === 0 && (x.portions == null || x.portions === '')));
+const w2 = await api(`/api/collections/ingredients/records/${ids0}`, { method: 'PATCH', body: { fdc_id: 1, portions: [] } });
+check('U5 a nutritionist cannot change fdc_id or portions', [403, 404].includes(w2.status), w2.status);
+r = loader(['--remove-dataset', 'usdatest', '--apply']);
+check('U6 --remove-dataset usdatest removes its rows and the links on them', r.code === 0 && (await count('ingredients', 'dataset = "usdatest"')) === 0 && (await count('item_tags', `item = "${ids0}"`)) === 0, r.out);
+
+check('U6 a starter tag shared with another dataset (alta en proteína, also in ejemplo) is NOT deleted with usdatest', (await count('tags', 'nutritionist = "" && name = "alta en proteína"')) === 1 && (await count('item_tags', 'nutritionist = "" && tag.name = "alta en proteína"')) > 0);
+
 // cleanup rules
 const gone = await api(`/api/collections/ingredients/records/${huevo.id}`, { method: 'DELETE', token: SU });
 check('C1 deleting an ingredient (admin) removes the links on it', gone.status === 204 && (await count('item_tags', `item = "${huevo.id}"`)) === 0);
