@@ -61,8 +61,8 @@ async function load() {
     return;
   }
   listEl.replaceChildren(...templates.map((t) => {
-    const n = daysFilled(t.meals, snacksOf(t));
-    const preview = h('section', { class: 'plato-week-preview', hidden: true }, weekList(t.meals || {}, snacksOf(t))); // hidden = no empty gap
+    const n = daysFilled(t.meals, snacksOf(t), t.plan);
+    const preview = h('section', { class: 'plato-week-preview', hidden: true }, weekList(t.meals || {}, snacksOf(t), t.plan)); // hidden = no empty gap
     const toggle = h('button', {
       class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', 'aria-expanded': 'false',
       onclick: () => {

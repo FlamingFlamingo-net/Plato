@@ -800,3 +800,24 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-dish-line .is-bad { color: var(--destructive); }
 .plato-dish-totals { display: grid; gap: 0.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); padding: 0.6rem 0.75rem; font-variant-numeric: tabular-nums; }
 @media (max-width: 40rem) { .plato-dish-actions { justify-content: flex-start; } .plato-dish > header { flex-wrap: wrap; } }
+
+/* Dishes inside a diet (spec "Feature: Diets using dishes, slice (c)") */
+.plato-numbers-switch { display: flex; gap: 0.6rem; align-items: flex-start; }
+.plato-numbers-switch > span { display: grid; gap: 0.1rem; min-width: 0; }
+.plato-numbers-switch input.input { width: 1rem; max-width: 1rem; flex: none; margin-top: 0.2rem; }
+.plato-plan-slot { display: grid; gap: 0.4rem; margin-top: 0.4rem; min-width: 0; }
+.plato-plan-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.plato-plan-line { display: grid; gap: 0.3rem; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.45rem 0.6rem; min-width: 0; background: var(--card); }
+.plato-plan-line.is-gone { border-style: dashed; }
+.plato-plan-name { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: center; overflow-wrap: anywhere; }
+.plato-plan-changed { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+.plato-plan-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.plato-plan-ctl .input { width: 5rem; min-width: 0; }
+.plato-plan-ctl .input[aria-invalid="true"] { border-color: var(--destructive); }
+.plato-plan-kcal { font-variant-numeric: tabular-nums; color: var(--muted-foreground); font-size: 0.875rem; }
+.plato-plan-slot > .btn { justify-self: start; }
+.plato-plan-panel { display: grid; gap: 0.4rem; min-width: 0; }
+.plato-plan-panel .input { width: 100%; box-sizing: border-box; }
+.plato-plan-totals { display: grid; gap: 0.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); padding: 0.6rem 0.75rem; font-variant-numeric: tabular-nums; margin-top: 0.5rem; }
+.week-dish { font-weight: 600; }
+.week-text + .week-dish, .week-dish + .week-text { margin-top: 0.1rem; }

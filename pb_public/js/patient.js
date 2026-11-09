@@ -7,6 +7,9 @@ import { sortItems } from './list-tabs.js';
 import { h, icon, toast, formError, busy, offlineBanner, wireTabs, age, isMinor, longDate, shortDate, timeOf, num } from './ui.js';
 import { activitySummary } from './activity.js';
 import { weekList, cleanMeals, daysFilled } from './week.js';
+import { createPlanEditor } from './plan-editor.js';
+import { listAll } from './tags.js';
+import { slotLines } from './plan-math.js';
 import { POSE_LABEL } from './progress-photos.js';
 import { feedbackEl, hasFeedback } from './feedback.js';
 import { feedbackControls } from './feedback-dialog.js';
@@ -143,7 +146,8 @@ let day = 1;
 let dirty = false;
 
 const dayMeals = (d) => (meals[d] ||= {});
-const filledSlots = (d) => slotsFor(snacks).filter(([k]) => (meals[d]?.[k] || '').trim()).length;
+const filledSlots = (d) => slotsFor(snacks).filter(([k]) => (meals[d]?.[k] || '').trim() || slotLines(planEd?.plan, d, k).length).length;
+let planEd = null;   // dishes inside the meals (plan-editor.js), made when the diet tab loads
 
 // "Colaciones al día: 0 1 2 3 4". Fewer hides rows; their text stays and comes back.
 const SNACK_HINT = ['Solo desayuno, comida y cena.', 'Colación de la tarde.', 'Mañana y tarde.', 'Mañana, tarde y nocturna.', 'Previa al desayuno, mañana, tarde y nocturna.'];
@@ -176,6 +180,17 @@ function renderDays() {
 
 function renderMeals() {
   document.getElementById('day-title').textContent = WEEKDAYS[day - 1];
+  const shown = slotsFor(snacks).map(([k]) => k);
+  const totalsWrap = h('div', { id: 'plan-totals-wrap' });
+  const paintTotals = () => { const el = planEd?.totalsEl(day, meals, shown); totalsWrap.replaceChildren(...(el ? [el] : [])); };
+  const paintStale = () => {
+    const ids = planEd ? planEd.stale() : [], box = document.getElementById('plan-stale');
+    box.hidden = !ids.length || closed;
+    if (box.hidden) return;
+    box.replaceChildren(h('span', { text: `${ids.length === 1 ? 'Una receta cambió' : `${ids.length} recetas cambiaron`} desde que guardaste esta dieta. Tus pacientes siguen viendo los valores guardados. ` }),
+      h('button', { class: 'btn', 'data-variant': 'outline', 'data-size': 'sm', type: 'button', id: 'plan-refresh-all', onclick: () => { planEd.refreshIds(ids); setDirty(true); renderMeals(); } }, 'Actualizar todas'));
+  };
+  if (planEd) planEd.onChange = (_d, _k, structural) => { setDirty(true); renderDays(); paintTotals(); if (structural) paintStale(); };
   mealFields.replaceChildren(...slotsFor(snacks).map(([key, label]) => {
     const fid = `meal-${key}`;
     const ta = h('textarea', { class: 'textarea', id: fid, rows: 2, maxlength: 600, placeholder: key.startsWith('snack') ? 'Ej. 1 manzana y 10 almendras' : 'Ej. 2 huevos a la mexicana, 2 tortillas, 1 taza de papaya' });
@@ -185,18 +200,23 @@ function renderMeals() {
       dayMeals(day)[key] = ta.value;
       setDirty(true);
       renderDays();
+      paintTotals();
     });
     return h('div', { class: 'plato-meal-field' },
       h('label', { for: fid }, h('span', { class: 'plato-swatch', style: `--swatch: var(--slot-${key})`, 'aria-hidden': 'true' }), label),
-      ta);
-  }));
+      ta, planEd ? planEd.slotEl(day, key, label) : null);
+  }), totalsWrap);
+  paintTotals();
+  paintStale();
 }
 
 document.getElementById('copy-day').addEventListener('click', () => {
   if (!confirm(`¿Copiar las comidas del ${WEEKDAYS[day - 1].toLowerCase()} a todos los días? Reemplaza lo que haya.`)) return;
   for (let d = 1; d <= 7; d++) if (d !== day) meals[d] = { ...dayMeals(day) };
+  planEd?.copyDay(day);
   setDirty(true);
   renderDays();
+  renderMeals();
   toast('Copiado a toda la semana. Falta guardar.');
 });
 
@@ -205,12 +225,14 @@ dietForm.addEventListener('submit', async (e) => {
   formError(dietForm, '');
   // Trim and drop empty slots so the patient app only shows planned meals.
   const clean = cleanMeals(meals);
-  const body = { title: dietForm.title.value.trim(), meals: clean, snacks };
+  if (planEd?.hasBad()) { formError(dietForm, 'Revisa las porciones de las recetas: de 0.25 a 20, de cuarto en cuarto.'); return; }
+  const body = { title: dietForm.title.value.trim(), meals: clean, snacks, plan: planEd ? planEd.clean() : {}, plan_refresh: planEd ? planEd.refreshList() : [] };
   try {
     diet = await busy(dietForm.querySelector('[type=submit]'), () =>
       diet ? update('diets', diet.id, body) : create('diets', { ...body, patient: patient.id }));
   } catch (err) { formError(dietForm, err.message); return; }
   meals = structuredClone(clean);
+  planEd?.load(diet.plan, diet.plan_calc);
   setDirty(false);
   renderDays();
   renderMeals();
@@ -270,7 +292,7 @@ const showConflict = (on) => { stConflict.hidden = !on; document.getElementById(
 stName.addEventListener('input', () => { showConflict(false); stExisting = null; });
 
 document.getElementById('save-template').addEventListener('click', () => {
-  if (!Object.keys(cleanMeals(meals)).length) { toast('La semana está vacía. Escribe al menos una comida.', 'error'); return; }
+  if (!Object.keys(cleanMeals(meals)).length && !Object.keys(planEd?.clean() || {}).length) { toast('La semana está vacía. Escribe al menos una comida.', 'error'); return; }
   stForm.reset();
   formError(stForm, '');
   showConflict(false);
@@ -283,7 +305,9 @@ document.getElementById('save-template').addEventListener('click', () => {
 
 async function saveTemplate(mode) {
   const title = stName.value.trim();
-  const body = { title, meals: cleanMeals(meals), snacks };
+  if (planEd?.hasGone()) throw new Error('Hay recetas borradas en la semana. Quítalas para guardar la plantilla.');
+  // a template is never patient-facing: it always takes today's dish values
+  const body = { title, meals: cleanMeals(meals), snacks, plan: planEd ? planEd.clean() : {}, plan_refresh: 'all' };
   if (mode === 'replace') return update('diet_templates', stExisting.id, { ...body, archived_at: '' });   // replacing an archived one restores it
   if (mode === 'copy') {
     const taken = new Set((await list('diet_templates', { fields: 'title', perPage: 500 })).map((t) => t.title));
@@ -352,10 +376,10 @@ document.getElementById('use-template').addEventListener('click', async () => {
   for (const t of utTemplates) {
     const input = h('input', { type: 'radio', name: 'ut-pick', value: t.id });
     input.addEventListener('change', () => {
-      utPreview.replaceChildren(weekList(t.meals || {}, snacksOf(t)));
+      utPreview.replaceChildren(weekList(t.meals || {}, snacksOf(t), t.plan));
       utUse.disabled = false;
     });
-    const n = daysFilled(t.meals, snacksOf(t));
+    const n = daysFilled(t.meals, snacksOf(t), t.plan);
     utList.append(h('label', { class: 'plato-template-option' }, input,
       h('span', { class: 'plato-stack-sm' },
         h('strong', { text: t.title }),
@@ -366,9 +390,10 @@ document.getElementById('use-template').addEventListener('click', async () => {
 utUse.addEventListener('click', () => {
   const t = utTemplates.find((x) => x.id === utList.querySelector('input:checked')?.value);
   if (!t) return;
-  const hasCurrent = !!diet || Object.keys(cleanMeals(meals)).length > 0;
+  const hasCurrent = !!diet || Object.keys(cleanMeals(meals)).length > 0 || Object.keys(planEd?.clean() || {}).length > 0;
   if (hasCurrent && !confirm(`¿Reemplazar la dieta actual de ${patient.name} con esta plantilla? Podrás revisarla antes de guardar.`)) return;
   meals = structuredClone(t.meals || {});
+  planEd?.adopt(t.plan, t.plan_calc);
   snacks = snacksOf(t);
   renderSnacks();
   dietForm.title.value = t.title;
@@ -380,8 +405,27 @@ utUse.addEventListener('click', () => {
   toast('Plantilla copiada. Revísala y toca “Guardar dieta”.');
 });
 
+// Whether the patient sees calories and macros (patients.show_numbers, off by default; the server only sends them when on).
+const numbersSwitch = document.getElementById('show-numbers');
+const paintNumbersHint = () => { document.getElementById('show-numbers-hint').textContent = numbersSwitch.checked ? 'Encendido: ve las calorías de cada comida y los totales del día.' : 'Apagado: solo ve las recetas y las porciones.'; };
+numbersSwitch.addEventListener('change', async () => {
+  const on = numbersSwitch.checked;
+  try { patient = await busy(numbersSwitch, () => update('patients', patient.id, { show_numbers: on })); } catch (err) { numbersSwitch.checked = !on; toast(err.message, 'error'); paintNumbersHint(); return; }
+  paintNumbersHint();
+  toast(on ? 'Tu paciente verá las calorías y los macros.' : 'Tu paciente ya no verá calorías ni macros.');
+});
+
 async function loadDiet() {
+  numbersSwitch.checked = !!patient.show_numbers;
+  numbersSwitch.disabled = closed;
+  paintNumbersHint();
   [diet] = await list('diets', { filter: `patient = ${pid}` });
+  if (!planEd) {
+    const dishes = await listAll('dishes').catch(() => []);
+    planEd = createPlanEditor({ dishes, closed, onChange: (...a) => planEd.onChange(...a) });
+    planEd.onChange = () => {};
+  }
+  planEd.load(diet?.plan, diet?.plan_calc);
   meals = structuredClone(diet?.meals || {});
   snacks = diet ? snacksOf(diet) : DEFAULT_SNACKS;
   renderSnacks();
