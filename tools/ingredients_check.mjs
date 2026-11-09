@@ -209,6 +209,43 @@ await step('P1', async () => {
   }
 });
 
+await step('U1', async () => {
+  // Real data: remove the made-up set, load the USDA file, and look at the page the way the client will.
+  const run = (args) => spawnSync('python', ['tools/load_ingredients.py', '--base', BASE, ...args], { env: { ...process.env, PB_SUPERUSER_TOKEN: SU, PYTHONIOENCODING: 'utf-8' }, encoding: 'utf-8' });
+  run(['--remove-dataset', 'ejemplo', '--apply']);
+  const r = run(['--csv', 'data/ingredients-usda.csv', '--dataset', 'usda-sr-legacy', '--source', 'USDA FoodData Central, SR Legacy', '--version', 'SR Legacy 2018', '--apply']);
+  const n = Number((r.stdout.match(/LOADED: (\d+)/) || [])[1]);
+  check('U1 the USDA file loads (400+ foods)', n >= 400, r.stdout + r.stderr);
+  const P = await open(1366, 900, '/ingredients.html');
+  await P.waitFor(`document.querySelectorAll('.plato-ing-table tbody tr').length > 10`, 20000);
+  const ui = await P.eval(`({ banner: !document.getElementById('sample-banner').hidden, src: document.getElementById('source-line').hidden ? '' : document.getElementById('source-line').textContent, status: document.getElementById('status').textContent })`);
+  check('U1 no "Datos de ejemplo" banner; the line "Fuente: USDA FoodData Central (SR Legacy)…" shows', !ui.banner && ui.src.startsWith('Fuente: USDA FoodData Central (SR Legacy)') && ui.src.includes('nombres están en inglés') && ui.status === `${n} ingredientes`, JSON.stringify(ui));
+  await P.fill('#ing-q', 'black beans, cooked');
+  await P.waitFor(`document.querySelector('.plato-ing-name')?.textContent === 'Black beans, cooked'`);
+  await P.click('.plato-ing-name');
+  const det = await P.text('.plato-ing-detail:not([hidden])');
+  check('U1 the row detail shows portions (cup = 172 g), sodium, source, version and the FDC id', det.includes('Porciones: cup = 172 g') && det.includes('sodium mg') && det.includes('USDA FoodData Central, SR Legacy') && det.includes('versión SR Legacy 2018') && det.includes('FDC 173735'), det);
+  await P.fill('#ing-q', 'pancake');
+  await P.waitFor(`document.querySelector('.plato-ing-name')?.textContent === 'Pancake'`);
+  await P.click('.plato-ing-name');
+  check('U1 pancake (no fibre value at USDA) shows fibre 0 and says so', (await P.text('.plato-ing-detail:not([hidden])')).includes('USDA no da este dato') && (await P.eval(`document.querySelector('.plato-ing-table tbody > tr td[data-label="Fibra (g)"]').textContent`)) === '0');
+  await P.fill('#ing-q', 'beans');
+  await P.waitFor(`document.querySelectorAll('.plato-ing-name').length >= 10`);
+  check('U1 searching in English finds beans; the Equivalentes tab says there is no data yet', true);
+  await P.click('#tab-equivalentes');
+  await P.waitFor(`document.querySelector('.plato-empty-state')`);
+  check('U1 Equivalentes: "Aún no hay equivalentes" (no exchange data in USDA)', (await P.text('.plato-empty-state')).includes('Aún no hay equivalentes'));
+  await P.goto(`${BASE}/home.html?tab=catalog`);
+  await P.waitFor(`document.querySelector('a.plato-catalog-card[href="/ingredients.html"]')`, 15000);
+  const tile = await P.text('a.plato-catalog-card[href="/ingredients.html"]');
+  check('U1 the Catálogo tile counts the foods and no longer says "de ejemplo"', tile.includes(`${n} ingredientes`) && !tile.includes('de ejemplo'), tile);
+  const ph = await open(320, 700, '/ingredients.html', true);
+  await ph.waitFor(`document.querySelectorAll('.plato-ing-table tbody tr').length > 10`, 20000);
+  await sleep(400);
+  check('U1 320px: the source line fits, no sideways scroll', await ph.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= 321 && document.getElementById('source-line').getBoundingClientRect().right <= innerWidth`));
+  await ph.screenshot(`${OUT}/usda-320.png`);
+});
+
 console.log('ALL ERRORS:', JSON.stringify(D.errors.slice(0, 6)));
 const errs = D.errors.filter((e) => !/\b40[034]\b|Failed to load resource/.test(e)).join(' | ');
 check('no console errors', !errs, errs);

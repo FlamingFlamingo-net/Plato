@@ -32,6 +32,13 @@ try {
 } catch (e) { statusEl.textContent = e.message; throw e; }
 const sample = rows.some((r) => r.dataset === 'ejemplo');
 document.getElementById('sample-banner').hidden = !sample;
+// Where the real numbers come from (spec "Plan: USDA FoodData Central"): shown whenever USDA rows are present.
+const fromUsda = rows.some((r) => String(r.dataset).startsWith('usda'));
+const srcLine = document.getElementById('source-line');
+if (fromUsda) {
+  srcLine.textContent = 'Fuente: USDA FoodData Central (SR Legacy). Valores promedio por 100 g, no de una marca. Los nombres están en inglés por ahora.';
+  srcLine.hidden = false;
+}
 const tagById = () => Object.fromEntries(tags.map((t) => [t.id, t]));
 const withGroups = rows.filter((r) => Array.isArray(r.groups) && r.groups.length);
 
@@ -74,10 +81,12 @@ await refreshCounts();
 const detailText = (r) => {
   const bits = [];
   if (r.piece_g) bits.push(`1 pieza ≈ ${num(r.piece_g, 0)} g`);
+  if (r.portions?.length) bits.push(`Porciones: ${r.portions.map((p) => `${p.label} = ${num(p.grams, 1)} g`).join(' · ')}`);
   if (r.density_g_ml) bits.push(`Densidad ${num(r.density_g_ml, 2)} g/ml`);
-  for (const [k, v] of Object.entries(r.extra || {})) bits.push(`${k.replace(/_/g, ' ')}: ${num(v, 1)}`);
+  if (r.extra?.fiber_assumed_zero) bits.push('Fibra: USDA no da este dato; se muestra 0.');
+  for (const [k, v] of Object.entries(r.extra || {})) if (k !== 'fiber_assumed_zero') bits.push(`${k.replace(/_/g, ' ')}: ${num(v, 1)}`);
   if (r.groups?.length) bits.push(`Equivalentes: ${r.groups.map((g) => `${g.group} (${num(g.portion_g, 0)} g)`).join(', ')}`);
-  bits.push(`Fuente: ${r.source || '—'}${r.version ? ` · versión ${r.version}` : ''}`);
+  bits.push(`Fuente: ${r.source || '—'}${r.version ? ` · versión ${r.version}` : ''}${r.fdc_id ? ` · FDC ${r.fdc_id}` : ''}`);
   return bits;
 };
 
