@@ -169,6 +169,30 @@ check('C1 deleting my tag removes it from the dishes too', (await api(`/api/coll
 r = loader('', ['--remove-dataset', 'dishtest', '--apply']);
 check('C2 removing the test data set leaves dishes in place, all lines flagged "missing", numbers kept', r.code === 0 && (await api('/api/collections/dishes/records?perPage=50')).json.items.filter((d) => d.items.some((x) => x.missing)).length >= 3);
 
+// golden examples (docs/plato-import.schema.json, data/import-examples/): each must be valid against the real data and give the hand-made calories
+{
+  const csv = readFileSync('data/ingredients-usda.csv', 'utf8');
+  const lg = spawnSync('python', ['tools/load_ingredients.py', '--base', BASE, '--csv', 'data/ingredients-usda.csv', '--dataset', 'usda-sr-legacy', '--source', 'USDA', '--version', 'x', '--apply'], { env: { ...process.env, PB_SUPERUSER_TOKEN: SU, PYTHONIOENCODING: 'utf-8' }, encoding: 'utf-8' });
+  const byFdc = {};
+  for (const x of (await api('/api/collections/ingredients/records?perPage=500&filter=' + encodeURIComponent('dataset = "usda-sr-legacy"'))).json.items) byFdc[x.fdc_id] = x.id;
+  const { readdirSync } = await import('node:fs');
+  const schema = JSON.parse(readFileSync('docs/plato-import.schema.json', 'utf8'));
+  const files = readdirSync('data/import-examples').filter((f) => f.endsWith('.json'));
+  let allOk = files.length >= 3 && lg.status === 0, why = '';
+  for (const f of files) {
+    const ex = JSON.parse(readFileSync(`data/import-examples/${f}`, 'utf8'));
+    const doc = ex.expected, dish = doc.dishes[0];
+    const shapeOk = doc.format === 'plato-import' && doc.version === schema.properties.version.const && Object.keys(doc).every((k) => k in schema.properties)
+      && Object.keys(dish).every((k) => k in schema.$defs.dish.properties) && schema.$defs.dish.required.every((k) => k in dish)
+      && dish.ingredients.every((i) => Object.keys(i).every((k) => k in schema.$defs.dish.properties.ingredients.items.properties) && Number.isInteger(i.fdc_id) && i.amount > 0);
+    const made = await api('/api/collections/dishes/records', { method: 'POST', body: { nutritionist: NID, name: `ejemplo ${f}`, serving_unit: dish.serving_unit, multi_serving: !!dish.multi_serving, items: dish.ingredients.map((i) => ({ ingredient: byFdc[i.fdc_id], amount: i.amount, unit: i.unit })) } });
+    const good = shapeOk && made.status === 200 && Math.abs(made.json.nutrition.kcal - ex.expected_kcal_per_serving) < 0.01;
+    if (!good) { allOk = false; why += ` ${f}: shape=${shapeOk} status=${made.status} kcal=${made.json?.nutrition?.kcal} want=${ex.expected_kcal_per_serving} ${made.json?.message || ''}`; }
+  }
+  check('G1 the golden examples (docs/plato-import.schema.json + data/import-examples): each file fits the schema, its fdc_ids and portion labels exist in the real USDA data, and the app computes the hand-made kcal per serving', allOk, why);
+  check('G1 the schema asks for what the app limits: 50 dishes per file, 40 lines per dish, 120-character names', schema.properties.dishes.maxItems === 50 && schema.$defs.dish.properties.ingredients.maxItems === 40 && schema.$defs.dish.properties.name.maxLength === 120);
+}
+
 function sleep(ms) { return new Promise((res) => setTimeout(res, ms)); }
 const ok = results.filter(Boolean).length; console.log(`${ok}/${results.length} passed`);
 process.exit(ok === results.length ? 0 : 1);

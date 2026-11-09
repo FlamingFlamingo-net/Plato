@@ -64,7 +64,8 @@ search.addEventListener('input', () => { st.q = search.value; st.shown = 60; syn
 stateSel.addEventListener('change', () => { st.state = stateSel.value; st.shown = 60; sync(); render(); });
 sortSel.addEventListener('change', () => { st.sort = sortSel.value; sync(); render(); });
 const csvBtn = h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', onclick: downloadCsv }, icon('copy', 16), 'Descargar lista (CSV)');
-document.getElementById('ing-controls').replaceChildren(search, stateSel, sortSel, csvBtn);
+const aiBtn = h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', id: 'ing-ai', onclick: downloadForAi, title: 'Un archivo JSON con los ingredientes, para pegarlo en tu asistente de IA' }, icon('copy', 16), 'Lista para IA (JSON)');
+document.getElementById('ing-controls').replaceChildren(search, stateSel, sortSel, csvBtn, aiBtn);
 
 // ---------- tag chips (counts come from the server) ----------
 const tagBar = document.getElementById('tag-bar');
@@ -147,6 +148,28 @@ function downloadCsv() {
     ...extraKeys.map((k) => r.extra?.[k] ?? ''), (r.groups || []).map((g) => `${g.group}:${g.portion_g}`).join(';'), r.dataset, r.source, r.version].map(cell).join(',')));
   const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
   const a = h('a', { href: URL.createObjectURL(blob), download: 'ingredientes.csv' });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// The ingredient list for an AI assistant (spec "Preparing for the natural-language skill"): ids, exact portion labels, tags.
+async function downloadForAi() {
+  const links = await listAll('item_tags', { filter: 'kind = "ingredient"', fields: 'tag,item' }).catch(() => []);
+  const tagName = Object.fromEntries(tags.map((x) => [x.id, x.name]));
+  const byItem = new Map();
+  for (const l of links) { if (!tagName[l.tag]) continue; (byItem.get(l.item) || byItem.set(l.item, []).get(l.item)).push(tagName[l.tag]); }
+  const sets = [...new Map(rows.map((r) => [r.dataset, { dataset: r.dataset, source: r.source, version: r.version }])).values()];
+  const doc = {
+    format: 'plato-ingredients', version: 1, generated_at: new Date().toISOString(), datasets: sets,
+    how_to_use: 'Reference an ingredient by fdc_id. Prefer grams. Use a household portion only when the request names one (for example 2 eggs) and copy its label exactly from portions. Never write nutrition numbers: the app computes them.',
+    ingredients: [...rows].sort((a, b) => collator.compare(a.name, b.name)).map((r) => ({
+      fdc_id: r.fdc_id || null, id: r.id, name: r.name, state: r.state,
+      per_100g: { kcal: r.kcal, protein_g: r.protein_g, fat_g: r.fat_g, carbs_g: r.carbs_g, fiber_g: r.fiber_g },
+      portions: (r.portions || []).map((p) => p.label), has_density: r.density_g_ml > 0, tags: byItem.get(r.id) || [],
+    })),
+  };
+  const blob = new Blob([JSON.stringify(doc, null, 1)], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: 'ingredientes-para-ia.json' });
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }

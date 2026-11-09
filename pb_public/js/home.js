@@ -52,7 +52,7 @@ let unseen = { meal: [], activity: [], progress: [], mood: [] };
 let withDiet = new Set();
 let recentMeals = new Set();
 let behind = { meal: [], act: [] }; // last full week below the goal (spec "Weekly goals": grouped, never per-patient rows)
-let ingredientSample = false, ingredientCount = 0, templateCount = 0, templateArchived = 0, patientArchived = 0;
+let dishCount = 0, dishArchived = 0, ingredientSample = false, ingredientCount = 0, templateCount = 0, templateArchived = 0, patientArchived = 0;
 let upcoming = [];   // today's and tomorrow's appointments (not cancelled)
 let pools = null;      // per type: { items, cursor, done }
 let limit = PAGE;
@@ -96,7 +96,7 @@ async function loadAll() {
   const since = new Date(); since.setDate(since.getDate() - 2); // today and the 2 days before = "3 days"
   // Bare checks (no photo) are not counted as new: they would flood the counts (spec "Weekly goals", slice 1).
   const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : t === 'mood' ? MOOD_SHOWN : ''}`, fields: 'id,patient', perPage: 500 });
-  const [ps, diets, recent, um, ua, up, uo, tpls, archivedPatients, ingredientTotal, ingredientExample] = await Promise.all([
+  const [ps, diets, recent, um, ua, up, uo, tpls, archivedPatients, ingredientTotal, ingredientExample, dishTotal, dishOld] = await Promise.all([
     list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history', sort: 'name', perPage: 500 }),
     list('diets', { fields: 'patient,meals,snacks', perPage: 500 }),
     list('meal_logs', { filter: `date >= ${q(localDate(since))} && patient.archived_at = ""`, fields: 'patient', perPage: 500 }),
@@ -105,6 +105,8 @@ async function loadAll() {
     count('patients', 'archived_at != ""').catch(() => 0),
     count('ingredients').catch(() => 0),
     count('ingredients', 'dataset = "ejemplo"').catch(() => 0),
+    count('dishes', 'archived_at = ""').catch(() => 0),
+    count('dishes', 'archived_at != ""').catch(() => 0),
   ]);
   patients = ps;
   pmap = Object.fromEntries(ps.map((p) => [p.id, p]));
@@ -114,6 +116,7 @@ async function loadAll() {
   templateCount = tpls.filter((x) => !x.archived_at).length;
   templateArchived = tpls.length - templateCount;
   patientArchived = archivedPatients;
+  dishCount = dishTotal; dishArchived = dishOld;
   ingredientCount = ingredientTotal;
   ingredientSample = ingredientTotal > 0 && ingredientExample === ingredientTotal;
   try { upcoming = (await loadRange(todayKey(), addDays(todayKey(), 1))).filter((a) => !a.cancelled_at); } catch { upcoming = []; }
@@ -374,7 +377,7 @@ function catalogCards() {
   return [
     live('Pacientes', `${patients.length} ${patients.length === 1 ? 'activo' : 'activos'}${patientArchived ? ` · ${patientArchived} ${patientArchived === 1 ? 'archivado' : 'archivados'}` : ''}`, '/patients.html', 'user'),
     live('Ingredientes', `${ingredientCount} ${ingredientCount === 1 ? 'ingrediente' : 'ingredientes'}${ingredientSample ? ' · de ejemplo' : ''}`, '/ingredients.html', 'list'),
-    soon('Recetas', 'con el catálogo de alimentos', 'book'),
+    live('Recetas', `${dishCount} ${dishCount === 1 ? 'receta' : 'recetas'}${dishArchived ? ` · ${dishArchived} ${dishArchived === 1 ? 'archivada' : 'archivadas'}` : ''}`, '/dishes.html', 'book'),
     soon('Planes de comidas', 'un día de comidas, con el catálogo', 'clock'),
     live('Dietas', `${templateCount} ${templateCount === 1 ? 'plantilla semanal' : 'plantillas semanales'}${templateArchived ? ` · ${templateArchived} ${templateArchived === 1 ? 'archivada' : 'archivadas'}` : ''}`, '/templates.html', 'calendar'),
     soon('Cuestionarios', 'con los formularios de Google del cliente', 'message'),

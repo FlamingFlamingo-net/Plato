@@ -1,0 +1,28 @@
+{
+ "request": "Huevos con frijoles: 2 huevos duros y media taza de frijoles negros cocidos.",
+ "expected_kcal_per_serving": 268.52,
+ "expected": {
+  "format": "plato-import",
+  "version": 1,
+  "dishes": [
+   {
+    "name": "Huevos con frijoles",
+    "serving_unit": "plato",
+    "ingredients": [
+     {
+      "fdc_id": 173424,
+      "name": "Egg, hard-boiled",
+      "amount": 2,
+      "unit": "large"
+     },
+     {
+      "fdc_id": 173735,
+      "name": "Black beans, cooked",
+      "amount": 0.5,
+      "unit": "cup"
+     }
+    ]
+   }
+  ]
+ }
+}

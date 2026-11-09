@@ -1,0 +1,35 @@
+{
+ "request": "Taco de lomo: una tortilla de maíz, 50 g de lomo de cerdo asado y 10 g de cilantro. Se sirve por piezas.",
+ "expected_kcal_per_serving": 159.12,
+ "expected": {
+  "format": "plato-import",
+  "version": 1,
+  "dishes": [
+   {
+    "name": "Taco de lomo",
+    "serving_unit": "taco",
+    "multi_serving": true,
+    "ingredients": [
+     {
+      "fdc_id": 175036,
+      "name": "Corn tortilla",
+      "amount": 1,
+      "unit": "tortilla"
+     },
+     {
+      "fdc_id": 168233,
+      "name": "Pork loin, lean, roasted",
+      "amount": 50,
+      "unit": "g"
+     },
+     {
+      "fdc_id": 169997,
+      "name": "Cilantro, raw",
+      "amount": 10,
+      "unit": "g"
+     }
+    ]
+   }
+  ]
+ }
+}

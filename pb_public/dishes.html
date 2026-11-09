@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Recetas — AHT Fitness</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#2f7d52">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/vendor/basecoat-1.0.2/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="/css/theme.css?v=1">
+  <link rel="stylesheet" href="/css/app.css?v=1">
+  <script defer src="/js/install.js?v=1"></script>
+  <script type="module" src="/js/dishes.js?v=1"></script>
+  <script type="module" src="/js/menu.js?v=1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="plato-top">
+    <a class="plato-brand" href="/home.html"><img src="/icons/icon-192.png" alt="" width="28" height="28">AHT Fitness</a>
+    <span class="plato-muted plato-small plato-top-who" id="who"></span>
+    <div class="plato-row">
+      <a class="btn" data-variant="ghost" data-size="sm" href="/home.html">Inicio</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/agenda.html">Agenda</a>
+      <a class="btn plato-hide-sm" data-variant="ghost" data-size="sm" href="/templates.html">Plantillas</a>
+      <a class="btn" data-variant="ghost" data-size="sm" href="/settings.html">Ajustes</a>
+      <a class="btn plato-report-link" data-variant="ghost" data-size="sm" href="/report.html" title="Reportar un problema" aria-label="Reportar un problema"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.33 2q2 0 3.67-.67a1 1 0 0 1 1 .2V15a1 1 0 0 1-.4.8A6 6 0 0 1 16 17c-3 0-5-2-8-2a6 6 0 0 0-4 1.5"/></svg><span class="plato-hide-sm">Reportar</span></a>
+      <button class="btn" data-variant="ghost" data-size="sm" type="button" id="sign-out">Salir</button>
+    </div>
+  </header>
+
+  <main id="main" class="plato-main" style="max-width:64rem">
+    <a class="plato-back" href="/home.html?tab=catalog"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Catálogo</a>
+    <div class="plato-row plato-row--between" style="align-items:flex-end;flex-wrap:wrap;gap:0.75rem">
+      <div>
+        <h1 class="plato-page-title" style="margin-bottom:0.25rem">Recetas</h1>
+        <p class="plato-muted" style="margin:0">Platillos armados con tus ingredientes. Los valores se calculan por porción. Solo tú las ves.</p>
+      </div>
+      <button class="btn" type="button" id="new-dish"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nueva receta</button>
+    </div>
+    <p class="plato-muted plato-small" id="source-line" hidden style="margin:0.75rem 0 0"></p>
+    <div id="list-bar" style="margin-top:1rem"></div>
+    <div role="tabpanel" id="list-panel">
+      <div class="plato-ing-controls plato-dish-controls"><input class="input" type="search" id="dish-q" placeholder="Buscar receta" autocomplete="off" aria-label="Buscar recetas por nombre"></div>
+      <div class="plato-chips" id="tag-bar" hidden></div>
+      <p id="status" class="plato-muted" role="status">Cargando…</p>
+      <ul class="plato-dishes" id="list" aria-label="Tus recetas"></ul>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+ "request": "Avena con plátano: 1 taza de avena cocida con agua y 1 plátano mediano.",
+ "expected_kcal_per_serving": 271.16,
+ "expected": {
+  "format": "plato-import",
+  "version": 1,
+  "dishes": [
+   {
+    "name": "Avena con plátano",
+    "serving_unit": "tazón",
+    "ingredients": [
+     {
+      "fdc_id": 173905,
+      "name": "Oatmeal, cooked with water",
+      "amount": 1,
+      "unit": "cup"
+     },
+     {
+      "fdc_id": 173944,
+      "name": "Banana, raw",
+      "amount": 1,
+      "unit": "medium (7\" to 7-7/8\" long)"
+     }
+    ]
+   }
+  ]
+ }
+}

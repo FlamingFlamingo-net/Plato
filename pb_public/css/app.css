@@ -714,7 +714,7 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 }
 
 /* Ingredients + tags (spec "Feature: Ingredients, slice (a)") */
-.plato-ing-controls { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto; gap: 0.5rem; margin: 1rem 0 0.75rem; align-items: center; }
+.plato-ing-controls { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto auto; gap: 0.5rem; margin: 1rem 0 0.75rem; align-items: center; }
 .plato-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.75rem; }
 .plato-tags { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; margin-left: 0.4rem; vertical-align: middle; }
 .plato-ing-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -762,3 +762,41 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 
 /* Patient page, Mediciones table: scroll inside its box instead of widening the whole page on a 320 px phone */
 .table-wrap { position: relative; max-width: 100%; overflow-x: auto; }   /* relative: the table's visually-hidden header texts are absolutely placed and would otherwise escape the clip */
+
+/* Recetas / dishes (spec "Feature: Recetas (dishes), slice (b)") */
+.plato-dish-controls { grid-template-columns: minmax(0, 1fr); }
+.plato-dishes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.plato-dish h2 { margin: 0; font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; overflow-wrap: anywhere; }
+.plato-dish-stats { margin: 0.15rem 0 0; color: var(--muted-foreground); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.plato-tags-row { margin: 0.35rem 0 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.plato-tags-row .plato-tags { margin-left: 0; }
+.plato-dish-actions { flex-wrap: wrap; justify-content: flex-end; gap: 0.15rem; }
+.plato-dish-note { margin: 0.5rem 0 0; font-size: 0.85rem; color: oklch(0.42 0.1 60); background: oklch(0.96 0.05 85); border-radius: var(--radius); padding: 0.4rem 0.6rem; }
+.plato-dish-warn { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--destructive); border: 1px solid var(--destructive); border-radius: var(--radius); padding: 0.4rem 0.6rem; }
+.plato-dish-lines ul { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.2rem; }
+.plato-dish-lines li { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dashed var(--border); padding: 0.2rem 0; overflow-wrap: anywhere; }
+.plato-dish-lines li b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.plato-dish-dialog { max-width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
+.plato-dish-dialog > div { width: 100%; max-width: min(40rem, calc(100vw - 1rem)); max-height: calc(100dvh - 1rem); display: flex; flex-direction: column; box-sizing: border-box; }
+.plato-dish-dialog form { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.plato-dish-dialog form > section { overflow-y: auto; min-height: 0; padding: 0.25rem 0.25rem 0.5rem; }
+.plato-dish-dialog .field, .plato-dish-dialog .input, .plato-dish-dialog .select, .plato-dish-dialog .textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.plato-dish-dialog .input, .plato-dish-dialog .select, .plato-dish-dialog .textarea { width: 100%; }
+.plato-dish-dialog .plato-actions { flex: none; padding-top: 0.5rem; border-top: 1px solid var(--border); background: var(--card, var(--background)); }
+.plato-dish-dialog .input[type="checkbox"] { width: 1rem; max-width: 1rem; }
+.plato-dish-switch span { min-width: 0; }
+.plato-dish-switch input { flex: none; margin-top: 0.2rem; }
+.plato-dish-ingredients { border: 0; margin: 0; padding: 0; display: grid; gap: 0.5rem; min-width: 0; }
+.plato-dish-ingredients legend { font-weight: 600; padding: 0; margin-bottom: 0.4rem; }
+.plato-dish-results { list-style: none; margin: 0.35rem 0 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); max-height: 14rem; overflow-y: auto; }
+.plato-dish-results li { padding: 0.35rem 0.6rem; }
+.plato-dish-result { width: 100%; text-align: left; background: none; border: 0; padding: 0.2rem 0; cursor: pointer; font: inherit; min-height: 2.25rem; overflow-wrap: anywhere; }
+.plato-dish-result:hover, .plato-dish-result:focus-visible { background: var(--secondary); outline: 2px solid transparent; }
+.plato-dish-edit-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.plato-dish-line { display: grid; gap: 0.25rem; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem 0.6rem; min-width: 0; }
+.plato-dish-line.is-bad { border-color: var(--destructive); color: var(--destructive); display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; }
+.plato-dish-line-name { overflow-wrap: anywhere; }
+.plato-dish-line-inputs { display: grid; grid-template-columns: minmax(4.5rem, 6rem) minmax(0, 1fr) auto; gap: 0.4rem; align-items: center; }
+.plato-dish-line .is-bad { color: var(--destructive); }
+.plato-dish-totals { display: grid; gap: 0.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); padding: 0.6rem 0.75rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 40rem) { .plato-dish-actions { justify-content: flex-start; } .plato-dish > header { flex-wrap: wrap; } }

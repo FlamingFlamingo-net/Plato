@@ -5,11 +5,12 @@
 import { h } from './ui.js';
 
 const collator = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
-const SORTS = ['name', '-name', '-created', 'created', '-archived'];
+const SORTS = ['name', '-name', '-created', 'created', '-archived', 'kcal'];
 
 export function sortItems(items, sort, { name = 'name', archived = 'archived_at' } = {}) {
   const byName = (a, b) => collator.compare(a[name] || '', b[name] || '');
   const byText = (k) => (a, b) => String(a[k] || '').localeCompare(String(b[k] || ''));
+  if (sort === 'kcal') return [...items].sort((a, b) => (Number(b.nutrition?.kcal) || 0) - (Number(a.nutrition?.kcal) || 0) || byName(a, b));   // dishes only
   const key = sort.replace(/^-/, ''), dir = sort.startsWith('-') ? -1 : 1;
   const cmp = key === 'name' ? byName : byText(key === 'archived' ? archived : 'created');
   return [...items].sort((a, b) => dir * cmp(a, b) || byName(a, b));
@@ -39,12 +40,12 @@ function writeUrl(state) {
 
 // labels: { active: 'Activos', archived: 'Archivados', recent: 'Archivados recientemente', what: 'pacientes' }
 // Returns { setCounts({ active, archived }) }. onChange(state) runs after every tab or sort change.
-export function mountListBar(el, { key, labels, state, panel, onChange }) {
+export function mountListBar(el, { key, labels, state, panel, onChange, calories = false }) {
   let counts = { active: null, archived: null };
   const names = {
-    name: 'Nombre (A–Z)', '-name': 'Nombre (Z–A)', '-created': 'Más nuevos primero', created: 'Más antiguos primero', '-archived': labels.recent,
+    name: 'Nombre (A–Z)', '-name': 'Nombre (Z–A)', '-created': 'Más nuevos primero', created: 'Más antiguos primero', '-archived': labels.recent, kcal: 'Más calorías primero',
   };
-  const spoken = { name: 'por nombre, de la A a la Z', '-name': 'por nombre, de la Z a la A', '-created': 'los más nuevos primero', created: 'los más antiguos primero', '-archived': 'los archivados más recientes primero' };
+  const spoken = { name: 'por nombre, de la A a la Z', '-name': 'por nombre, de la Z a la A', '-created': 'los más nuevos primero', created: 'los más antiguos primero', '-archived': 'los archivados más recientes primero', kcal: 'las de más calorías primero' };
   const live = h('p', { class: 'sr-only', 'aria-live': 'polite' });
   const tab = (view) => h('button', {
     class: 'plato-list-tab', type: 'button', role: 'tab', id: `tab-${view}`, 'aria-controls': panel,
@@ -79,7 +80,7 @@ export function mountListBar(el, { key, labels, state, panel, onChange }) {
       tabs[v].replaceChildren(labels[v], n == null ? '' : h('span', { class: 'plato-list-tab-count', text: ` (${n})` }));
       tabs[v].setAttribute('aria-label', n == null ? labels[v] : `${labels[v]}, ${n}`);
     }
-    sel.replaceChildren(...SORTS.filter((s) => allowed(s, state.view)).map((s) => h('option', { value: s, selected: s === state.sort }, names[s])));
+    sel.replaceChildren(...SORTS.filter((s) => allowed(s, state.view) && (s !== 'kcal' || calories)).map((s) => h('option', { value: s, selected: s === state.sort }, names[s])));
     document.getElementById(panel)?.setAttribute('aria-labelledby', `tab-${state.view}`);
   }
   function select(view, user) {
