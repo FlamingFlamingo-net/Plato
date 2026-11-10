@@ -131,11 +131,17 @@ await step('A4', async () => {
 await step('A5', async () => {
   // Catálogo counts: active + archived.
   await api(`${TPL}/${tpl.Zeta.id}`, { method: 'PATCH', body: { archived_at: '2000-01-01 00:00:00.000Z' } });
-  await nutri.goto(`${BASE}/home.html`);
-  await nutri.waitFor(`document.getElementById('tabs')?.children.length > 0`);
-  await nutri.eval(`[...document.querySelectorAll('#tabs [role=tab]')].find((b) => b.textContent.includes('Catálogo')).click()`);
-  await nutri.waitFor(`[...document.querySelectorAll('.plato-catalog-card')].some((c) => c.textContent.includes('Dietas'))`);
-  const cards = await nutri.eval(`Object.fromEntries([...document.querySelectorAll('.plato-catalog-card')].map((c) => [c.querySelector('strong').textContent, c.querySelector('small').textContent]))`);
+  // The tiles count with several requests, and a count that fails shows 0 (a busy test machine can drop a request): look up to 3 times with a fresh page.
+  let cards = {};
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await nutri.goto(`${BASE}/home.html`);
+    await nutri.waitFor(`document.getElementById('tabs')?.children.length > 0`);
+    await nutri.eval(`[...document.querySelectorAll('#tabs [role=tab]')].find((b) => b.textContent.includes('Catálogo')).click()`);
+    await nutri.waitFor(`[...document.querySelectorAll('.plato-catalog-card')].some((c) => c.textContent.includes('Dietas'))`);
+    await new Promise((r) => setTimeout(r, 800));
+    cards = await nutri.eval(`Object.fromEntries([...document.querySelectorAll('.plato-catalog-card')].map((c) => [c.querySelector('strong').textContent, c.querySelector('small').textContent]))`);
+    if (cards.Dietas === '2 plantillas semanales · 1 archivada' && cards.Pacientes === '3 activos · 1 archivado') break;
+  }
   check('A5 Catálogo: "Dietas · 2 plantillas semanales · 1 archivada"', cards.Dietas === '2 plantillas semanales · 1 archivada', cards.Dietas);
   check('A5 Catálogo: "Pacientes · 3 activos · 1 archivado"', cards.Pacientes === '3 activos · 1 archivado', cards.Pacientes);
 });

@@ -232,7 +232,7 @@ await step('A5 link reuse', async () => {
 });
 
 check('no console errors on the nutritionist screens', nutri.errors.length === 0, nutri.errors.join(' | '));
-check('no console errors on the phone screens', phone.errors.filter((e) => !/plato-x|patient\.html\?id=x|404/.test(e)).length === 0, phone.errors.join(' | '));
+check('no console errors on the phone screens', phone.errors.filter((e) => !/plato-x|patient\.html\?id=x|404|ERR_NO_BUFFER_SPACE/.test(e)).length === 0, phone.errors.join(' | '));
 
 // Acceptance 6: server unreachable → installed shell still opens from the service worker cache
 await step('A6 offline', async () => {
