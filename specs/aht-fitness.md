@@ -1725,3 +1725,50 @@ The idea: a skill lets a nutritionist describe dishes in plain language and prod
 - **In b1:** (1) each stored dish line keeps the ingredient's `fdc_id` next to the record id, so lines are stable across data reloads; (2) `docs/plato-import.schema.json`, a JSON Schema of the import file (units, limits: up to 40 ingredient lines per dish, up to 50 dishes per file); (3) golden examples in `data/import-examples/` (a plain-language request beside the exact JSON it should give) that become the skill's test set; (4) an **agent export** of the ingredient list as JSON ("Descargar lista para IA" on Ingredientes): `fdc_id`, name, state, exact portion labels, whether a density exists, tags, plus the data set name, version and date so a skill can tell a stale copy.
 - **Rules for the skill:** reference ingredients by `fdc_id`; prefer grams, use a household portion only when the request says so ("2 huevos") with the label copied exactly from the export; never write nutrition numbers (they are ignored: the app computes them).
 - **In b2:** a server **check route** that takes the import JSON and returns a structured report (per problem a code, the path inside the file, a plain message, suggestions). The preview screen and any later skill use the same route (one set of rules). Saving stays all-or-nothing and only after a person has seen the preview. A name clash offers replace / save as copy / skip. A short instruction file for the skill ships with b2.
+
+---
+
+## Feature: Diets using dishes, slice (c) (BUILT v38; owner approved 2026-11-09, "aos 1-4")
+
+**Context (owner: "c").** Dishes are live (v36). Slice (c) lets a meal slot of a diet hold dishes with servings ("Taco de lomo × 3") next to the free text that works today, and shows calories and macros per meal and per day. Hybrid, as decided on 2026-10-25 (decisions 3, 4, 6).
+
+**What stays as it is.** `diets.meals` and `diet_templates.meals` (free text per day and slot) are not touched, so the patient's Hoy checklist, the printed sheet, the export, the meal goal and every template keep working. Dishes live in a second field next to it.
+
+### Design
+1. **New field `plan`** (JSON) on `diets` and `diet_templates`: `{ "1": { "breakfast": [ { dish, servings } ] } }`, days 1-7 like `meals`, at most 8 dishes per slot, servings 0.25-20 in steps of 0.25.
+2. **Each stored line is a snapshot**, written by the server on every save: dish name, serving unit, nutrition per serving at that moment, plus the dish id. The patient cannot read the nutritionist's dishes, so the snapshot is what the patient app shows.
+3. **Totals** per slot and per day are computed by the server from the snapshots and stored on the diet (`plan_totals`). Free text is never counted: a slot that mixes both shows "+ texto libre" so nobody reads a partial total as complete.
+4. **Numbers for the patient are off by default**, with a per-patient switch for the nutritionist (`patients.show_numbers`, decision 4). Off: the patient sees dish names and servings only. On: calories per meal and calories plus P / G / C per day. Both layouts are designed as complete screens, not one with holes.
+5. **Editor (nutritionist):** under each meal's text box, an "Agregar receta" search (own active dishes), servings stepper, remove; the day shows its totals live, using the same arithmetic as the server (tests prove they agree). "Copiar a toda la semana" and templates copy the dishes too.
+6. **Patient and print:** the slot shows free text, then the dish lines ("3 × Taco de lomo"). Patient Hoy checklist still ticks the slot as one meal. Print sheet and export show the same lines; totals only when the switch is on.
+7. **Dish changes later:** a saved diet does not change on its own. The editor shows "La receta cambió" on a line whose dish now differs, with "Actualizar" per line or for the whole diet.
+8. **Archived dish:** cannot be added; stays in diets that already have it. **Deleted dish:** the snapshot stays; the editor says "receta borrada".
+9. **Ownership:** a nutritionist can only use their own dishes (server refuses anyone else's id); numbers and snapshots sent by a client are overwritten.
+
+### Choices I propose (owner can change any)
+1. Dish changes do not reach saved diets automatically (point 7).
+2. The patient sees kcal per meal and kcal + P/G/C per day when the switch is on; no per-ingredient breakdown.
+3. Only dishes in a slot, no loose ingredient. A single food ("1 manzana") is a one-ingredient dish.
+4. Free text and dishes can share a slot; the checklist counts it as one meal.
+
+### Build plan (3 commits, each tested as committed)
+- **c1 server:** migration (`plan`, `plan_totals`, `show_numbers`), hook (snapshots, totals, ownership, limits), `planapi_check`.
+- **c2 editor:** dish picker, live totals, switch on the patient page, templates and copy-to-week carry dishes, 320 px checks.
+- **c3 patient, print, export:** both layouts (with / without numbers), phone checks, spec marked built. Deploy after c3 (c1 and c2 alone change nothing visible to patients).
+
+### Acceptance
+1. A slot with "Taco de lomo × 3" (159.12 kcal each) on the patient's Monday breakfast: server stores 477.36 kcal for the slot and the day; the editor shows the same.
+2. Free text only, dishes only and both all save; a mixed slot is flagged "+ texto libre".
+3. Another nutritionist's dish id, servings 0 or 21, 9 dishes in a slot: all refused.
+4. Editing the dish later: the diet keeps 159.12 until "Actualizar", then shows the new number.
+5. Switch off: the patient API and screens carry no numbers at all (checked on the raw response, not just the screen). Switch on: kcal per meal and the day's totals appear.
+6. Template saved with dishes and applied to another patient keeps lines; copy-to-week copies them.
+7. 320 / 360 / 390 px: editor and patient screens fit; full run, API checks and probe stay green.
+
+### Later
+Loose ingredients in a slot, saved meal combinations, weekly averages, per-patient calorie targets with a gap indicator.
+
+### Built (v38) and decisions
+Owner answered "aos 1-4": (1) a saved diet never changes on its own, "Actualizar" renews it; (2) the patient sees kcal per meal and kcal + P/G/C per day when the switch is on; (3) dishes only in a meal, no loose ingredient; (4) free text and dishes can share a meal, flagged "+ texto libre".
+Commits: server `f61a4d3`, editor `4cf15eb` (v37), patient / print / export `7906f14` (v38). Checks: planapi 31, plan 38, planview 16.
+Additions beyond the draft: plan lines of a deleted dish keep their snapshot and show "receta borrada"; a template cannot be saved while the week has a deleted dish; the print sheet and export follow the PATIENT's switch (not who prints); a meal that holds only dishes counts as planned (checklist, goals, photo page). Not checked: a generated PDF of the print sheet with numbers, a real phone.
