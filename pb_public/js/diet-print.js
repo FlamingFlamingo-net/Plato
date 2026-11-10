@@ -20,7 +20,7 @@ try {
   const [diet] = await list('diets', { filter: `patient = ${q(patient.id)}` });
   document.title = `Dieta de ${patient.name} — AHT Fitness`;
 
-  if (!diet || !hasDiet(diet.meals, snacksOf(diet))) {
+  if (!diet || !hasDiet(diet.meals, snacksOf(diet), diet.plan)) {
     statusEl.textContent = 'Aún no hay dieta.';
     printBtn.disabled = true;
     printBtn.hidden = true;
@@ -34,7 +34,8 @@ try {
           h('p', { text: patient.name }),
           by ? h('p', { text: by }) : null),
         h('div', { class: 'sheet-meta' }, h('div', { text: printedOn() }), h('div', { text: 'AHT Fitness' }))),
-      weekTable(diet.meals, snacksOf(diet)));
+      // calories and macros print only when the nutritionist switched them on for this patient
+      weekTable(diet.meals, snacksOf(diet), diet.plan, patient.show_numbers ? diet.plan_calc : null));
     sheet.hidden = false;
     document.getElementById('hint').hidden = false;
     statusEl.textContent = '';

@@ -39,7 +39,7 @@ export function indexLogs(meals, acts) {
   return { meals: m, minutes: min, acts };
 }
 
-const plannedOn = (diet, ymd) => plannedSlots(diet, diet?.meals?.[isoWeekday(toDate(ymd))]).map(([k]) => k);
+const plannedOn = (diet, ymd) => plannedSlots(diet, diet?.meals?.[isoWeekday(toDate(ymd))], isoWeekday(toDate(ymd))).map(([k]) => k);
 
 // One week for one goal kind. Returns { goal: {days, per}|null, days: [{ymd, state, value, need}], met, total }.
 export function weekOf(kind, patient, diet, idx, monday) {

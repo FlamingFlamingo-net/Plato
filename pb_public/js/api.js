@@ -28,7 +28,8 @@ const SNACKS_SHOWN = [[], ['snack_pm'], ['snack_am', 'snack_pm'], ['snack_am', '
 export const snacksOf = (diet) => (Number.isInteger(diet?.snacks) && diet.snacks >= 0 && diet.snacks <= 4 ? diet.snacks : DEFAULT_SNACKS);
 export const slotsFor = (n) => SLOTS.filter(([k]) => !k.startsWith('snack') || SNACKS_SHOWN[n ?? DEFAULT_SNACKS].includes(k));
 // The planned meals of one day: shown slots that have text.
-export const plannedSlots = (diet, dayMeals) => slotsFor(snacksOf(diet)).filter(([k]) => (dayMeals?.[k] || '').trim());
+// weekday (1 = Monday) lets a meal that holds only dishes (diet.plan) count as planned.
+export const plannedSlots = (diet, dayMeals, weekday) => slotsFor(snacksOf(diet)).filter(([k]) => (dayMeals?.[k] || '').trim() || diet?.plan?.[weekday]?.[k]?.length > 0);
 // A meal log without photo on a planned slot is a check ("lo comí").
 export const isCheck = (l) => !l.photo && l.slot !== 'extra';
 export const WEEKDAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];

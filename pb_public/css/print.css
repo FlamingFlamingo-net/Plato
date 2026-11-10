@@ -47,6 +47,11 @@ body.doc { background: var(--muted); }
 .week-table tbody th span:last-child { display: block; margin-top: 1mm; }
 .week-table td { white-space: pre-wrap; overflow-wrap: anywhere; hyphens: auto; }
 .week-table td.is-empty { color: #9aa29d; text-align: center; }
+.week-table tfoot th, .week-table tfoot td { background: #f3f0e8; }
+.week-table tfoot th { font-weight: 700; font-size: 8.5pt; }
+.week-dish { font-weight: 600; }
+.week-kcal, .week-macros { font-size: 8pt; color: #4b524d; margin-top: 0.6mm; }
+.doc-table + .week-day-total, .week-day-total { margin-top: 2mm; padding: 1.5mm 2.5mm; border: 0.6pt solid #d9d4c8; background: #f3f0e8; font-size: 9pt; display: grid; gap: 0.5mm; }
 .week-table tr { break-inside: avoid; }
 .week-table thead { display: table-header-group; }
 

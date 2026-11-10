@@ -821,3 +821,10 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-plan-totals { display: grid; gap: 0.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); padding: 0.6rem 0.75rem; font-variant-numeric: tabular-nums; margin-top: 0.5rem; }
 .week-dish { font-weight: 600; }
 .week-text + .week-dish, .week-dish + .week-text { margin-top: 0.1rem; }
+
+/* Dishes and (optional) numbers on the patient's day and the week previews */
+.plato-meal-plan { display: grid; gap: 0.15rem; overflow-wrap: anywhere; }
+.plato-meal-plan .week-text { white-space: pre-wrap; }
+.week-kcal { font-size: 0.85rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.week-day-total { display: grid; gap: 0.1rem; margin-top: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+#day-total:not(:empty) { margin-top: 0.75rem; }

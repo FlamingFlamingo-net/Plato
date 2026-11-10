@@ -121,7 +121,7 @@ async function render() {
         : h('p', { class: 'doc-empty', text: 'Sin mediciones.' })),
 
     section(diet?.title ? `Dieta: ${diet.title}` : 'Dieta',
-      diet && hasDiet(diet.meals, snacksOf(diet)) ? weekList(diet.meals, snacksOf(diet)) : h('p', { class: 'doc-empty', text: 'Sin dieta asignada.' })),
+      diet && hasDiet(diet.meals, snacksOf(diet), diet.plan) ? weekList(diet.meals, snacksOf(diet), diet.plan, patient.show_numbers ? diet.plan_calc : null) : h('p', { class: 'doc-empty', text: 'Sin dieta asignada.' })),
 
     section(`Comidas registradas (${logs.length})`,
       logs.length ? h('div', { class: 'doc-logs' }, ...photoCards) : h('p', { class: 'doc-empty', text: 'Sin comidas registradas.' })),
@@ -233,7 +233,7 @@ jsonBtn.addEventListener('click', () => {
     measurements: measurements.map((m) => ({
       date: dateOnly(m.date), weight_kg: m.weight_kg, body_fat_pct: m.body_fat_pct || null, waist_cm: m.waist_cm || null,
     })),
-    diet: diet ? { title: diet.title || '', snacks_per_day: snacksOf(diet), meals: diet.meals || {}, updated: diet.updated } : null,
+    diet: diet ? { title: diet.title || '', snacks_per_day: snacksOf(diet), meals: diet.meals || {}, dishes: diet.plan || {}, ...(patient.show_numbers && diet.plan_calc ? { numbers: diet.plan_calc } : {}), updated: diet.updated } : null,
     meal_logs: logs.map((l) => ({
       date: l.date, meal: l.slot, meal_label: SLOT_LABEL[l.slot], note: l.note || '',
       sent_at: l.created, seen_at: l.seen_at || null, photo_file: l.photo || null, checked_without_photo: !l.photo && l.slot !== 'extra',

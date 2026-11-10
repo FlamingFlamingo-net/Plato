@@ -1,5 +1,6 @@
 // today.js — the patient's day: the plate, the day's meals as a checklist, extra meals, and today's activity.
 // Check first ("lo comí"), then an optional photo (spec "Feature: Weekly goals", slice 1). Today and yesterday.
+import { slotContent, dayTotalEl } from './week.js';
 import { list, create, remove, photoUrl, q, SLOTS, SLOT_LABEL, localDate, isoWeekday, plannedSlots } from './api.js';
 import { h, icon, longDate, toast, timeOf } from './ui.js';
 import { plate } from './charts.js';
@@ -29,6 +30,8 @@ if (params.has('logged') || params.has('welcome') || params.has('activity')) his
 const statusEl = document.getElementById('status');
 const fbSince = lastSeen('meal'); // what was already seen on this phone
 const mealsEl = document.getElementById('meals');
+const dayTotalHost = h('div', { id: 'day-total' });
+mealsEl.after(dayTotalHost);
 const extrasEl = document.getElementById('extras');
 const addExtra = document.getElementById('add-extra');
 const dayBtns = [...document.querySelectorAll('#day-switch button')];
@@ -75,8 +78,9 @@ async function renderMeals() {
     logs = await list('meal_logs', { filter: `patient = ${q(me.id)} && date = ${q(date)}`, sort: 'created' });
   } catch (e) { statusEl.textContent = e.message; return; }
   if (token !== renderToken) return;
-  const plan = diet?.meals?.[isoWeekday(new Date(`${date}T12:00:00`))] || {};
-  const planned = plannedSlots(diet, plan);
+  const wd = isoWeekday(new Date(`${date}T12:00:00`));
+  const plan = diet?.meals?.[wd] || {};
+  const planned = plannedSlots(diet, plan, wd);
   const plannedKeys = new Set(planned.map(([k]) => k));
   const bySlot = {};
   for (const l of logs) (bySlot[l.slot] ||= []).push(l);
@@ -118,7 +122,7 @@ async function renderMeals() {
       check,
       h('div', {},
         h('h3', { text: label }),
-        plannedKeys.has(key) ? h('p', { text: plan[key] }) : h('p', { class: 'plato-muted', text: 'Fuera de tu plan' }),
+        plannedKeys.has(key) ? h('div', { class: 'plato-meal-plan' }, ...slotContent(diet.meals, diet.plan, diet.plan_calc, wd, key)) : h('p', { class: 'plato-muted', text: 'Fuera de tu plan' }),
         checked ? h('span', { class: `plato-meal-status${seen ? ' is-seen' : ''}` }, icon(seen ? 'eye' : 'check', 14),
           seen ? 'Vista por tu nutrióloga/o' : 'Registrada') : null,
         photos.length ? h('div', { class: 'plato-meal-thumbs' }, ...photos.flatMap((l) => [thumb(l, label), delBtn(l, label)])) : null,
@@ -130,6 +134,8 @@ async function renderMeals() {
         }, icon('camera', 16), photos.length ? 'Otra foto' : 'Agregar foto') : null));
   });
   mealsEl.replaceChildren(...rows);
+  // The day's calories and macros: only when the nutritionist switched numbers on (the server then sends plan_calc).
+  dayTotalHost.replaceChildren(...[diet?.plan_calc && plannedKeys.size ? dayTotalEl(diet.plan_calc, wd) : null].filter(Boolean));
 
   const extras = bySlot.extra || [];
   extrasEl.replaceChildren(...extras.map((l) => h('li', { class: 'plato-meal plato-meal--extra' },

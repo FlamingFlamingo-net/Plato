@@ -2,6 +2,7 @@
 // A photo for a meal already checked on Hoy attaches to that check. "Comida extra": photo or note.
 // ?date= may be yesterday (the checklist's "Ayer"); anything else means today.
 // Photos are shrunk on the phone (max 1600 px JPEG) so they upload fast and stay under the 5 MB limit.
+import { lineText } from './plan-math.js';
 import { create, update, list, q, SLOTS, localDate, isoWeekday, slotsFor, plannedSlots, snacksOf, DEFAULT_SNACKS } from './api.js';
 import { h, formError, busy, longDate } from './ui.js';
 import { patientShell } from './shell.js';
@@ -33,7 +34,8 @@ try {
 // Only the day's planned meals (spec "Snacks per diet"); with nothing planned, the diet's usual slots.
 // A slot asked for by ?slot= (e.g. a meal outside the plan, checked on Hoy) is always offered.
 const wanted = params.get('slot');
-const plannedToday = plannedSlots(diet, todays);
+const weekdayToday = isoWeekday(new Date(`${date}T12:00:00`));
+const plannedToday = plannedSlots(diet, todays, weekdayToday);
 const shown = new Set((plannedToday.length ? plannedToday : slotsFor(diet ? snacksOf(diet) : DEFAULT_SNACKS)).map(([k]) => k));
 const CHOICES = [...SLOTS.filter(([k]) => shown.has(k) || k === wanted), ['extra', 'Comida extra']];
 // Default slot: ?slot=, else the offered meal closest to now.
@@ -51,7 +53,8 @@ for (const [key, label] of CHOICES) {
 function showPlanned() {
   const k = form.slot.value;
   const extra = k === 'extra';
-  planned.textContent = extra ? 'Algo que comiste fuera de tu plan. Una foto o una nota es suficiente.' : todays[k] ? `Tu plan: ${todays[k]}` : '';
+  const planText = [...(diet?.plan?.[weekdayToday]?.[k] || []).map(lineText), (todays[k] || '').trim()].filter(Boolean).join(' · ');
+  planned.textContent = extra ? 'Algo que comiste fuera de tu plan. Una foto o una nota es suficiente.' : planText ? `Tu plan: ${planText}` : '';
   photo.required = !extra;
   document.getElementById('pick-title').textContent = extra ? 'Foto (opcional)' : 'Toma una foto de tu plato';
   document.getElementById('note-opt').textContent = extra ? '(o una foto)' : '(opcional)';
