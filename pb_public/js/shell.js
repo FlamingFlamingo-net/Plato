@@ -13,9 +13,7 @@ export async function patientShell(current) {
     h('div', { class: 'plato-row' },
       h('button', { id: 'install-app', class: 'btn', 'data-variant': 'secondary', 'data-size': 'sm', type: 'button', hidden: true }, 'Instalar app'),
       h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'sm', type: 'button', onclick: signOut }, 'Salir')));
-  const help = h('p', { id: 'install-help', class: 'plato-hint', hidden: true, style: 'text-align:center;margin:0.5rem 1rem 0' },
-    'En iPhone o iPad: toca Compartir y luego "Agregar a inicio".');
-  document.body.prepend(h('a', { class: 'skip-link', href: '#main' }, 'Saltar al contenido'), top, help);
+  document.body.prepend(h('a', { class: 'skip-link', href: '#main' }, 'Saltar al contenido'), top);
 
   const link = (href, key, label, ic) => h('a', { href, 'aria-current': current === key ? 'page' : null }, icon(ic, 22), label);
   document.body.append(h('nav', { class: 'plato-bottom-nav', 'aria-label': 'Secciones' },

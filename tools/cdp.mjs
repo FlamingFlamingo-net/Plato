@@ -106,6 +106,9 @@ export async function launch({ port = 9333, profileDir }) {
       },
       async timezone(id) { await s('Emulation.setTimezoneOverride', { timezoneId: id }); },
       async userAgent(ua) { await s('Emulation.setUserAgentOverride', { userAgent: ua }); },
+      async press(key, code = key, keyCode = { Escape: 27, Enter: 13, Tab: 9 }[key] || 0) {   // a real key press (keydown + keyup)
+        for (const type of ['keyDown', 'keyUp']) await s('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode });
+      },
       async beforeLoad(source) { await s('Page.addScriptToEvaluateOnNewDocument', { source }); },
       // setting: 'granted' | 'denied' | 'prompt' for this page's browser context (e.g. notifications)
       async permission(name, setting, origin) { await send('Browser.setPermission', { permission: { name }, setting, origin, browserContextId }); },

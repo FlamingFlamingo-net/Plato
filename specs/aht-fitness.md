@@ -1772,3 +1772,39 @@ Loose ingredients in a slot, saved meal combinations, weekly averages, per-patie
 Owner answered "aos 1-4": (1) a saved diet never changes on its own, "Actualizar" renews it; (2) the patient sees kcal per meal and kcal + P/G/C per day when the switch is on; (3) dishes only in a meal, no loose ingredient; (4) free text and dishes can share a meal, flagged "+ texto libre".
 Commits: server `f61a4d3`, editor `4cf15eb` (v37), patient / print / export `7906f14` (v38). Checks: planapi 31, plan 38, planview 16.
 Additions beyond the draft: plan lines of a deleted dish keep their snapshot and show "receta borrada"; a template cannot be saved while the week has a deleted dish; the print sheet and export follow the PATIENT's switch (not who prints); a meal that holds only dishes counts as planned (checklist, goals, photo page). Not checked: a generated PDF of the print sheet with numbers, a real phone.
+
+
+---
+
+## Design: iPhone "Instalar app" panel (DRAFT 2026-11-11, awaiting approval)
+
+**Context.** On iPhone a website cannot open an install prompt (Apple does not allow it). Today "Instalar app" only reveals one small line under the top bar; the owner tapped it and thought nothing happened (card `t_fba45084`). Patients will hit the same thing.
+
+### What changes (patient side only; Android and computers stay as they are)
+1. On iPhone/iPad, "Instalar app" opens a **panel** (a native `<dialog>`) titled **"Instala AHT Fitness en tu iPhone"** with numbered steps, each with a small drawing of the Safari button to tap (our own simple line icons, not Apple's images).
+2. **Safari on iOS 26 or newer** (address bar at the bottom):
+   1. Toca **•••** junto a la barra de dirección.
+   2. Toca **Compartir** (cuadro con flecha hacia arriba).
+   3. Toca **Agregar a inicio**. Si no lo ves, toca **Ver más**.
+   4. Deja encendido **Abrir como app web** y toca **Agregar**.
+3. **Safari on iOS 17-18**: 1. Toca **Compartir** en la barra de abajo. 2. **Agregar a inicio**. 3. **Agregar**.
+4. **Not in Safari** (the page was opened inside Instagram, Facebook, Gmail, Chrome or another app): the panel says the app can only be installed from Safari, with a **"Copiar enlace"** button and the step "Abre Safari, pega el enlace y vuelve a tocar Instalar app".
+5. Last line in every version: "Listo: abre AHT Fitness desde el ícono de tu pantalla de inicio." Button **Entendido** closes it; Escape and tapping outside close it too.
+6. The old one-line hint goes away. When the app is already installed (opened from the icon), the button does not appear (as today).
+7. The **install guide PDF** (`AHT-Fitness-instalar-app.pdf`, outside the repo) gets the iOS 26 steps too.
+
+### Choices I propose (owner can change any)
+1. Detect the version from Safari's own version number (Safari 26 = the new layout). If it cannot tell, show the iOS 26 steps with a small "¿Tu iPhone es más antiguo?" link that switches to the older steps.
+2. No screenshots of Apple screens (they change every year and are Apple's); simple drawn icons instead.
+3. Spanish only, like the rest of the app.
+
+### Acceptance
+1. iPhone Safari 26 user agent: tapping "Instalar app" opens the panel with the 4 iOS 26 steps; focus goes into the panel; Entendido / Escape / outside close it and focus returns to the button.
+2. iPhone Safari 18 user agent: the 3 older steps. Unknown: iOS 26 steps plus the "más antiguo" link, which switches.
+3. Instagram / Chrome-on-iPhone user agents: the "solo desde Safari" version; "Copiar enlace" copies the page address.
+4. Android Chrome: unchanged (the system install prompt); desktop: unchanged.
+5. 320 / 360 / 390 px: the panel fits with no sideways scroll; text readable; full run and probe stay green.
+6. On a real iPhone (owner): the steps match what Safari shows.
+
+### Build plan
+One commit (app v39): `install.js` + the panel markup/CSS, a new check `installpanel_check`; deploy; then update the install PDF.
