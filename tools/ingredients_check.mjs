@@ -11,7 +11,7 @@ const t = JSON.parse(readFileSync(TOKENS, 'utf8'));
 const results = [];
 const check = (n, ok, d = '') => { results.push(!!ok); console.log(`${ok ? 'PASS' : 'FAIL'} ${n}${ok ? '' : `  -> ${d}`}`); };
 const step = async (name, fn) => { try { await fn(); } catch (e) { check(name, false, e.message.split('\n')[0]); } };
-const GROUPS = ['Cereales', 'Verduras', 'Frutas', 'Leguminosas', 'Carnes', 'Lácteos', 'Grasas'];
+const GROUPS = ['Verduras', 'Frutas', 'Cereales', 'Leguminosas', 'Carnes', 'Lácteos', 'Grasas'];   // SMAE's order
 const NCOCIDO = readFileSync('data/ingredients-ejemplo.csv', 'utf8').split(String.fromCharCode(10)).filter((l) => l.split(',')[1] === 'cocido').length;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const SU = await superuser(BASE, process.env.PB_CONTAINER || 'pb-check');
@@ -47,7 +47,7 @@ await step('I1', async () => {
   await D.waitFor(`location.pathname === '/ingredients.html' && document.getElementById('status').textContent.includes('ingredientes')`, 15000);
   const ui = await D.eval(`({ banner: !document.getElementById('sample-banner').hidden && document.getElementById('sample-banner').textContent, status: document.getElementById('status').textContent, tabs: [...document.querySelectorAll('#ing-tabs [role=tab]')].map((x) => x.getAttribute('aria-label')),
     chips: [...document.querySelectorAll('#tag-bar .plato-chip')].map((x) => x.textContent.replace(/\\s+/g, ' ').trim()), cols: [...document.querySelectorAll('.plato-ing-table thead th')].map((x) => x.textContent) })`);
-  check('I1 the banner "Datos de ejemplo" shows, the count is right, two tabs', /Datos de ejemplo/.test(ui.banner) && ui.status === `${total} ingredientes` && ui.tabs[0] === `Ingredientes, ${total}` && ui.tabs[1].startsWith('Equivalentes (ejemplo)'), JSON.stringify(ui));
+  check('I1 the banner "Datos de ejemplo" shows, the count is right, two tabs (the sample set is its own source tab "Otros")', /Datos de ejemplo/.test(ui.banner) && ui.status === `${total} ingredientes` && ui.tabs[0] === `Otros, ${total}` && ui.tabs[1].startsWith('Equivalentes (ejemplo)'), JSON.stringify(ui));
   check('I1 columns are per 100 g (kcal, proteína, grasas, carbohidratos, fibra) and the starter tags are chips with counts', ui.cols.join() === 'Ingrediente,kcal,Proteína (g),Grasas (g),Carbohidratos (g),Fibra (g)' && ui.chips.length >= 6 && ui.chips.some((c) => /^fibra \(\d+\)$/.test(c)), JSON.stringify(ui));
   await D.screenshot(`${OUT}/list-desk.png`);
 });
@@ -94,11 +94,11 @@ await step('E1', async () => {
   await clear(D);
   await D.click('#tab-equivalentes');
   await D.waitFor(`document.querySelectorAll('.plato-group').length >= 7`);
-  const g = await D.eval(`Object.fromEntries([...document.querySelectorAll('.plato-group')].map((s) => [s.querySelector('h2').textContent, [...s.querySelectorAll('li')].map((li) => li.textContent)]))`);
+  const g = await D.eval(`Object.fromEntries([...document.querySelectorAll('.plato-group')].map((s) => [s.querySelector('.plato-group-name').textContent, [...s.querySelectorAll('li')].map((li) => li.textContent)]))`);
   check('E1 the Equivalentes tab lists the 7 groups, labelled "ejemplo"', GROUPS.every((n) => g[n]) && (await D.text('#ing-view')).startsWith('Ejemplo:'), Object.keys(g).join());
   check('E1 Frijol negro sits in two groups (Leguminosas 90 g and Carnes 60 g)', g.Leguminosas.some((x) => x.startsWith('Frijol negro') && x.endsWith('90 g')) && g.Carnes.some((x) => x.startsWith('Frijol negro') && x.endsWith('60 g')));
-  check('E1 the groups come in the usual order', Object.keys(g).slice(0, 7).join() === GROUPS.join(), Object.keys(g).join());
-  await D.click('#tab-lista');
+  check('E1 the groups come in the SMAE order', Object.keys(g).slice(0, 7).join() === GROUPS.join(), Object.keys(g).join());
+  await D.click('#tab-otros');
   await D.waitFor(`document.querySelectorAll('.plato-ing-table tbody tr').length > 10`);
 });
 
@@ -224,7 +224,7 @@ await step('U1', async () => {
   await P.waitFor(`document.querySelector('.plato-ing-name')?.textContent === 'Black beans, cooked'`);
   await P.click('.plato-ing-name');
   const det = await P.text('.plato-ing-detail:not([hidden])');
-  check('U1 the row detail shows portions (cup = 172 g), sodium, source, version and the FDC id', det.includes('Porciones: cup = 172 g') && det.includes('sodium mg') && det.includes('USDA FoodData Central, SR Legacy') && det.includes('versión SR Legacy 2018') && det.includes('FDC 173735'), det);
+  check('U1 the row detail shows portions (cup = 172 g), sodium, source, version and the FDC id', det.includes('Porciones: cup = 172 g') && det.includes('Sodio (mg)') && det.includes('USDA FoodData Central, SR Legacy') && det.includes('versión SR Legacy 2018') && det.includes('FDC 173735'), det);
   await P.fill('#ing-q', 'pancake');
   await P.waitFor(`document.querySelector('.plato-ing-name')?.textContent === 'Pancake'`);
   await P.click('.plato-ing-name');

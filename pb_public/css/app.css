@@ -839,3 +839,31 @@ dialog.dialog.plato-photo-dialog > div { max-width: min(92vw, 56rem); }
 .plato-install-copied { margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--muted-foreground); overflow-wrap: anywhere; }
 .plato-install-copied:empty { display: none; }
 .plato-install-done { margin: 0.9rem 0 0; padding: 0.5rem 0.7rem; border-radius: var(--radius); background: var(--muted); }
+
+/* SMAE and USDA side by side (spec "SMAE and USDA side by side") */
+.plato-ing-controls--eq { grid-template-columns: minmax(0, 28rem); }
+.plato-ing-eq { display: block; margin-top: 0.15rem; font-weight: 400; overflow-wrap: anywhere; }
+.plato-confirm { margin-left: 0.35rem; font-weight: 500; vertical-align: middle; }
+.plato-src { font-size: 0.68rem; padding: 0 0.35rem; line-height: 1.3; vertical-align: 0.1em; letter-spacing: 0.02em; }
+.plato-src--smae { border-color: var(--primary); color: var(--primary); }
+.plato-srcseg { display: inline-flex; width: max-content; justify-self: start; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px; gap: 2px; margin-bottom: 0.5rem; background: var(--muted); max-width: 100%; }
+.plato-srcseg[hidden] { display: none; }
+.plato-srcseg > button { font: inherit; font-size: 0.85rem; border: 0; background: transparent; padding: 0.3rem 0.75rem; border-radius: calc(var(--radius) - 2px); cursor: pointer; color: var(--muted-foreground); min-height: 2rem; }
+.plato-srcseg > button[aria-checked="true"] { background: var(--card); color: var(--foreground); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.plato-srcseg > button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+details.plato-group { padding: 0; gap: 0; }
+details.plato-group > summary { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.75rem 1rem; cursor: pointer; list-style: none; }
+details.plato-group > summary::-webkit-details-marker { display: none; }
+details.plato-group > summary::before { content: "▸"; color: var(--muted-foreground); margin-right: 0.25rem; }
+details.plato-group[open] > summary::before { content: "▾"; }
+details.plato-group > summary:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; border-radius: var(--radius); }
+.plato-group-name { font-family: var(--font-heading); font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+details.plato-group > .plato-group-list { padding: 0 1rem 0.75rem; }
+.plato-group-list li > span { min-width: 0; overflow-wrap: anywhere; }
+.plato-group-list li > b { white-space: nowrap; }
+@media (max-width: 40rem) {
+  .plato-list-tab { min-width: 0; white-space: normal; padding: 0.5rem 0.55rem; }
+}
+@media (max-width: 30rem) {
+  .plato-tab-sub { display: none; }
+}

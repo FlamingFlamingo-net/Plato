@@ -2,6 +2,7 @@
 // A dish is entered PER SERVING. Each line: an ingredient, an amount and a unit: "g", "ml" (needs the ingredient's density),
 // or the label of a household portion that ingredient has (e.g. "large", "cup"; "pieza" uses piece_g when there is no portion).
 // grams -> nutrition = grams / 100 x the ingredient's per-100 g value. The total is the sum of the lines. Nothing is guessed.
+// An ingredient whose source has no fibre value (extra.fiber_missing, SMAE) makes nutrition.fiber_incomplete = true.
 
 const KEYS = ["kcal", "protein_g", "fat_g", "carbs_g", "fiber_g"];
 const MAX_LINES = 40;
@@ -32,7 +33,7 @@ function gramsOf(ing, line) {
 function compute(app, raw, mode) {
   const errors = [], items = [];
   const total = Object.fromEntries(KEYS.map((k) => [k, 0]));
-  let missing = false;
+  let missing = false, fiberGap = false;
   if (!Array.isArray(raw) || raw.length < 1) return { items: [], nutrition: null, errors: ["Agrega al menos un ingrediente."], missing };
   if (raw.length > MAX_LINES) return { items: [], nutrition: null, errors: [`Máximo ${MAX_LINES} ingredientes por receta.`], missing };
   raw.forEach((line, i) => {
@@ -53,13 +54,17 @@ function compute(app, raw, mode) {
       return fail(`${ing.getString("name")} ${g.error}`);
     }
     for (const k of KEYS) total[k] += (g.grams / 100) * ing.getFloat(k);
+    const ex = jget(ing, "extra");
+    if (ex && ex.fiber_missing) fiberGap = true;
     items.push({ ingredient: ing.id, fdc_id: ing.getInt("fdc_id"), name: ing.getString("name"), state: ing.getString("state"), amount, unit, grams: round4(g.grams) });
   });
   if (errors.length) return { items: [], nutrition: null, errors, missing };
-  return { items, nutrition: Object.fromEntries(KEYS.map((k) => [k, round4(total[k])])), errors, missing };
+  const nutrition = Object.fromEntries(KEYS.map((k) => [k, round4(total[k])]));
+  if (fiberGap) nutrition.fiber_incomplete = true;
+  return { items, nutrition, errors, missing };
 }
 
-const same = (a, b) => !!a && !!b && KEYS.every((k) => Math.abs(Number(a[k]) - Number(b[k])) < 0.00005);
+const same = (a, b) => !!a && !!b && KEYS.every((k) => Math.abs(Number(a[k]) - Number(b[k])) < 0.00005) && !!a.fiber_incomplete === !!b.fiber_incomplete;
 const nowDb = () => new Date().toISOString().replace("T", " ");
 
 module.exports = { KEYS, MAX_LINES, compute, jget, same, nowDb, round4 };

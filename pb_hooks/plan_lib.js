@@ -73,6 +73,7 @@ function build(app, rec, original, refresh) {
     const n = jget(dish, "nutrition") || {};
     const per = {};
     for (const k of KEYS) per[k] = Number(n[k]) || 0;
+    if (n.fiber_incomplete) per.fiber_incomplete = true;   // a food without a fibre value: the fibre total is a floor
     dishes[id] = { name: dish.getString("name"), serving_unit: dish.getString("serving_unit"), per_serving: per, at: dish.getString("computed_at") };
   }
   for (const d of Object.keys(clean)) for (const k of Object.keys(clean[d])) for (const l of clean[d][k]) { l.name = dishes[l.dish].name; l.unit = dishes[l.dish].serving_unit; }
@@ -91,6 +92,7 @@ function build(app, rec, original, refresh) {
       for (const key of KEYS) s[key] = 0;
       for (const l of lines) for (const key of KEYS) s[key] += l.servings * dishes[l.dish].per_serving[key];
       for (const key of KEYS) { s[key] = round4(s[key]); total[key] += s[key]; }
+      if (lines.some((l) => dishes[l.dish].per_serving.fiber_incomplete)) { s.fiber_incomplete = true; total.fiber_incomplete = true; }
       s.free_text = !!t;
       if (t) free = true;
       slots[k] = s;

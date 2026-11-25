@@ -6,6 +6,8 @@ import { listState, mountListBar, sortItems } from './list-tabs.js';
 import { h, icon, toast, busy, num, shortDate, offlineBanner } from './ui.js';
 import { listAll, loadTags, linksFor, mountTagChips, tagBadges, openTagDialog, normText } from './tags.js';
 import { compute, unitsOf, MAX_LINES } from './dish-math.js';
+import { fiberText } from './plan-math.js';
+import { sourceOf, sourceBadge, equivalentText } from './sources.js';
 
 offlineBanner();
 const me = await requireRole('nutritionists');
@@ -16,7 +18,7 @@ const listEl = document.getElementById('list');
 const statusEl = document.getElementById('status');
 const search = document.getElementById('dish-q');
 const tagBarEl = document.getElementById('tag-bar');
-const FIELDS = 'id,name,state,kcal,protein_g,fat_g,carbs_g,fiber_g,piece_g,density_g_ml,portions,fdc_id,dataset,source,version';
+const FIELDS = 'id,name,state,kcal,protein_g,fat_g,carbs_g,fiber_g,piece_g,density_g_ml,portions,fdc_id,dataset,source,version,extra,groups';
 let ingredients = [], byId = new Map(), tagList = [], chips = null;
 const picked = new Set();
 try {
@@ -24,11 +26,13 @@ try {
   byId = new Map(ingredients.map((i) => [i.id, i]));
   tagList = await loadTags().catch(() => []);
 } catch (e) { statusEl.textContent = e.message; throw e; }
-if (ingredients.some((i) => String(i.dataset).startsWith('usda'))) {
+const hasSrc = (k) => ingredients.some((i) => sourceOf(i) === k);
+if (hasSrc('usda') || hasSrc('smae')) {
   const s = document.getElementById('source-line');
-  s.textContent = 'Los valores salen de tus ingredientes (USDA FoodData Central, SR Legacy), por porción.';
+  s.textContent = `Los valores salen de los ingredientes (${[hasSrc('smae') ? 'SMAE' : '', hasSrc('usda') ? 'USDA FoodData Central' : ''].filter(Boolean).join(' y ')}), por porción.`;
   s.hidden = false;
 }
+const SRC_KEY = 'plato.dishes.source';
 
 const state = listState('dishes');
 const bar = mountListBar(document.getElementById('list-bar'), {
@@ -39,7 +43,7 @@ const bar = mountListBar(document.getElementById('list-bar'), {
 search.addEventListener('input', () => load());
 
 const kcalOf = (d) => Math.round(Number(d.nutrition?.kcal) || 0);
-const stats = (n) => `${num(n.kcal, 0)} kcal · P ${num(n.protein_g)} g · G ${num(n.fat_g)} g · C ${num(n.carbs_g)} g · Fibra ${num(n.fiber_g)} g`;
+const stats = (n) => `${num(n.kcal, 0)} kcal · P ${num(n.protein_g)} g · G ${num(n.fat_g)} g · C ${num(n.carbs_g)} g · ${fiberText(n)}`;
 const now = () => new Date().toISOString().replace('T', ' ');
 const unique = (name, all) => {
   const taken = new Set(all.map((d) => d.name.toLowerCase()));
@@ -139,7 +143,24 @@ function openBuilder(dish) {
   const totals = h('div', { class: 'plato-dish-totals', 'aria-live': 'polite', id: 'dish-totals' });
   const linesEl = h('ul', { class: 'plato-dish-edit-lines', id: 'dish-lines', 'aria-label': 'Ingredientes de la receta' });
   const results = h('ul', { class: 'plato-dish-results', id: 'dish-results', hidden: true });
-  const ingQ = h('input', { class: 'input', type: 'search', id: 'dish-ing-q', placeholder: 'Buscar ingrediente (en inglés)', autocomplete: 'off', 'aria-label': 'Buscar un ingrediente para agregarlo', 'aria-controls': 'dish-results' });
+  const ingQ = h('input', { class: 'input', type: 'search', id: 'dish-ing-q', placeholder: 'Buscar ingrediente', autocomplete: 'off', 'aria-label': 'Buscar un ingrediente para agregarlo', 'aria-controls': 'dish-results' });
+  // Todos | SMAE | USDA: which list the search looks in (only the sources that exist); remembered on this device
+  const srcs = ['todos', ...['smae', 'usda', 'otros'].filter(hasSrc)];
+  let src = (() => { try { const v = localStorage.getItem(SRC_KEY); return srcs.includes(v) ? v : 'todos'; } catch { return 'todos'; } })();
+  const SRC_LABEL = { todos: 'Todos', smae: 'SMAE', usda: 'USDA', otros: 'Otros' };
+  const srcBox = h('div', { class: 'plato-srcseg', role: 'radiogroup', 'aria-label': 'Buscar en', id: 'dish-src', hidden: srcs.length <= 2 },
+    ...srcs.map((k) => h('button', { type: 'button', role: 'radio', 'aria-checked': String(k === src), tabindex: k === src ? '0' : '-1', 'data-src': k,
+      onclick: () => pickSrc(k) }, SRC_LABEL[k])));
+  function pickSrc(k, focus = false) {
+    src = k; try { localStorage.setItem(SRC_KEY, k); } catch {}
+    for (const b of srcBox.children) { const on = b.dataset.src === k; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); }
+    ingQ.placeholder = k === 'usda' ? 'Buscar ingrediente (en inglés)' : 'Buscar ingrediente';
+    renderResults();
+  }
+  srcBox.addEventListener('keydown', (e) => {
+    const i = srcs.indexOf(src), n = { ArrowRight: srcs[(i + 1) % srcs.length], ArrowDown: srcs[(i + 1) % srcs.length], ArrowLeft: srcs[(i - 1 + srcs.length) % srcs.length], ArrowUp: srcs[(i - 1 + srcs.length) % srcs.length] }[e.key];
+    if (n) { e.preventDefault(); pickSrc(n, true); }
+  });
   const say = (m) => { error.textContent = m || ''; error.hidden = !m; };
 
   function renderTotals() {
@@ -164,7 +185,7 @@ function openBuilder(dish) {
       out.textContent = info.error ? info.error : (info.grams != null ? `${num(info.grams, 1)} g · ${num(info.kcal, 0)} kcal` : '');
       if (info.error) out.classList.add('is-bad');
       return h('li', { class: 'plato-dish-line' },
-        h('div', { class: 'plato-dish-line-name' }, h('strong', { text: ing.name }), ing.state !== 'otro' ? h('span', { class: 'plato-muted plato-small', text: ` ${ing.state}` }) : null),
+        h('div', { class: 'plato-dish-line-name' }, sourceBadge(ing), ' ', h('strong', { text: ing.name }), ing.state !== 'otro' ? h('span', { class: 'plato-muted plato-small', text: ` ${ing.state}` }) : null),
         h('div', { class: 'plato-dish-line-inputs' }, amount, unit,
           h('button', { class: 'btn', 'data-variant': 'ghost', 'data-size': 'icon-sm', type: 'button', 'aria-label': `Quitar ${ing.name}`, onclick: () => { lines.splice(i, 1); renderLines(); ingQ.focus(); } }, icon('trash', 16))),
         out);
@@ -174,10 +195,11 @@ function openBuilder(dish) {
   function renderResults() {
     const needle = normText(ingQ.value);
     if (!needle) { results.hidden = true; results.replaceChildren(); return; }
-    const found = ingredients.filter((i) => normText(i.name).includes(needle)).slice(0, 8);
+    const found = ingredients.filter((i) => (src === 'todos' || sourceOf(i) === src) && normText(i.name).includes(needle)).slice(0, 8);
     results.hidden = false;
     results.replaceChildren(...(found.length ? found.map((i) => h('li', {}, h('button', { class: 'plato-dish-result', type: 'button', onclick: () => add(i) },
-      h('strong', { text: i.name }), h('span', { class: 'plato-muted plato-small', text: ` ${i.state !== 'otro' ? `${i.state} · ` : ''}${num(i.kcal, 0)} kcal / 100 g` })))) : [h('li', { class: 'plato-muted plato-small', text: 'Ningún ingrediente coincide. Prueba en inglés (por ejemplo, “beans”).' })]));
+      sourceBadge(i), ' ', h('strong', { text: i.name }), h('span', { class: 'plato-muted plato-small', text: ` ${i.state !== 'otro' ? `${i.state} · ` : ''}${num(i.kcal, 0)} kcal / 100 g${equivalentText(i) ? ` · ${equivalentText(i)}` : ''}` })))) :
+      [h('li', { class: 'plato-muted plato-small', text: src === 'usda' ? 'Ningún ingrediente coincide. USDA está en inglés (por ejemplo, “beans”).' : src === 'smae' ? 'Ningún ingrediente coincide en el SMAE.' : 'Ningún ingrediente coincide. SMAE está en español y USDA en inglés.' })]));
   }
   function add(i) {
     if (lines.length >= MAX_LINES) { say(`Máximo ${MAX_LINES} ingredientes por receta.`); return; }
@@ -217,7 +239,7 @@ function openBuilder(dish) {
     h('label', { class: 'plato-row plato-dish-switch', for: 'dish-multi', style: 'gap:0.5rem;align-items:flex-start' }, multiIn, h('span', { class: 'plato-stack-sm' }, h('strong', { text: 'Se sirve por piezas' }), h('span', { class: 'plato-muted plato-small', text: 'Una dieta podrá decir × 3.' }))),
     h('div', { class: 'field' }, h('label', { for: 'dish-notes' }, 'Notas ', h('span', { class: 'plato-muted', text: '(opcional, cómo se prepara)' })), notesIn),
     h('fieldset', { class: 'plato-dish-ingredients' }, h('legend', { text: 'Ingredientes' }),
-      h('div', { class: 'field' }, ingQ, results), linesEl),
+      srcBox, h('div', { class: 'field' }, ingQ, results), linesEl),
     totals, error),
   h('footer', { class: 'plato-actions' }, h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', onclick: () => dlg.close() }, 'Cancelar'), save));
   dlg = h('dialog', { class: 'dialog plato-dish-dialog', id: 'dish-dialog', 'aria-labelledby': 'dish-title' },

@@ -2,14 +2,14 @@
 // Holds the plan being edited, one snapshot per dish (what the diet saved; the server keeps it until "Actualizar") and the dish list.
 import { h, icon, num } from './ui.js';
 import { normText } from './tags.js';
-import { KEYS, MAX_PER_SLOT, MIN_SERVINGS, MAX_SERVINGS, validServings, fmtServings, slotLines, dayTotals } from './plan-math.js';
+import { KEYS, MAX_PER_SLOT, MIN_SERVINGS, MAX_SERVINGS, validServings, fmtServings, slotLines, dayTotals, fiberText } from './plan-math.js';
 
 export function createPlanEditor({ dishes, closed, onChange }) {
   const byId = new Map(dishes.map((d) => [d.id, d]));
   let plan = {}, snap = {};
   const refresh = new Set();
-  const stats = (n) => `${num(n.kcal, 0)} kcal · P ${num(n.protein_g)} g · G ${num(n.fat_g)} g · C ${num(n.carbs_g)} g · Fibra ${num(n.fiber_g)} g`;
-  const perServing = (d) => Object.fromEntries(KEYS.map((k) => [k, Number(d.nutrition?.[k]) || 0]));
+  const stats = (n) => `${num(n.kcal, 0)} kcal · P ${num(n.protein_g)} g · G ${num(n.fat_g)} g · C ${num(n.carbs_g)} g · ${fiberText(n)}`;
+  const perServing = (d) => { const p = Object.fromEntries(KEYS.map((k) => [k, Number(d.nutrition?.[k]) || 0])); if (d.nutrition?.fiber_incomplete) p.fiber_incomplete = true; return p; };
   const snapOf = (d) => ({ name: d.name, serving_unit: d.serving_unit, per_serving: perServing(d) });
   const changed = (id) => {   // the dish today differs from what this diet saved
     const d = byId.get(id), s = snap[id];

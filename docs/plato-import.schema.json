@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "title": "plato-import v1 (dishes)",
- "description": "The file an AI assistant produces for AHT Fitness 'Importar recetas'. Reference ingredients by fdc_id from the 'Lista para IA (JSON)' export. Never write nutrition numbers: the app computes them (any that are sent are ignored). One file = up to 50 dishes.",
+ "description": "The file an AI assistant produces for AHT Fitness 'Importar recetas'. Reference ingredients from the 'Lista para IA (JSON)' export: USDA ones by fdc_id, SMAE ones (no fdc_id) by ingredient_id. Never write nutrition numbers: the app computes them (any that are sent are ignored). One file = up to 50 dishes.",
  "type": "object",
  "additionalProperties": false,
  "required": [
@@ -64,7 +64,6 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-       "fdc_id",
        "amount",
        "unit"
       ],
@@ -72,7 +71,13 @@
        "fdc_id": {
         "type": "integer",
         "minimum": 1,
-        "description": "From the ingredient export. Never guess a name."
+        "description": "USDA ingredients: the fdc_id from the ingredient export. Never guess a name."
+       },
+       "ingredient_id": {
+        "type": "string",
+        "minLength": 15,
+        "maxLength": 15,
+        "description": "Ingredients without an fdc_id (SMAE): the id from the ingredient export. Use fdc_id OR ingredient_id."
        },
        "name": {
         "type": "string",
@@ -89,7 +94,19 @@
         "maxLength": 60,
         "description": "'g', 'ml' (only if has_density), or a portion label copied EXACTLY from that ingredient's portions."
        }
-      }
+      },
+      "anyOf": [
+       {
+        "required": [
+         "fdc_id"
+        ]
+       },
+       {
+        "required": [
+         "ingredient_id"
+        ]
+       }
+      ]
      }
     }
    }

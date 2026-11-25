@@ -13,6 +13,7 @@ export const slotLines = (plan, d, k) => { const v = plan?.[d]?.[k]; return Arra
 export const slotNumbers = (calc, d, k) => calc?.days?.[d]?.slots?.[k] || null;
 export const dayNumbers = (calc, d) => calc?.days?.[d] || null;
 export const kcalText = (s) => `${num(s.kcal, 0)} kcal${s.free_text ? ' + texto libre' : ''}`;
+export const fiberText = (n) => (n?.fiber_incomplete ? 'Fibra: incompleta' : `Fibra ${num(n?.fiber_g)} g`);
 export const macrosText = (t) => `P ${num(t.protein_g)} g · G ${num(t.fat_g)} g · C ${num(t.carbs_g)} g`;
 const text = (meals, d, k) => String(meals?.[d]?.[k] || '').trim();
 
@@ -28,6 +29,7 @@ export function dayTotals(plan, meals, d, shown, snap) {
     const s = Object.fromEntries(KEYS.map((x) => [x, 0]));
     for (const l of lines) for (const x of KEYS) s[x] += l.servings * (Number(snap[l.dish]?.per_serving?.[x]) || 0);
     for (const x of KEYS) total[x] += s[x];
+    if (lines.some((l) => snap[l.dish]?.per_serving?.fiber_incomplete)) { s.fiber_incomplete = true; total.fiber_incomplete = true; }
     s.free_text = !!t; if (t) free = true;
     slots[k] = s;
   }

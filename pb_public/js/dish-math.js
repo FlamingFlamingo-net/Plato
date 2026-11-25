@@ -28,13 +28,16 @@ export function gramsOf(ing, amount, unit) {
 // lines: [{ ingredient: id, amount, unit }], byId: Map(id → ingredient). → { nutrition, lines: [{ grams, kcal, error, missing }] }
 export function compute(lines, byId) {
   const total = Object.fromEntries(KEYS.map((k) => [k, 0]));
+  let fiberGap = false;
   const info = lines.map((l) => {
     const ing = byId.get(l.ingredient);
     if (!ing) return { missing: true };
     const g = gramsOf(ing, Number(l.amount), l.unit);
     if (g.error) return { error: g.error };
     for (const k of KEYS) total[k] += (g.grams / 100) * ing[k];
+    if (ing.extra?.fiber_missing) fiberGap = true;
     return { grams: g.grams, kcal: (g.grams / 100) * ing.kcal };
   });
+  if (fiberGap) total.fiber_incomplete = true;   // same rule as the server: a food without a fibre value
   return { nutrition: total, lines: info, ok: info.length > 0 && info.every((i) => i.grams != null) };
 }
