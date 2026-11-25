@@ -201,6 +201,8 @@ await step('A1', async () => {
   const P = await open(1366, 900, '/ingredients.html');
   await P.waitFor(`document.querySelectorAll('.plato-ing-table tbody tr').length > 10`, 20000);
   await P.eval(`window.__ai = ''; URL.createObjectURL = (b) => { b.text().then((x) => { window.__ai = x; }); return '#'; }`);
+  await P.click('#tab-descargas');
+  await P.waitFor(`document.getElementById('ing-ai')`);
   await P.click('#ing-ai');
   await P.waitFor(`window.__ai.length > 1000`, 15000);
   const doc = JSON.parse(await P.eval('window.__ai'));

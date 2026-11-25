@@ -1,6 +1,7 @@
 // ingredients.js — Catálogo → Ingredientes (spec "Feature: Ingredients, slice (a)" + "SMAE and USDA side by side").
 // Read-only platform data per 100 g. One tab per data source (SMAE | USDA | Otros, only those present) with its own search,
-// filters, sort and tags, plus the Equivalentes tab (SMAE groups). CSV of the tab, and a JSON list for an AI assistant.
+// filters, sort and tags, plus the Equivalentes tab (SMAE groups) and Descargas (full CSV per source, JSON for an AI assistant;
+// downloads ignore search and filters, so they live in their own tab).
 import { requireRole, signOut } from './api.js';
 import { h, icon, num } from './ui.js';
 import { listAll, loadTags, linksFor, mountTagChips, tagBadges, openTagDialog, normText } from './tags.js';
@@ -40,7 +41,7 @@ const sample = rows.some((r) => r.dataset === 'ejemplo');
 document.getElementById('sample-banner').hidden = !sample;
 const bySource = Object.fromEntries(SOURCES.map((s) => [s, rows.filter((r) => sourceOf(r) === s)]));
 const present = SOURCES.filter((s) => bySource[s].length);
-const TABS = [...present, 'equivalentes'];
+const TABS = [...present, 'equivalentes', 'descargas'];
 const withGroups = rows.filter((r) => Array.isArray(r.groups) && r.groups.length);
 
 // ---------- state: one per source tab (search, state, sort, tags), plus the Equivalentes search ----------
@@ -79,6 +80,8 @@ const countsFor = (src) => {
 // ---------- tabs ----------
 const tabsEl = document.getElementById('ing-tabs');
 const tabBtn = (key) => {
+  if (key === 'descargas') return h('button', { class: 'plato-list-tab plato-tab-dl', type: 'button', role: 'tab', id: 'tab-descargas', 'aria-controls': 'ing-panel', 'aria-selected': String(tab === key), tabindex: tab === key ? '0' : '-1',
+    'aria-label': 'Descargas', title: 'Descargas', onclick: () => go(key) }, icon('download', 16), h('span', { class: 'plato-tab-dl-text', text: 'Descargas' }));
   const label = key === 'equivalentes' ? (sample && !bySource.smae.length ? 'Equivalentes (ejemplo)' : 'Equivalentes') : SOURCE_TAB[key];
   const n = key === 'equivalentes' ? null : bySource[key].length;
   return h('button', { class: 'plato-list-tab', type: 'button', role: 'tab', id: `tab-${key}`, 'aria-controls': 'ing-panel', 'aria-selected': String(tab === key), tabindex: tab === key ? '0' : '-1',
@@ -100,8 +103,6 @@ const sortSel = h('select', { class: 'select', id: 'ing-sort', 'aria-label': 'Or
 search.addEventListener('input', () => { if (cur()) { cur().q = search.value; cur().shown = 60; } else eqState.q = search.value; sync(); render(); });
 stateSel.addEventListener('change', () => { cur().state = stateSel.value; cur().shown = 60; sync(); render(); });
 sortSel.addEventListener('change', () => { cur().sort = sortSel.value; sync(); render(); });
-const csvBtn = h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', onclick: downloadCsv }, icon('copy', 16), 'Descargar lista (CSV)');
-const aiBtn = h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', id: 'ing-ai', onclick: downloadForAi, title: 'Un archivo JSON con los ingredientes de todas las fuentes, para pegarlo en tu asistente de IA' }, icon('copy', 16), 'Lista para IA (JSON)');
 const controls = document.getElementById('ing-controls');
 const tagBar = document.getElementById('tag-bar');
 const srcLine = document.getElementById('source-line');
@@ -113,9 +114,10 @@ function paint() {
   search.value = s ? s.q : eqState.q;
   search.placeholder = tab === 'equivalentes' ? 'Buscar en los grupos' : tab === 'usda' ? 'Buscar por nombre (en inglés)' : 'Buscar por nombre';
   controls.classList.toggle('plato-ing-controls--eq', !s);
-  controls.replaceChildren(...(s ? [search, stateSel, sortSel, csvBtn, aiBtn] : [search]));
+  controls.hidden = tab === 'descargas';
+  controls.replaceChildren(...(s ? [search, stateSel, sortSel] : tab === 'equivalentes' ? [search] : []));
   if (s) { stateSel.value = s.state; sortSel.value = s.sort; }
-  const line = s ? SOURCE_LINE[tab] : (bySource.smae.length ? 'Grupos del SMAE: la porción en gramos es 1 equivalente de ese grupo.' : '');
+  const line = s ? SOURCE_LINE[tab] : (tab === 'equivalentes' && bySource.smae.length ? 'Grupos del SMAE: la porción en gramos es 1 equivalente de ese grupo.' : '');
   srcLine.textContent = line; srcLine.hidden = !line;
   tagBar.replaceChildren(); chips = null;
   tagBar.hidden = !s || !tags.length;
@@ -144,6 +146,7 @@ let seq = 0;   // a slower, older render must never overwrite a newer one
 async function render() {
   const mine = ++seq;
   if (tab === 'equivalentes') { renderGroups(); return; }
+  if (tab === 'descargas') { renderDownloads(); return; }
   const s = cur(), needle = normText(s.q);
   let out = bySource[tab].filter((r) => (!s.state || r.state === s.state) && (!needle || normText(r.name).includes(needle)));
   if (s.selected.size) out = out.filter((r) => [...s.selected].every((id) => tagItems.get(id)?.has(r.id)));
@@ -202,16 +205,32 @@ function renderGroups() {
     }));
 }
 
-// ---------- CSV (the tab's rows) ----------
-function downloadCsv() {
-  const list = bySource[tab] || rows;
+// ---------- Descargas: whole lists, never filtered ----------
+function renderDownloads() {
+  statusEl.textContent = '';
+  const nf = new Intl.NumberFormat('es-MX');
+  const item = (title, text, n, label, onclick, id) => h('li', { class: 'card plato-dl' },
+    h('div', {}, h('h2', { text: title }), h('p', { class: 'plato-muted', text }), h('p', { class: 'plato-muted plato-small', text: `${nf.format(n)} ${n === 1 ? 'alimento' : 'alimentos'}` })),
+    h('button', { class: 'btn', 'data-variant': 'outline', type: 'button', id, onclick }, icon('download', 16), label));
+  const CSV_TEXT = { smae: 'Todos los alimentos del SMAE: valores por 100 g, grupo y equivalente, porciones y otros nutrientes. Se abre en Excel.',
+    usda: 'Todos los alimentos del USDA: valores por 100 g, porciones y otros nutrientes. Se abre en Excel.', otros: 'Todos los demás alimentos cargados. Se abre en Excel.' };
+  view.replaceChildren(
+    h('p', { class: 'plato-muted' }, 'Las descargas traen la lista completa: no usan la búsqueda ni los filtros de las otras pestañas.'),
+    h('ul', { class: 'plato-dl-list' },
+      ...present.map((s) => item(`${SOURCE_SHORT[s] === 'Otro' ? 'Otros' : SOURCE_SHORT[s]} completo (CSV)`, CSV_TEXT[s], bySource[s].length, 'Descargar CSV', () => downloadCsv(s), `dl-${s}`)),
+      item('Lista para tu asistente de IA (JSON)', 'Todas las fuentes en un archivo, para pegarlo en tu chat de IA cuando te ayude a escribir recetas.', rows.length, 'Descargar JSON', downloadForAi, 'ing-ai')));
+}
+
+// ---------- CSV (one source, complete) ----------
+function downloadCsv(src) {
+  const list = bySource[src] || rows;
   const extraKeys = [...new Set(list.flatMap((r) => Object.keys(r.extra || {})))].sort();
   const cell = (v) => { const s = v == null ? '' : String(v); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const head = ['name', 'state', 'kcal', 'protein_g', 'fat_g', 'carbs_g', 'fiber_g', 'piece_g', 'density_g_ml', ...extraKeys.map((k) => `extra:${k}`), 'groups', 'portions', 'dataset', 'source', 'version'];
   const lines = [head.join(',')].concat([...list].sort((a, b) => collator.compare(a.name, b.name)).map((r) => [r.name, r.state, r.kcal, r.protein_g, r.fat_g, r.carbs_g, r.fiber_g, r.piece_g || '', r.density_g_ml || '',
     ...extraKeys.map((k) => r.extra?.[k] ?? ''), (r.groups || []).map((g) => `${g.group}:${g.portion_g}`).join(';'), (r.portions || []).map((p) => `${p.label}:${p.grams}`).join(';'), r.dataset, r.source, r.version].map(cell).join(',')));
   const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = h('a', { href: URL.createObjectURL(blob), download: `ingredientes-${tab}.csv` });
+  const a = h('a', { href: URL.createObjectURL(blob), download: `ingredientes-${src}.csv` });
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }

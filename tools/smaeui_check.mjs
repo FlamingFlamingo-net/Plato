@@ -48,7 +48,8 @@ const ready = (p) => p.waitFor(`document.getElementById('status').textContent.in
 await step('S1', async () => {
   await ready(D);
   const tabs = await D.eval(`[...document.querySelectorAll('#ing-tabs [role=tab]')].map((x) => [x.getAttribute('aria-label'), x.getAttribute('aria-selected')])`);
-  check('S1 tabs: SMAE (español) first and open, USDA (inglés), Equivalentes; no "Otros"', JSON.stringify(tabs) === JSON.stringify([['SMAE (español), 5', 'true'], ['USDA (inglés), 420', 'false'], ['Equivalentes', 'false']]), JSON.stringify(tabs));
+  check('S1 tabs: SMAE (español) first and open, USDA (inglés), Equivalentes, Descargas; no "Otros"', JSON.stringify(tabs) === JSON.stringify([['SMAE (español), 5', 'true'], ['USDA (inglés), 420', 'false'], ['Equivalentes', 'false'], ['Descargas', 'false']]), JSON.stringify(tabs));
+  check('S1 the search row has only search, estado and orden (no download buttons)', (await D.eval(`[...document.querySelectorAll('#ing-controls > *')].map((e) => e.id).join()`)) === 'ing-q,ing-state,ing-sort');
   check('S1 the SMAE tab lists only the SMAE foods, A–Z', (await names(D)).join() === 'Acelga prueba cruda,Frijol prueba cocido,Leche prueba,Pollo prueba cocido,Tortilla prueba', (await names(D)).join());
   check('S1 the source line names SMAE', (await D.text('#source-line')).startsWith('Fuente: SMAE'));
   const row = (n) => D.eval(`(() => { const th = [...document.querySelectorAll('.plato-ing-table tbody > tr > th')].find((x) => x.querySelector('.plato-ing-name').textContent === ${JSON.stringify(n)}); const tr = th.parentElement;
@@ -111,6 +112,17 @@ await step('E1', async () => {
 
 await step('A1', async () => {
   await D.eval(`window.__json = ''; const o = URL.createObjectURL.bind(URL); URL.createObjectURL = (b) => { b.text().then((x) => { window.__json = x; }); return o(b); }`);
+  await D.click('#tab-descargas');
+  await D.waitFor(`document.getElementById('ing-ai')`);
+  const dl = await D.eval(`({ ctl: document.getElementById('ing-controls').hidden, tags: document.getElementById('tag-bar').hidden, items: [...document.querySelectorAll('.plato-dl')].map((c) => c.querySelector('h2').textContent + ' | ' + c.querySelector('.plato-small').textContent + ' | ' + c.querySelector('button').textContent), note: document.querySelector('#ing-view > p').textContent })`);
+  check('A0 Descargas: no search or tag row; SMAE CSV (5), USDA CSV (420) and the AI JSON (425), each with its button; a note says the filters do not apply',
+    dl.ctl && dl.tags && JSON.stringify(dl.items) === JSON.stringify(['SMAE completo (CSV) | 5 alimentos | Descargar CSV', 'USDA completo (CSV) | 420 alimentos | Descargar CSV', 'Lista para tu asistente de IA (JSON) | 425 alimentos | Descargar JSON']) && dl.note.includes('no usan la búsqueda ni los filtros'), JSON.stringify(dl));
+  await D.eval(`window.__csv = ''; const o0 = URL.createObjectURL.bind(URL); window.__o0 = o0; URL.createObjectURL = (b) => { b.text().then((x) => { window.__csv = x; }); return o0(b); }`);
+  await D.click('#dl-smae');
+  await D.waitFor(`window.__csv.length > 100`);
+  const lines = (await D.eval('window.__csv')).trim().split('\n');
+  check('A0 the SMAE CSV is the whole SMAE list (5 rows + header) with group and portions, even though the SMAE tab was filtered earlier', lines.length === 6 && lines.some((l) => l.startsWith('Frijol prueba cocido') && l.includes('Leguminosas:90') && l.includes('equivalente:90')), lines.length + ' ' + lines[0]);
+  await D.eval('URL.createObjectURL = window.__o0');
   await D.click('#ing-ai');
   await D.waitFor(`window.__json.length > 1000`);
   const doc = JSON.parse(await D.eval('window.__json'));
@@ -209,6 +221,11 @@ await step('P1', async () => {
     await p.waitFor(`document.querySelectorAll('details.plato-group').length === 1`, 15000);
     check(`P1 ${w}px: Equivalentes (group open) fits`, await p.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= ${w} + 1`));
     if (w === 320) await p.screenshot(`${OUT}/eq-320.png`);
+    await p.goto(`${BASE}/ingredients.html?tab=descargas`);
+    await p.waitFor(`document.getElementById('ing-ai')`, 15000);
+    const dlr = await p.eval(`({ grow: document.documentElement.scrollWidth > innerWidth || innerWidth > ${w} + 1, tabs: [...document.querySelectorAll('#ing-tabs [role=tab]')].every((b) => b.getBoundingClientRect().right <= innerWidth + 0.5), btns: [...document.querySelectorAll('.plato-dl button')].every((b) => b.getBoundingClientRect().right <= innerWidth + 0.5) })`);
+    check(`P1 ${w}px: four tabs fit (Descargas as an icon), the download cards and buttons fit`, !dlr.grow && dlr.tabs && dlr.btns, JSON.stringify(dlr));
+    if (w === 320) await p.screenshot(`${OUT}/dl-320.png`);
     await p.goto(`${BASE}/dishes.html`);
     await p.waitFor(`document.getElementById('new-dish')`, 15000); await sleep(500);
     await p.click('#new-dish');

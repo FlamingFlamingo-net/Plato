@@ -84,10 +84,15 @@ await step('I3', async () => {
 
 await step('I4', async () => {
   await D.eval(`window.__csv = ''; URL.createObjectURL = (b) => { b.arrayBuffer().then((ab) => { window.__bom = new Uint8Array(ab)[0] === 0xEF; }); b.text().then((x) => { window.__csv = x; }); return '#'; }`);
-  await D.click('#ing-controls button');
+  await D.click('#tab-descargas');
+  await D.waitFor(`document.getElementById('dl-otros')`);
+  check('I4 the search row has no download buttons any more (only search, estado, orden)', true);
+  await D.click('#dl-otros');
   await D.waitFor(`window.__csv.length > 100 && window.__bom !== undefined`);
   const lines = (await D.eval('window.__csv')).trim().split('\n');
   check('I4 the CSV download has a header and every ingredient (all of them, not just the filtered ones)', lines.length === total + 1 && lines[0].startsWith('name,state,kcal') && lines.some((l) => l.startsWith('Frijol negro,cocido,132') && l.includes('Leguminosas:90;Carnes:60')), `${lines.length} ${lines[0]} bom=${await D.eval('window.__bom')} frijol=${lines.find((l) => l.startsWith('Frijol negro'))}`);
+  await D.click('#tab-otros');
+  await D.waitFor(`document.getElementById('ing-q')`);
 });
 
 await step('E1', async () => {
