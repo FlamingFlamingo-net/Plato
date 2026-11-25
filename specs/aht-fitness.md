@@ -1812,7 +1812,7 @@ One commit (app v39): `install.js` + the panel markup/CSS, a new check `installp
 
 ---
 
-## Feature: SMAE and USDA side by side (APPROVED 2026-11-25, owner "aos")
+## Feature: SMAE and USDA side by side (APPROVED 2026-11-25, owner "aos"; s1 + s2 BUILT v41)
 
 **Context (owner: "both work in conjunction … tabs for either so we can search ingredients separately but can pull from either").** The client may use SMAE (owner, 2026-11-10). SMAE V4 has been read into tables outside the repo (`Downloads/SMAE-interpretado`): 2,312 foods, Spanish names, each with its equivalents group and serving. USDA SR Legacy (420 foods, English) is live. The ingredient table, the loader, the `groups` field and the Equivalentes view were built for exactly this in slice (a); nothing about dishes or diets has to change shape.
 
@@ -1852,6 +1852,13 @@ One commit (app v39): `install.js` + the panel markup/CSS, a new check `installp
 - `tools/smae_to_csv.py` on the real table: 2,312 rows read, **2,306 loaded**, 6 left out with their reason (`-no-cargados.csv`: misprinted weights or a missing value). 1,379 without fibre (`fiber_missing`), 76 `por_confirmar`, 20 renamed with their serving.
 - Beyond the choices above (both reversible): drinks and sweets print protein / fat blank when there is none, so blank = 0 in those two groups; sugar and fats that the book's rounding puts just over 100 g per 100 g (up to 110) are set to 100 and marked `por_confirmar`.
 - Real load on a throwaway server: 8 s, 1,677 starter-tag links; a second load: 0 new. `tools/smaeload_check.mjs` (21) uses an invented mini table, so no book data enters the repo.
+
+### Built (s2, v41)
+- Ingredientes: a tab per source present (SMAE | USDA | Otros) + Equivalentes; each tab keeps its own search, state, sort and tag chips (counts per tab, counted on the device); last tab remembered on the device. SMAE rows show group and equivalent; no fibre value shows "—"; "por confirmar" badge. Equivalentes: closed group cards in SMAE order with their own search.
+- Recipe builder: Todos | SMAE | USDA (radio group, arrow keys, remembered), SMAE/USDA labels on results and lines, units g / equivalente / household unit.
+- `fiber_incomplete` on dish nutrition, diet snapshots, meal and day totals (server and screen, same rule); shown as "Fibra: incompleta".
+- AI list v2 (both sources, `source`, fibre null when unknown); import schema: `fdc_id` OR `ingredient_id`. Small phones show "SMAE (n) | USDA (n)".
+- Also fixed: a stray "null" printed under the ingredients table (old code). `smaeui_check` 43.
 
 ### Later
 Spanish names for USDA foods; equivalents for USDA foods; "dish as equivalents" (count a diet in equivalents per group); fixing the 56 + 70 flagged SMAE rows with the client.
