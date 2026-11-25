@@ -84,6 +84,7 @@ async function renderMeals() {
   const plannedKeys = new Set(planned.map(([k]) => k));
   const bySlot = {};
   for (const l of logs) (bySlot[l.slot] ||= []).push(l);
+  markSeen('meal', logs.filter((l) => l.photo).map((l) => l.feedback_at));   // the feedback shown on this day's photos
 
   document.getElementById('plate').replaceChildren(plate(planned.map(([k]) => ({ slot: k, done: !!bySlot[k] })), 220, day === 'yesterday' ? 'ayer' : 'hoy'));
   const when = day === 'yesterday' ? 'Ayer' : 'Hoy';
@@ -178,8 +179,8 @@ try {
         h('strong', { class: 'plato-small', text: `${SLOT_LABEL[l.slot]} · ${longDate(l.date)}` }),
         feedbackEl(l, { from: 'Tu nutrióloga/o', isNew: isNewSince(l, fbSince) }))));
   }
+  markSeen('meal', older.map((l) => l.feedback_at));
 } catch { /* the rest of Hoy still works */ }
-markSeen('meal');
 
 // Today's physical activity (same-day delete, like meals).
 const actEl = document.getElementById('activities');

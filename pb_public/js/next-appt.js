@@ -51,6 +51,6 @@ export async function mountNextAppointment(el, me) {
   const push = next ? h('div', { id: 'push-box' }) : null;
   el.replaceChildren(...parts, ...(push ? [push] : []));
   el.hidden = !parts.length;
-  if (parts.length) markSeen('appointment');
+  if (parts.length) markSeen('appointment', rows.map((a) => a.changed_at));
   if (push) mountPushInvite(push, me);
 }

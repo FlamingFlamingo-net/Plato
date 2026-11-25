@@ -34,7 +34,13 @@ export function feedbackText(rec) {
 }
 
 // "New since I last looked" on the patient's phone (kept on the device; no extra server field).
+// What is stored is the newest SERVER time among the things the screen showed (feedback_at, changed_at), never the phone's
+// clock: a phone running fast or slow would otherwise hide a fresh change or keep an old dot.
 const KEY = (kind) => `plato.feedbackSeen.${kind}`;
 export const lastSeen = (kind) => localStorage.getItem(KEY(kind)) || '';
-export const markSeen = (kind) => localStorage.setItem(KEY(kind), new Date().toISOString().replace('T', ' '));
+export function markSeen(kind, stamps) {
+  let top = lastSeen(kind);
+  for (const s of stamps || []) if (s && s > top) top = s;
+  if (top) localStorage.setItem(KEY(kind), top);
+}
 export const isNewSince = (rec, since) => hasFeedback(rec) && (!since || rec.feedback_at > since);

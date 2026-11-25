@@ -82,7 +82,7 @@ try {
   if (photos.length && !canDelete) {
     grid.after(h('p', { class: 'plato-muted plato-small', style: 'margin:0.75rem 0 0', text: '¿Quieres borrar una foto? Pídeselo a tu nutrióloga o nutriólogo.' }));
   }
-  markSeen('progress');
+  markSeen('progress', photos.map((p) => p.feedback_at));
 } catch (e) {
   ppStatus.textContent = e.message;
 }
