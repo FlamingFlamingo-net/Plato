@@ -1776,7 +1776,7 @@ Additions beyond the draft: plan lines of a deleted dish keep their snapshot and
 
 ---
 
-## Design: iPhone "Instalar app" panel (DRAFT 2026-11-11, awaiting approval)
+## Design: iPhone "Instalar app" panel (BUILT v39; owner approved 2026-11-11)
 
 **Context.** On iPhone a website cannot open an install prompt (Apple does not allow it). Today "Instalar app" only reveals one small line under the top bar; the owner tapped it and thought nothing happened (card `t_fba45084`). Patients will hit the same thing.
 
@@ -1808,3 +1808,50 @@ Additions beyond the draft: plan lines of a deleted dish keep their snapshot and
 
 ### Build plan
 One commit (app v39): `install.js` + the panel markup/CSS, a new check `installpanel_check`; deploy; then update the install PDF.
+
+
+---
+
+## Feature: SMAE and USDA side by side (APPROVED 2026-11-25, owner "aos")
+
+**Context (owner: "both work in conjunction … tabs for either so we can search ingredients separately but can pull from either").** The client may use SMAE (owner, 2026-11-10). SMAE V4 has been read into tables outside the repo (`Downloads/SMAE-interpretado`): 2,312 foods, Spanish names, each with its equivalents group and serving. USDA SR Legacy (420 foods, English) is live. The ingredient table, the loader, the `groups` field and the Equivalentes view were built for exactly this in slice (a); nothing about dishes or diets has to change shape.
+
+### What the nutritionist sees
+1. **Ingredientes** gets source tabs: **SMAE (español)** | **USDA (inglés)** | **Equivalentes**. Each source tab has its own search, state filter, sort, tags and count; the page remembers the last tab. SMAE is first.
+2. Each SMAE food shows its **group / subgroup** (e.g. "Cereales y tubérculos · sin grasa") and its **equivalent** ("1 equivalente = 1/2 taza, 72 g") next to the values per 100 g, like USDA.
+3. **Equivalentes** lists the SMAE groups (Verduras, Frutas, Cereales sin/con grasa, Leguminosas, AOA ×4, Leche ×4, Grasas ×2, Azúcares ×2, Libres, Bebidas alcohólicas) with each food's grams per equivalent, searchable.
+4. **Recetas → builder**: the ingredient search has the same choice, **Todos | SMAE | USDA** (Todos by default); every result carries a small **SMAE** or **USDA** label. A dish can mix both ("Corn tortilla" from USDA + "Frijol negro cocido" from SMAE). The units offered for an SMAE food include **equivalente** and its household unit ("taza", "pieza mediana"), besides g.
+5. The **AI list (JSON)** includes both sources, each item labelled with its source; SMAE foods (no USDA number) are referenced by their app id. The import schema accepts either.
+
+### How SMAE becomes ingredients
+1. A converter (`tools/smae_to_csv.py`) turns the SMAE table into the loader's CSV: values ÷ net weight × 100 = per 100 g; group/subgroup → `groups` ("Cereales sin grasa:30" = 30 g is one equivalent); the serving → portions (`equivalente` = net grams; the unit, e.g. `taza` = net ÷ 1/2); raw / cooked from the name (crudo, cocido…, otherwise "otro"); other nutrients (vitamins, sodium, cholesterol…) → `extra`.
+2. Loaded as its own data set `smae-v4` with the existing loader (dry run, then `--apply`; repeat loads change nothing; `--remove-dataset` takes it out again, leaving dishes flagged, as for any removed ingredient).
+3. **The SMAE data file never goes into the repo**: the repo is public and SMAE is a copyrighted book. The CSV stays on this computer (`C:\Programming\Repos\AHT-validacion\data\`); only the converter is in the repo.
+
+### Choices I propose (owner can change any)
+1. **Rows that need a person (56) are not loaded**; they stay in `smae-revisar.csv` for the client to fix by hand. Rows whose calories don't add up (70) **are loaded as printed** and marked "por confirmar" in the table.
+2. **Repeated names (13)**: the serving is added to the name ("Leche entera (taza)") so both stay.
+3. **No fibre in SMAE** for animal foods, milk, fats and sugars (1,355 foods): left empty, not 0. A dish total that includes such a food says **"Fibra: incompleta"** instead of a number that looks exact.
+4. **Starter tags** (alta en fibra, alta en proteína, bajo en sodio) are applied to SMAE foods with the same per-100 g thresholds used for USDA, only where the value exists.
+5. No equivalents for USDA foods (SMAE is the equivalents source); no merging of "the same food" across sources.
+
+### Build plan (commits, each tested as committed)
+- **s1 converter + load check**: `tools/smae_to_csv.py`, run on a throwaway server: counts, per-100 g math against hand-checked rows, repeat load = no change, remove = dishes flagged.
+- **s2 screens**: Ingredientes source tabs and Equivalentes from SMAE; builder source filter, labels and "equivalente" unit; "Fibra: incompleta"; AI list + schema; 320 / 360 / 390 px.
+- **s3 spec**, deploy, then **load SMAE on live** (temporary admin, with your OK, deleted after; counts only).
+
+### Acceptance
+1. Hand-checked rows: "Acelga cruda" (2 tazas, 98 g net, 22 kcal) → 22.4 kcal per 100 g; group Verduras, 98 g per equivalent; units g / equivalente (98 g) / taza (49 g).
+2. Ingredientes: SMAE tab ~2,250 foods in Spanish with group and equivalent; USDA tab unchanged (420); searching "frijol" in SMAE and "beans" in USDA each find their own.
+3. A dish with 1 equivalente of an SMAE cereal + 50 g of a USDA meat: server total = screen total; both labels shown; fibre says "incompleta" when the meat has no fibre value.
+4. Loading twice changes nothing; removing `smae-v4` keeps dishes and flags their lines; USDA is never touched by an SMAE load.
+5. The SMAE CSV is not in git (checked).
+6. Phones: tabs, table and builder fit at 320 / 360 / 390 px; full run, API checks and probe green.
+
+### Built (s1) and decisions
+- `tools/smae_to_csv.py` on the real table: 2,312 rows read, **2,306 loaded**, 6 left out with their reason (`-no-cargados.csv`: misprinted weights or a missing value). 1,379 without fibre (`fiber_missing`), 76 `por_confirmar`, 20 renamed with their serving.
+- Beyond the choices above (both reversible): drinks and sweets print protein / fat blank when there is none, so blank = 0 in those two groups; sugar and fats that the book's rounding puts just over 100 g per 100 g (up to 110) are set to 100 and marked `por_confirmar`.
+- Real load on a throwaway server: 8 s, 1,677 starter-tag links; a second load: 0 new. `tools/smaeload_check.mjs` (21) uses an invented mini table, so no book data enters the repo.
+
+### Later
+Spanish names for USDA foods; equivalents for USDA foods; "dish as equivalents" (count a diet in equivalents per group); fixing the 56 + 70 flagged SMAE rows with the client.
