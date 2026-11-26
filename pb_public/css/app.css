@@ -878,3 +878,14 @@ details.plato-group > .plato-group-list { padding: 0 1rem 0.75rem; }
 .plato-dl p { margin: 0 0 0.15rem; }
 .plato-dl > div { min-width: 0; }
 @media (max-width: 30rem) { .plato-dl { flex-direction: column; align-items: stretch; } }
+
+/* Home feed: every log card is the same size (owner comment, 2026-11-25). Photo cards give the photo whatever is left;
+   text cards keep their action at the bottom; long notes and feedback are trimmed (the full text is on the patient's page). */
+.plato-feed > li.plato-log-card { height: 22rem; align-self: stretch; box-sizing: border-box; }
+.plato-feed > li.plato-log-card:not(.plato-log-card--check):not(.plato-log-card--mood):not(.plato-log-card--activity) { grid-template-rows: minmax(6rem, 1fr) auto; }
+.plato-feed > li.plato-log-card button.plato-photo-btn { aspect-ratio: auto; height: 100%; min-height: 0; }
+.plato-feed > li.plato-log-card--check, .plato-feed > li.plato-log-card--mood, .plato-feed > li.plato-log-card--activity { display: flex; flex-direction: column; align-self: stretch; }
+.plato-feed > li.plato-log-card--mood { padding: 0.75rem; gap: 0.4rem; }   /* it never had the padding the other text cards have */
+.plato-feed > li.plato-log-card--check > :last-child, .plato-feed > li.plato-log-card--mood > :last-child, .plato-feed > li.plato-log-card--activity > :last-child { margin-top: auto; }
+.plato-feed > li.plato-log-card .plato-log-note, .plato-feed > li.plato-log-card .plato-feedback p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.plato-feed > li.plato-log-card--check .plato-log-note, .plato-feed > li.plato-log-card--mood .plato-log-note, .plato-feed > li.plato-log-card--activity .plato-log-note { -webkit-line-clamp: 4; line-clamp: 4; }
