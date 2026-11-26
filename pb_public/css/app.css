@@ -891,14 +891,18 @@ details.plato-group > .plato-group-list { padding: 0 1rem 0.75rem; }
 .plato-seen-mark { display: inline-flex; color: var(--primary); }
 #cards > li.plato-log-card > button.plato-photo-btn { flex: none; height: 8.5rem; aspect-ratio: auto; margin: 0 -0.75rem; width: calc(100% + 1.5rem); }
 #cards > li.plato-log-card > .plato-log-body { padding: 0; display: flex; flex-direction: column; gap: 0.3rem; min-height: 0; overflow: hidden; }
+#cards > li.plato-log-card > .plato-log-body > * { flex: none; }   /* never squash the title: if it is too long, the bottom is cut, not the top */
 #cards .plato-log-title { margin: 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #cards .plato-log-detail { display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.9rem; font-weight: 400; min-width: 0; }
 #cards .plato-log-detail.plato-activity-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 #cards .plato-ate { color: var(--primary); font-weight: 600; }
 #cards .plato-log-note, #cards .plato-feedback p { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-#cards .plato-feedback { margin-top: 0.15rem; }
+#cards .plato-feedback { margin-top: 0.15rem; display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.5rem; }   /* one compact line: stars, then the comment with "…" */
+#cards .plato-feedback > .plato-row { flex: none; }
+#cards .plato-feedback p { display: block; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: unset; line-clamp: unset; }
 /* the buttons at the bottom of every card: same style, full width, "Marcar vista" always the last one */
 .plato-log-actions { display: flex; flex-direction: column; align-items: stretch; gap: 0.4rem; margin-top: auto; flex: none; }
 #cards .plato-log-actions .btn { width: 100%; justify-content: center; }
 .plato-log-actions:empty { display: none; }
+.plato-fb-remove { color: var(--destructive); margin-right: auto; }
 .plato-log-actions > div { display: contents; }

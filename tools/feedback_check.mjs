@@ -47,7 +47,7 @@ await step('B1', async () => {
   const shown = await nutri.eval(`({ stars: ${firstMealCard}.querySelector('.plato-stars')?.getAttribute('aria-label'), text: ${firstMealCard}.querySelector('.plato-feedback p')?.textContent,
     seenBtn: !!${firstMealCard}.querySelector('[aria-label^="Marcar vista"]'), edit: !!${firstMealCard}.querySelector('[aria-label^="Editar retroalimentación"]') })`);
   const after = Number(await nutri.text('#log-count') || 0);
-  check('B1 the card shows ★★★ "¡Excelente!" and the comment, with Editar / Quitar', shown.stars === '3 de 3 estrellas: ¡Excelente!' && shown.text.startsWith('¡Muy buen plato!') && shown.edit, JSON.stringify(shown));
+  check('B1 the card shows ★★★ "¡Excelente!" and the comment, with one button "Editar retroalimentación" (no Quitar on the card)', shown.stars === '3 de 3 estrellas: ¡Excelente!' && shown.text.startsWith('¡Muy buen plato!') && shown.edit, JSON.stringify(shown));
   check('B1 feedback counts as seen (no "Marcar vista"; unseen count down by one)', !shown.seenBtn && after === before - 1, `${before} -> ${after}`);
   await nutri.screenshot(`${OUT}/registros-feedback.png`, { full: false });
 });
@@ -117,7 +117,10 @@ await step('X1', async () => {
 await step('B3r', async () => {
   await openRegistros();
   await nutri.eval('window.confirm = () => true');
-  await nutri.eval(`${firstMealCard}.querySelector('[aria-label^="Quitar retroalimentación"]').click()`);
+  check('B3 the card has no Quitar button', await nutri.eval(`!${firstMealCard}.querySelector('[aria-label^="Quitar retroalimentación"]')`));
+  await nutri.eval(`${firstMealCard}.querySelector('[aria-label^="Editar retroalimentación"]').click()`);
+  await nutri.waitFor(`document.getElementById('fb-dialog')?.open && !document.getElementById('fb-remove').hidden`);
+  await nutri.click('#fb-remove');
   await nutri.waitFor(`!${firstMealCard}.querySelector('.plato-feedback') && ${firstMealCard}.querySelector('[aria-label^="Dar retroalimentación"]')`);
   await ana.goto(`${BASE}/today.html`);
   await ana.waitFor(`document.getElementById('act-status').textContent || document.querySelector('#activities li')`);

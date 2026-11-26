@@ -28,7 +28,7 @@ const made = [
 // one seen photo card (as the nutritionist), so a "Vista" mark is on screen
 { const N = t.nutritionist.token;
   const r = await (await fetch(`${BASE}/api/collections/meal_logs/records?perPage=1&filter=${encodeURIComponent(`patient = '${ANA}' && photo != ''`)}`, { headers: { Authorization: N } })).json();
-  const s = await fetch(`${BASE}/api/collections/meal_logs/records/${r.items[0].id}`, { method: 'PATCH', headers: { Authorization: N, 'Content-Type': 'application/json' }, body: JSON.stringify({ seen_at: new Date().toISOString().replace('T', ' ') }) });
+  const s = await fetch(`${BASE}/api/collections/meal_logs/records/${r.items[0].id}`, { method: 'PATCH', headers: { Authorization: N, 'Content-Type': 'application/json' }, body: JSON.stringify({ seen_at: new Date().toISOString().replace('T', ' '), feedback_text: 'Muy buen plato, bien balanceado; agrega un poco más de verdura en la cena y cuida la porción de tortilla.', feedback_stars: 2 }) });
   made.push(s.status); }
 check('setup: a meal check, a mood and a progress photo are added by the patient', made.every((s) => s === 200), made.join(' '));
 
@@ -89,6 +89,13 @@ for (const [w, h, mobile] of [[1366, 900, false], [390, 844, true], [320, 700, t
       return { icon: document.querySelectorAll('#cards .plato-activity-icon').length, text: e?.textContent, green: !!e && getComputedStyle(e).color === primary }; })()`);
     const last = await p.eval(`[...document.querySelectorAll('#cards .plato-log-actions')].map((r) => { const b = [...r.querySelectorAll('button')]; return b.length ? b[b.length - 1].textContent : ''; })`);
     check(`A5 ${w}px: where a card has "Marcar vista", it is always the bottom button`, last.filter((x) => x.includes('Marcar vista')).length >= 3 && last.every((x) => !x || x.includes('Marcar vista') || !last.some(Boolean) || true) && (await p.eval(`[...document.querySelectorAll('#cards .plato-log-actions')].every((r) => { const b = [...r.querySelectorAll('button')]; const i = b.findIndex((x) => x.textContent.includes('Marcar vista')); return i < 0 || i === b.length - 1; })`)), JSON.stringify(last));
+    const ttl = await p.eval(`[...document.querySelectorAll('#cards .plato-log-title')].map((e) => { const r = e.getBoundingClientRect(), c = e.closest('li').getBoundingClientRect(); return { h: Math.round(r.height), inside: r.bottom <= c.bottom }; })`);
+    check(`A6 ${w}px: every card's title is fully visible (one full line, inside the card), including a photo card with long feedback`, ttl.every((x) => x.h >= 18 && x.inside), JSON.stringify(ttl));
+    const fbc = await p.eval(`(() => { const c = [...document.querySelectorAll('#cards > li')].find((x) => x.querySelector('.plato-feedback')); return c ? [...c.querySelectorAll('.plato-log-actions button')].map((b) => b.textContent) : null; })()`);
+    const fbl = await p.eval(`(() => { const f = document.querySelector('#cards .plato-feedback'); if (!f) return null; const r = f.getBoundingClientRect(), c = f.closest('li'), body = c.querySelector('.plato-log-body').getBoundingClientRect(), pp = f.querySelector('p').getBoundingClientRect();
+      return { inside: r.bottom <= body.bottom + 0.5, oneLine: Math.abs(pp.top - r.top) < 12 && r.height < 40 }; })()`);
+    check(`A8 ${w}px: the feedback box is one compact line (stars + comment with "…") and is never cut in half`, fbl && fbl.inside && fbl.oneLine, JSON.stringify(fbl));
+    check(`A7 ${w}px: a card with feedback has one button, "Editar retroalimentación" (no Quitar)`, JSON.stringify(fbc) === JSON.stringify(['Editar retroalimentación']), JSON.stringify(fbc));
     check(`A4 ${w}px: no round icon badges in the cards; "lo comió" is plain green text`, ate.icon === 0 && ate.text === 'lo comió' && ate.green, JSON.stringify(ate));
     check(`F ${w}px: no sideways scroll`, await p.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= ${w} + 1`));
     await p.screenshot(`${OUT}/feed-${w}.png`, { full: true });
