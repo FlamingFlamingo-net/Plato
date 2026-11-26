@@ -25,6 +25,11 @@ const made = [
   await post('mood_logs', { patient: ANA, date: day(0), mood: 4, note: 'Bien' }),
   await post('progress_photos', { patient: ANA, date: day(0), pose: 'front' }, { field: 'photo' }),
 ];
+// one seen photo card (as the nutritionist), so a "Vista" mark is on screen
+{ const N = t.nutritionist.token;
+  const r = await (await fetch(`${BASE}/api/collections/meal_logs/records?perPage=1&filter=${encodeURIComponent(`patient = '${ANA}' && photo != ''`)}`, { headers: { Authorization: N } })).json();
+  const s = await fetch(`${BASE}/api/collections/meal_logs/records/${r.items[0].id}`, { method: 'PATCH', headers: { Authorization: N, 'Content-Type': 'application/json' }, body: JSON.stringify({ seen_at: new Date().toISOString().replace('T', ' ') }) });
+  made.push(s.status); }
 check('setup: a meal check, a mood and a progress photo are added by the patient', made.every((s) => s === 200), made.join(' '));
 
 const browser = await launch({ port: 9376, profileDir: `${OUT}/chrome-profile` });
@@ -54,6 +59,22 @@ for (const [w, h, mobile] of [[1366, 900, false], [390, 844, true], [320, 700, t
     check(`F ${w}px: every button and "Vista" badge is fully inside its card (nothing cut off); photos keep a real size (≥ 90 px)`, m.every((x) => x.inside) && m.filter((x) => x.img != null).every((x) => x.img >= 90), JSON.stringify(m.filter((x) => !x.inside || (x.img != null && x.img < 90))));
     const pad = await p.eval(`[...document.querySelectorAll('#cards > li.plato-log-card--check, #cards > li.plato-log-card--mood')].map((c) => getComputedStyle(c).paddingLeft)`);
     check(`F ${w}px: the mood card has the same inner spacing as the meal-check card`, pad.length >= 2 && new Set(pad).size === 1 && pad[0] !== '0px', pad.join());
+    const g = await p.eval(`(() => [...document.querySelectorAll('#cards > li.plato-log-card')].map((c) => {
+      const cr = c.getBoundingClientRect(), hd = c.querySelector('.plato-row--between'), name = hd.querySelector('.plato-home-person').getBoundingClientRect(), when = hd.querySelector('.plato-log-when').getBoundingClientRect();
+      const row = c.querySelector('.plato-log-actions'), btns = row ? [...row.querySelectorAll('button')].map((b) => b.getBoundingClientRect()) : [];
+      const left = btns.length ? Math.min(...btns.map((b) => b.left)) : 0, right = btns.length ? Math.max(...btns.map((b) => b.right)) : 0;
+      return { kind: c.className, top: Math.round(cr.top), oneLine: Math.abs((name.top + name.bottom) / 2 - (when.top + when.bottom) / 2) < 6 && hd.getBoundingClientRect().height < 40,
+        badge: [...c.querySelectorAll('.badge')].some((b) => b.textContent.includes('Vista')), mark: !!hd.querySelector('.plato-seen-mark'),
+        btnBottom: btns.length ? Math.round(Math.max(...btns.map((b) => b.bottom))) : null, centred: !btns.length || Math.abs((left + right) / 2 - (cr.left + cr.right) / 2) <= 2,
+        bottomGap: btns.length ? Math.round(cr.bottom - Math.max(...btns.map((b) => b.bottom))) : null }; }))()`);
+    check(`G1 ${w}px: name and time always share one header row`, g.every((x) => x.oneLine), JSON.stringify(g.filter((x) => !x.oneLine)));
+    const av = await p.eval(`[...document.querySelectorAll('#cards .plato-home-person .plato-avatar')].map((e) => Math.round(e.getBoundingClientRect().width))`);
+    const nm = await p.eval(`[...document.querySelectorAll('#cards .plato-home-person strong')].map((e) => Math.round(e.getBoundingClientRect().width))`);
+    check(`G1 ${w}px: avatars keep their full size and every name keeps room for at least a few letters (≥ 40 px)`, new Set(av).size === 1 && nm.every((x) => x >= 40), JSON.stringify({ av, nm }));
+    check(`G2 ${w}px: no "Vista" badge row in any card; a seen card shows a small check next to its time`, !g.some((x) => x.badge) && g.some((x) => x.mark), JSON.stringify(g.map((x) => [x.badge, x.mark])));
+    check(`G3 ${w}px: the buttons are centred in their card`, g.every((x) => x.centred), JSON.stringify(g.filter((x) => !x.centred).map((x) => x.kind)));
+    const rows = {}; for (const x of g) if (x.btnBottom != null) (rows[x.top] ||= []).push(x.btnBottom);
+    check(`G4 ${w}px: cards side by side have their buttons on the same line, at the same distance from the bottom`, Object.values(rows).every((b) => Math.max(...b) - Math.min(...b) <= 1) && new Set(g.filter((x) => x.bottomGap != null).map((x) => x.bottomGap)).size === 1, JSON.stringify({ rows, gaps: g.map((x) => x.bottomGap) }));
     check(`F ${w}px: no sideways scroll`, await p.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= ${w} + 1`));
     await p.screenshot(`${OUT}/feed-${w}.png`, { full: true });
   });

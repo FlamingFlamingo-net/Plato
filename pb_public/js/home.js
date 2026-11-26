@@ -283,12 +283,17 @@ function head(l) {
     h('a', { class: 'plato-home-person', href: `/patient.html?id=${encodeURIComponent(l.patient)}&tab=log` },
       h('span', { class: 'plato-avatar plato-avatar--sm', 'aria-hidden': 'true', text: initials(p?.name) }),
       h('strong', { text: p?.name || 'Paciente' })),
-    h('span', { class: 'plato-muted plato-small', text: `${timeOf(l.created)}${l.date !== dayOf(l.created) ? ` · del ${shortDate(l.date)}` : ''}` }));
+    h('span', { class: 'plato-log-when plato-muted plato-small' },
+      l.seen_at ? h('span', { class: 'plato-seen-mark', title: 'Vista', role: 'img', 'aria-label': 'Vista' }, icon('check', 14), h('span', { class: 'sr-only', text: 'Vista' })) : null,
+      h('span', { text: `${timeOf(l.created)}${l.date !== dayOf(l.created) ? ` · ${dayMonth(l.date)}` : ''}` })));
 }
+// "24 nov" (the year only when it is not this year): keeps the header short enough for the patient's name
+const dayMonth = (d) => { const [y, m, dd] = d.slice(0, 10).split('-').map(Number); return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', ...(y !== new Date().getFullYear() ? { year: 'numeric' } : {}) }).format(new Date(y, m - 1, dd)).replace('.', ''); };
 const dayOf = (created) => localDate(new Date(created.replace(' ', 'T')));
 
+// Seen: the header shows a small check next to the time (head), so the card needs no row for it.
 function seenControl(l) {
-  if (l.seen_at) return h('span', { class: 'badge', 'data-variant': 'secondary' }, icon('check', 14), 'Vista');
+  if (l.seen_at) return null;
   return h('button', {
     class: 'btn', 'data-size': 'sm', type: 'button', 'aria-label': `Marcar vista: ${titleOf(l)} de ${pmap[l.patient]?.name || 'tu paciente'}`,
     onclick: async (ev) => {
@@ -306,7 +311,7 @@ function card(l) {
       head(l),
       h('span', { class: 'plato-row' }, face(l.mood, 22), h('strong', { text: 'Ánimo' }), h('span', { text: moodLabel(l.mood) })),
       l.note ? h('p', { class: 'plato-log-note', text: `“${l.note}”` }) : null,
-      h('div', {}, seenControl(l)));
+      actions(seenControl(l)));
   }
   if (l.type === 'activity') {
     return h('li', { class: 'plato-log-card plato-log-card--activity', dataset: { id: l.id } },
@@ -314,7 +319,7 @@ function card(l) {
       h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon('activity', 18)), h('strong', { text: 'Actividad física' })),
       h('p', { class: 'plato-activity-summary', text: activitySummary(l) }),
       l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-      h('div', {}, seenControl(l)));
+      actions(seenControl(l)));
   }
   if (l.type === 'meal' && !l.photo) {   // a check ("lo comió") or an extra with only a note
     const extra = l.slot === 'extra';
@@ -323,7 +328,7 @@ function card(l) {
       h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon(extra ? 'plus' : 'check', 16)),
         h('strong', { text: extra ? 'Comida extra' : SLOT_LABEL[l.slot] }), extra ? null : h('span', { class: 'plato-muted plato-small', text: 'lo comió' })),
       l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-      h('div', {}, seenControl(l)));
+      actions(seenControl(l)));
   }
   const title = titleOf(l);
   const img = h('img', { alt: `${title} de ${pmap[l.patient]?.name || 'tu paciente'}`, loading: 'lazy', width: 400, height: 300 });
@@ -345,9 +350,9 @@ function card(l) {
       h('strong', { text: title }),
       l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
       feedbackEl(l),
-      feedbackControls(l, { title, onSaved: () => reload() }),
-      hasFeedback(l) ? null : h('div', {}, seenControl(l))));
+      actions(feedbackControls(l, { title, onSaved: () => reload() }), hasFeedback(l) ? null : seenControl(l))));
 }
+function actions(...items) { return h('div', { class: 'plato-log-actions' }, ...items.filter(Boolean)); }
 
 function byDay(items) {
   const out = [];
