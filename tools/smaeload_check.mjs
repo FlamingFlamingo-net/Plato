@@ -111,7 +111,8 @@ check('X2 removing smae-v4 keeps the dish and flags only the SMAE line; USDA sta
 
 // ---------- the book's data stays out of the public repo ----------
 const tracked = spawnSync('git', ['ls-files'], { encoding: 'utf-8' }).stdout.split('\n').filter((f) => /smae/i.test(f));
-check('P1 no SMAE data file is tracked in git (only the converter and this check)', tracked.every((f) => ['tools/smae_to_csv.py', 'tools/smaeload_check.mjs'].includes(f)), tracked.join(' '));
+const data = tracked.filter((f) => !/^tools\/smae[\w-]*\.(py|mjs)$/.test(f));   // code (the converter, the checks) is fine; data files are not
+check('P1 no SMAE data file is tracked in git (only code: the converter and the checks)', data.length === 0 && tracked.includes('tools/smae_to_csv.py'), data.join(' ') || tracked.join(' '));
 
 const ok = results.filter(Boolean).length; console.log(`${ok}/${results.length} passed`);
 process.exit(ok === results.length ? 0 : 1);
