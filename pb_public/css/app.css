@@ -879,25 +879,26 @@ details.plato-group > .plato-group-list { padding: 0 1rem 0.75rem; }
 .plato-dl > div { min-width: 0; }
 @media (max-width: 30rem) { .plato-dl { flex-direction: column; align-items: stretch; } }
 
-/* Home feed (#cards only; the patient page's Registros keeps its own layout): every log card is the same size (owner comment, 2026-11-25). Photo cards give the photo whatever is left;
-   text cards keep their action at the bottom; long notes and feedback are trimmed (the full text is on the patient's page). */
-#cards > li.plato-log-card { height: 22rem; align-self: stretch; box-sizing: border-box; }
-#cards > li.plato-log-card:not(.plato-log-card--check):not(.plato-log-card--mood):not(.plato-log-card--activity) { grid-template-rows: minmax(6rem, 1fr) auto; }
-#cards > li.plato-log-card button.plato-photo-btn { aspect-ratio: auto; height: 100%; min-height: 0; }
-#cards > li.plato-log-card--check, #cards > li.plato-log-card--mood, #cards > li.plato-log-card--activity { display: flex; flex-direction: column; align-self: stretch; }
-#cards > li.plato-log-card--mood, #cards > li.plato-log-card--activity { padding: 0.75rem; gap: 0.4rem; }   /* same inner spacing as the check card, so the buttons line up */   /* it never had the padding the other text cards have */
-#cards > li.plato-log-card--check > :last-child, #cards > li.plato-log-card--mood > :last-child, #cards > li.plato-log-card--activity > :last-child { margin-top: auto; }
-/* the header row never wraps: the name shortens, the time (and the "Vista" check) stay on the right */
-#cards > li.plato-log-card .plato-row--between:first-child, #cards > li.plato-log-card .plato-log-body > .plato-row--between:first-child { flex-wrap: nowrap; gap: 0.5rem; min-width: 0; }
+/* Home feed (#cards only; the patient page's Registros keeps its own layout), owner comments 2026-11-25: every card has the SAME
+   anatomy and size — header (name · time) / photo band (photo cards only, fixed height) / title / detail / note or feedback /
+   one row of buttons, all the same style, pinned to the bottom. Long text is trimmed; the full text is on the patient's page. */
+#cards > li.plato-log-card { height: 22rem; align-self: stretch; box-sizing: border-box; display: flex; flex-direction: column; padding: 0.75rem; gap: 0.5rem; }
+#cards > li.plato-log-card > .plato-row--between:first-child { flex: none; flex-wrap: nowrap; gap: 0.5rem; min-width: 0; }
 #cards > li.plato-log-card .plato-home-person { min-width: 0; overflow: hidden; }
 #cards > li.plato-log-card .plato-home-person .plato-avatar { flex: none; }
 #cards > li.plato-log-card .plato-home-person strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plato-log-when { display: inline-flex; align-items: center; gap: 0.25rem; flex: none; white-space: nowrap; }
 .plato-seen-mark { display: inline-flex; color: var(--primary); }
-/* one centred action row at the bottom of every card */
-.plato-log-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.4rem; margin-top: auto; }
+#cards > li.plato-log-card > button.plato-photo-btn { flex: none; height: 8.5rem; aspect-ratio: auto; margin: 0 -0.75rem; width: calc(100% + 1.5rem); }
+#cards > li.plato-log-card > .plato-log-body { padding: 0; display: flex; flex-direction: column; gap: 0.3rem; min-height: 0; overflow: hidden; }
+#cards .plato-log-title { margin: 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cards .plato-log-detail { display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.9rem; font-weight: 400; min-width: 0; }
+#cards .plato-log-detail.plato-activity-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+#cards .plato-ate { color: var(--primary); font-weight: 600; }
+#cards .plato-log-note, #cards .plato-feedback p { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+#cards .plato-feedback { margin-top: 0.15rem; }
+/* the buttons at the bottom of every card: same style, full width, "Marcar vista" always the last one */
+.plato-log-actions { display: flex; flex-direction: column; align-items: stretch; gap: 0.4rem; margin-top: auto; flex: none; }
+#cards .plato-log-actions .btn { width: 100%; justify-content: center; }
 .plato-log-actions:empty { display: none; }
 .plato-log-actions > div { display: contents; }
-#cards > li.plato-log-card .plato-log-body { display: flex; flex-direction: column; min-height: 0; }
-#cards > li.plato-log-card .plato-log-note, #cards > li.plato-log-card .plato-feedback p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-#cards > li.plato-log-card--check .plato-log-note, #cards > li.plato-log-card--mood .plato-log-note, #cards > li.plato-log-card--activity .plato-log-note { -webkit-line-clamp: 4; line-clamp: 4; }

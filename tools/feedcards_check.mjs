@@ -75,6 +75,21 @@ for (const [w, h, mobile] of [[1366, 900, false], [390, 844, true], [320, 700, t
     check(`G3 ${w}px: the buttons are centred in their card`, g.every((x) => x.centred), JSON.stringify(g.filter((x) => !x.centred).map((x) => x.kind)));
     const rows = {}; for (const x of g) if (x.btnBottom != null) (rows[x.top] ||= []).push(x.btnBottom);
     check(`G4 ${w}px: cards side by side have their buttons on the same line, at the same distance from the bottom`, Object.values(rows).every((b) => Math.max(...b) - Math.min(...b) <= 1) && new Set(g.filter((x) => x.bottomGap != null).map((x) => x.bottomGap)).size === 1, JSON.stringify({ rows, gaps: g.map((x) => x.bottomGap) }));
+    const an = await p.eval(`(() => [...document.querySelectorAll('#cards > li.plato-log-card')].map((c) => {
+      const cr = c.getBoundingClientRect(), off = (sel) => { const e = c.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().top - cr.top) : null; };
+      const pic = c.querySelector(':scope > .plato-photo-btn');
+      return { photo: !!pic, first: c.firstElementChild.classList.contains('plato-row--between'), head: off(':scope > .plato-row--between'), pic: pic ? Math.round(pic.getBoundingClientRect().height) : null,
+        title: off('.plato-log-title'), btns: [...c.querySelectorAll('.plato-log-actions button')].map((b) => b.dataset.variant + '/' + b.dataset.size + '/' + Math.round(b.getBoundingClientRect().height) + '/' + Math.round(b.getBoundingClientRect().width)) }; }))()`);
+    const same = (xs) => new Set(xs).size === 1;
+    check(`A1 ${w}px: every card starts with the same header (name · time), at the same place`, an.every((x) => x.first) && same(an.map((x) => x.head)), JSON.stringify(an.map((x) => [x.first, x.head])));
+    check(`A2 ${w}px: photo cards: same photo height, title at the same height; text cards: title at the same height`, same(an.filter((x) => x.photo).map((x) => x.pic)) && same(an.filter((x) => x.photo).map((x) => x.title)) && same(an.filter((x) => !x.photo).map((x) => x.title)),
+      JSON.stringify(an.map((x) => [x.photo, x.pic, x.title])));
+    check(`A3 ${w}px: every button in every card has the same style, height and width`, same(an.flatMap((x) => x.btns)) && an.flatMap((x) => x.btns).length >= 6, JSON.stringify(an.map((x) => x.btns)));
+    const ate = await p.eval(`(() => { const e = document.querySelector('#cards .plato-ate'); const probe = document.createElement('span'); probe.style.color = 'var(--primary)'; document.body.append(probe); const primary = getComputedStyle(probe).color; probe.remove();
+      return { icon: document.querySelectorAll('#cards .plato-activity-icon').length, text: e?.textContent, green: !!e && getComputedStyle(e).color === primary }; })()`);
+    const last = await p.eval(`[...document.querySelectorAll('#cards .plato-log-actions')].map((r) => { const b = [...r.querySelectorAll('button')]; return b.length ? b[b.length - 1].textContent : ''; })`);
+    check(`A5 ${w}px: where a card has "Marcar vista", it is always the bottom button`, last.filter((x) => x.includes('Marcar vista')).length >= 3 && last.every((x) => !x || x.includes('Marcar vista') || !last.some(Boolean) || true) && (await p.eval(`[...document.querySelectorAll('#cards .plato-log-actions')].every((r) => { const b = [...r.querySelectorAll('button')]; const i = b.findIndex((x) => x.textContent.includes('Marcar vista')); return i < 0 || i === b.length - 1; })`)), JSON.stringify(last));
+    check(`A4 ${w}px: no round icon badges in the cards; "lo comió" is plain green text`, ate.icon === 0 && ate.text === 'lo comió' && ate.green, JSON.stringify(ate));
     check(`F ${w}px: no sideways scroll`, await p.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= ${w} + 1`));
     await p.screenshot(`${OUT}/feed-${w}.png`, { full: true });
   });

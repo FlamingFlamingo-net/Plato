@@ -285,7 +285,7 @@ function head(l) {
       h('strong', { text: p?.name || 'Paciente' })),
     h('span', { class: 'plato-log-when plato-muted plato-small' },
       l.seen_at ? h('span', { class: 'plato-seen-mark', title: 'Vista', role: 'img', 'aria-label': 'Vista' }, icon('check', 14), h('span', { class: 'sr-only', text: 'Vista' })) : null,
-      h('span', { text: `${timeOf(l.created)}${l.date !== dayOf(l.created) ? ` · ${dayMonth(l.date)}` : ''}` })));
+      h('span', { text: timeOf(l.created) })));
 }
 // "24 nov" (the year only when it is not this year): keeps the header short enough for the patient's name
 const dayMonth = (d) => { const [y, m, dd] = d.slice(0, 10).split('-').map(Number); return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', ...(y !== new Date().getFullYear() ? { year: 'numeric' } : {}) }).format(new Date(y, m - 1, dd)).replace('.', ''); };
@@ -305,36 +305,22 @@ function seenControl(l) {
 }
 const titleOf = (l) => l.type === 'meal' ? SLOT_LABEL[l.slot] : l.type === 'progress' ? `Foto de progreso · ${POSE_LABEL[l.pose]}` : l.type === 'mood' ? `Ánimo: ${moodLabel(l.mood)}` : 'Actividad física';
 
+// Every card has the same anatomy (owner comments, 2026-11-25): header / photo (photo cards) / title / detail / note or feedback /
+// one row of buttons in the same style. Only what is inside changes from one kind to another.
 function card(l) {
-  if (l.type === 'mood') {
-    return h('li', { class: 'plato-log-card plato-log-card--mood', dataset: { id: l.id } },
-      head(l),
-      h('span', { class: 'plato-row' }, face(l.mood, 22), h('strong', { text: 'Ánimo' }), h('span', { text: moodLabel(l.mood) })),
-      l.note ? h('p', { class: 'plato-log-note', text: `“${l.note}”` }) : null,
-      actions(seenControl(l)));
-  }
-  if (l.type === 'activity') {
-    return h('li', { class: 'plato-log-card plato-log-card--activity', dataset: { id: l.id } },
-      head(l),
-      h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon('activity', 18)), h('strong', { text: 'Actividad física' })),
-      h('p', { class: 'plato-activity-summary', text: activitySummary(l) }),
-      l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-      actions(seenControl(l)));
-  }
-  if (l.type === 'meal' && !l.photo) {   // a check ("lo comió") or an extra with only a note
-    const extra = l.slot === 'extra';
-    return h('li', { class: 'plato-log-card plato-log-card--check', dataset: { id: l.id } },
-      head(l),
-      h('span', { class: 'plato-row' }, h('span', { class: 'plato-activity-icon' }, icon(extra ? 'plus' : 'check', 16)),
-        h('strong', { text: extra ? 'Comida extra' : SLOT_LABEL[l.slot] }), extra ? null : h('span', { class: 'plato-muted plato-small', text: 'lo comió' })),
-      l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-      actions(seenControl(l)));
-  }
-  const title = titleOf(l);
-  const img = h('img', { alt: `${title} de ${pmap[l.patient]?.name || 'tu paciente'}`, loading: 'lazy', width: 400, height: 300 });
-  photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
-  return h('li', { class: `plato-log-card${l.type === 'progress' ? ' plato-log-card--progress' : ''}`, dataset: { id: l.id } },
-    h('button', {
+  const photo = !!l.photo;
+  const title = l.type === 'meal' && !photo ? (l.slot === 'extra' ? 'Comida extra' : SLOT_LABEL[l.slot]) : l.type === 'mood' ? 'Ánimo' : titleOf(l);
+  const detail = l.type === 'mood' ? h('p', { class: 'plato-log-detail' }, face(l.mood, 18), h('span', { text: moodLabel(l.mood) }))
+    : l.type === 'activity' ? h('p', { class: 'plato-log-detail plato-activity-summary', text: activitySummary(l) })
+    : l.type === 'meal' && !photo && l.slot !== 'extra' ? h('p', { class: 'plato-log-detail' }, h('span', { class: 'plato-ate', text: 'lo comió' }))
+    : null;
+  const note = l.note ? h('p', { class: 'plato-log-note', text: l.type === 'mood' ? `“${l.note}”` : l.note }) : null;
+  const kind = l.type === 'mood' ? ' plato-log-card--mood' : l.type === 'activity' ? ' plato-log-card--activity' : l.type === 'progress' ? ' plato-log-card--progress' : !photo ? ' plato-log-card--check' : '';
+  let pic = null;
+  if (photo) {
+    const img = h('img', { alt: `${title} de ${pmap[l.patient]?.name || 'tu paciente'}`, loading: 'lazy', width: 400, height: 300 });
+    photoUrl(l).then((u) => { img.src = u; }).catch(() => {});
+    pic = h('button', {
       class: 'plato-photo-btn', type: 'button', 'aria-label': `Ver foto grande: ${title}, ${pmap[l.patient]?.name || ''}`,
       onclick: async () => {
         document.getElementById('ph-title').textContent = `${title} · ${pmap[l.patient]?.name || ''}`;
@@ -344,15 +330,23 @@ function card(l) {
         big.src = await photoUrl(l, '');
         photoDialog.showModal();
       },
-    }, img),
+    }, img);
+  }
+  const feedback = photo ? feedbackEl(l) : null;
+  const buttons = photo ? actions(feedbackControls(l, { title, onSaved: () => reload() }), hasFeedback(l) ? null : seenControl(l)) : actions(seenControl(l));
+  return h('li', { class: `plato-log-card${kind}`, dataset: { id: l.id } },
+    head(l), pic,
     h('div', { class: 'plato-log-body' },
-      head(l),
-      h('strong', { text: title }),
-      l.note ? h('p', { class: 'plato-log-note', text: l.note }) : null,
-      feedbackEl(l),
-      actions(feedbackControls(l, { title, onSaved: () => reload() }), hasFeedback(l) ? null : seenControl(l))));
+      h('p', { class: 'plato-log-title' }, h('strong', { text: title }), l.date !== dayOf(l.created) ? h('span', { class: 'plato-muted plato-small', text: ` · del ${dayMonth(l.date)}` }) : null),
+      detail, note, feedback),
+    buttons);
 }
-function actions(...items) { return h('div', { class: 'plato-log-actions' }, ...items.filter(Boolean)); }
+// one row of buttons, every one the same style (outline, small) whatever module made it
+function actions(...items) {
+  const row = h('div', { class: 'plato-log-actions' }, ...items.filter(Boolean));
+  for (const b of row.querySelectorAll('button')) { b.dataset.variant = 'outline'; b.dataset.size = 'sm'; }
+  return row;
+}
 
 function byDay(items) {
   const out = [];
