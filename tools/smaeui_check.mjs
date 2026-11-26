@@ -64,6 +64,17 @@ await step('S1', async () => {
   await D.screenshot(`${OUT}/smae-desk.png`);
 });
 
+await step('L1', async () => {
+  // switching tabs changes the data, not the layout: the tab row and the search row stay where they are
+  const pos = () => D.eval(`({ tabs: Math.round(document.getElementById('ing-tabs').getBoundingClientRect().top), ctl: document.getElementById('ing-controls').hidden ? null : Math.round(document.getElementById('ing-controls').getBoundingClientRect().top), status: Math.round(document.getElementById('status').getBoundingClientRect().top) })`);
+  const seen = [];
+  for (const k of ['smae', 'usda', 'equivalentes', 'descargas', 'smae']) { await D.click(`#tab-${k}`); await sleep(350); seen.push({ k, ...(await pos()) }); }
+  const tops = seen.map((x) => x.tabs), ctls = seen.map((x) => x.ctl).filter((x) => x != null);
+  check('L1 the tab row does not move between SMAE, USDA, Equivalentes and Descargas; the search row is at the same height in the three tabs that have it',
+    new Set(tops).size === 1 && new Set(ctls).size === 1 && ctls.length === 4, JSON.stringify(seen));
+  check('L1 the source note sits under the list, not above the tabs', await D.eval(`document.getElementById('source-line').getBoundingClientRect().top > document.getElementById('ing-view').getBoundingClientRect().bottom - 1`));
+});
+
 await step('S3', async () => {
   await D.fill('#ing-q', 'frijol');
   await D.waitFor(`document.getElementById('status').textContent === '1 ingrediente'`);
