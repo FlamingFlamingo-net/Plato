@@ -1862,3 +1862,60 @@ One commit (app v39): `install.js` + the panel markup/CSS, a new check `installp
 
 ### Later
 Spanish names for USDA foods; equivalents for USDA foods; "dish as equivalents" (count a diet in equivalents per group); fixing the 56 + 70 flagged SMAE rows with the client.
+
+
+---
+
+## Design: home "Recientes" by sections — a second view (APPROVED 2026-11-25: owner "1-default should be the new one, aos everything else"; BUILT v48, not yet validated by the client)
+
+**Owner (2026-11-25):** keep the current home view and add a second option. The second view is still cards, with mostly the same styling. It splits "Recientes" into two sections: one with every photo card, then one with every card without a photo. The cards without a photo get a smaller, standard size, so more of them fit on screen.
+
+### What the nutritionist sees
+1. Next to the "Recientes" title there is a small switch: **Vista: Una lista | Por secciones**.
+2. **Una lista** is today's view, unchanged: one feed, newest first, every card the same size (v46/v47). **Por secciones** is the default.
+3. **Por secciones** shows two sections, one under the other:
+   - **Con foto (N):** meal photos and progress photos. These are the same cards as today, with the same size, photo, feedback and buttons.
+   - **Sin foto (N):** meals marked "lo comió", extra meals with only a note, mood and activity. These cards are compact: the same structure (header / title / detail / one line of note / button), but about half as tall, and more of them per row.
+   - N is the number of cards not yet seen in that section, the same count the tabs use.
+4. Each section is newest first, with the usual day labels ("Hoy", "Ayer", …) inside it.
+5. The choice is remembered on this device. The view opens the way the nutritionist left it.
+6. Only "Recientes" gets the switch. "Fotos" and "Actividades" already show one kind of card each.
+
+### Rules
+- Both views show the same records with the same "Marcar vista", feedback and "sin ver" counts. Only the layout changes.
+- "Marcar todo como visto" marks what both sections show, the same as in "Una lista".
+- Each section has its own **Ver más**. A long photo section does not push the cards without a photo out of reach.
+- An empty section shows one short line ("Nada nuevo con foto." / "Nada nuevo sin foto.") instead of disappearing, so the layout does not jump.
+- The patient sees nothing new. This is the nutritionist's home only.
+
+### Choices I propose (owner can change any)
+1. **Default view:** "Por secciones" is the default (owner, 2026-11-25). "Una lista" is one tap away.
+2. **Section names:** "Con foto" / "Sin foto". "Fotos" is already a tab name, so a second "Fotos" would confuse.
+3. **Where the switch sits:** at the right of the "Recientes" title, in the same row. On phones it goes under the title.
+4. **Compact card height:** 11 rem (176 px) on every screen size, in the same columns as the photo cards (changed during build: one grid keeps both sections aligned), 1 per row on a phone. The note shows one line.
+5. **Order:** "Con foto" first, then "Sin foto", as the owner asked.
+
+### Acceptance (checked on v48 in the test suite: feedcards S1–S9, home H8; not yet validated by the client)
+1. In "Recientes", switch to **Por secciones**. Two sections appear: "Con foto" holds only cards with a photo, "Sin foto" only cards without one. Every record of "Una lista" is in exactly one section.
+2. Every card in "Con foto" has the same size as today. Every card in "Sin foto" has one smaller size, and all of them are the same.
+3. In "Sin foto", buttons are at the same height across a row, and no title, button or "Vista" mark is cut off.
+4. "Marcar vista" on a card in either section works, and the counts update in both the section title and the tab.
+5. Reload the page: the view is still "Por secciones". Switch back to **Una lista**: the page looks exactly like v47.
+6. The tabs row and the "Recientes" title do not move when the view switches.
+7. Phones (320 / 360 / 390 px): the switch, both sections and the compact cards fit, with no sideways scroll.
+8. The full test suite passes, including the patient page's Registros (its cards must not change).
+
+### Build plan (one commit, app v48)
+- `home.js`: the switch (a radio group with arrow keys), the two sections with their own "Ver más", and the empty lines. The existing card builder stays the only one; a section only adds a size class.
+- `app.css`: the compact size, scoped to the home feed (`#cards`), as the v45 lesson requires.
+- `tools/feedcards_check.mjs`: the acceptance above, in both views, at 1366 / 390 / 320 px, written to fail before the build.
+
+### Decisions (2026-11-25)
+Owner: default "Por secciones"; "aos" on 2–5: names "Con foto" / "Sin foto", one "Ver más" per section, compact ~11 rem with a one-line note, not on Registros for now.
+
+### Open questions (answered)
+1. ~~Default view for everyone: "Una lista" until the client picks?~~ Decided: **"Por secciones" is the default** (owner).
+2. Section names "Con foto" / "Sin foto"? (Recommended: yes.)
+3. Each section has its own "Ver más"? (Recommended: yes.)
+4. Compact cards ~11 rem tall, note on one line? (Recommended: yes; adjust after you see it.)
+5. Later, maybe: the same switch on the patient page's Registros. (Recommended: not now; decide after the client uses the home view.)
