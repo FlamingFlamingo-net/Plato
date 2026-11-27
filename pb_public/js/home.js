@@ -15,11 +15,11 @@ offlineBanner();
 const me = await requireRole('nutritionists');
 document.getElementById('sign-out').addEventListener('click', signOut);
 
-const COLL = { meal: 'meal_logs', mealphoto: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos', mood: 'mood_logs' };
+const COLL = { meal: 'meal_logs', mealphoto: 'meal_logs', mealplain: 'meal_logs', activity: 'activity_logs', progress: 'progress_photos', mood: 'mood_logs' };
 // Fotos shows meal logs with a photo only (checks have none); same collection, its own page cursor.
 // Mood: only low days or days with a note reach Inicio (spec "Feature: Mood check-in"); good days add no noise.
 const MOOD_SHOWN = ' && (mood <= 2 || note != "")';
-const EXTRA_FILTER = { mealphoto: ' && photo != ""', mood: MOOD_SHOWN };
+const EXTRA_FILTER = { mealphoto: ' && photo != ""', mealplain: ' && photo = ""', mood: MOOD_SHOWN };
 const PAGE = 50;
 const initials = (s) => String(s || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 const nowIso = () => new Date().toISOString().replace('T', ' ');
@@ -69,7 +69,7 @@ async function fetchPage(type) {
   const c = p.last;
   const after = c ? ` && (created < ${q(c.created)} || (created = ${q(c.created)} && id < ${q(c.id)}))` : '';
   const items = await list(COLL[type], { filter: `patient.archived_at = ""${EXTRA_FILTER[type] || ''}${after}`, sort: '-created,-id', perPage: PAGE });
-  for (const x of items) x.type = type === 'mealphoto' ? 'meal' : type;
+  for (const x of items) x.type = type === 'mealphoto' || type === 'mealplain' ? 'meal' : type;
   p.items.push(...items);
   if (items.length) p.last = items.at(-1);
   if (items.length < PAGE) p.done = true;
@@ -79,7 +79,7 @@ async function fetchPage(type) {
 // the oldest item loaded from every collection that may still have more.
 const key = (x) => `${x.created}|${x.id}`;
 const TOP = '\uffff'; // "nothing loaded yet": sorts above every key
-async function visible(types) {
+async function visible(types, lim = limit) {
   for (;;) {
     const merged = types.flatMap((t) => pools[t].items).sort((a, b) => key(b).localeCompare(key(a)));
     // (one pool per collection view, so no record appears twice in one tab)
@@ -87,7 +87,7 @@ async function visible(types) {
     const edge = (t) => (pools[t].last ? key(pools[t].last) : TOP);
     const boundary = open.length ? open.map(edge).reduce((a, b) => (a > b ? a : b)) : '';
     const safe = boundary ? merged.filter((x) => key(x) >= boundary) : merged;
-    if (safe.length > limit || !open.length) return { shown: safe.slice(0, limit), more: safe.length > limit || open.length > 0 };
+    if (safe.length > lim || !open.length) return { shown: safe.slice(0, lim), more: safe.length > lim || open.length > 0 };
     await Promise.all(open.filter((t) => edge(t) === boundary).map(fetchPage));
   }
 }
@@ -95,7 +95,7 @@ async function visible(types) {
 async function loadAll() {
   const since = new Date(); since.setDate(since.getDate() - 2); // today and the 2 days before = "3 days"
   // Bare checks (no photo) are not counted as new: they would flood the counts (spec "Weekly goals", slice 1).
-  const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : t === 'mood' ? MOOD_SHOWN : ''}`, fields: 'id,patient', perPage: 500 });
+  const unseenOf = (t) => list(COLL[t], { filter: `seen_at = "" && patient.archived_at = ""${t === 'meal' ? ' && (photo != "" || slot = "extra")' : t === 'mood' ? MOOD_SHOWN : ''}`, fields: t === 'meal' ? 'id,patient,photo' : 'id,patient', perPage: 500 });
   const [ps, diets, recent, um, ua, up, uo, tpls, archivedPatients, ingredientTotal, ingredientExample, dishTotal, dishOld] = await Promise.all([
     list('patients', { filter: 'archived_at = ""', fields: 'id,name,birth_date,joined,service,meal_goal_days,meal_goal_per_day,activity_goal_days,activity_goal_min,goal_history', sort: 'name', perPage: 500 }),
     list('diets', { fields: 'patient,meals,snacks', perPage: 500 }),
@@ -211,6 +211,47 @@ const tabsEl = document.getElementById('tabs');
 let current = new URL(location.href).searchParams.get('tab') || 'recent';
 if (!TABS.some((t) => t.id === current && !t.disabled)) current = 'recent';
 let photoFilter = 'all';
+// "Recientes" view (spec "Design: home Recientes by sections"): 'sections' (default, owner 2026-11-25) or 'list'.
+// ?view= in the address wins and is remembered; otherwise this device's last choice.
+const VIEW_KEY = 'plato-home-view';
+const urlView = new URL(location.href).searchParams.get('view');
+let recentView = ['list', 'sections'].includes(urlView) ? urlView : (localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'sections');
+if (urlView === recentView) localStorage.setItem(VIEW_KEY, recentView);
+const SECTIONS = [
+  { id: 'photo', label: 'Con foto', types: ['mealphoto', 'progress'], empty: 'Nada nuevo con foto.',
+    unseen: () => unseen.meal.filter((m) => m.photo).length + unseen.progress.length },
+  { id: 'plain', label: 'Sin foto', types: ['mealplain', 'activity', 'mood'], empty: 'Nada nuevo sin foto.', compact: true,
+    unseen: () => unseen.meal.filter((m) => !m.photo).length + unseen.activity.length + unseen.mood.length },
+];
+const sectionLimit = { photo: PAGE, plain: PAGE };
+
+// the "Vista" switch: a radio group with arrow keys
+function viewSwitch() {
+  const opts = [['list', 'Una lista'], ['sections', 'Por secciones']];
+  const pick = (v, focus) => {
+    recentView = v; localStorage.setItem(VIEW_KEY, v);
+    const u = new URL(location.href); u.searchParams.delete('view'); history.replaceState(null, '', u);
+    renderFeed().then(() => { if (focus) document.querySelector(`#view-switch [data-view="${v}"]`)?.focus(); });
+  };
+  const btns = opts.map(([v, l]) => h('button', {
+    class: 'plato-chip', type: 'button', role: 'radio', dataset: { view: v },
+    'aria-checked': String(recentView === v), 'aria-pressed': String(recentView === v), tabindex: recentView === v ? '0' : '-1',
+    onclick: () => { if (recentView !== v) pick(v, false); },
+    onkeydown: (ev) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(ev.key)) return;
+      ev.preventDefault();
+      const other = opts.find(([x]) => x !== v)[0];
+      pick(other, true);
+    },
+  }, l));
+  return h('div', { class: 'plato-view-switch', id: 'view-switch', role: 'radiogroup', 'aria-label': 'Vista' },
+    h('span', { class: 'plato-muted plato-small', text: 'Vista:' }), ...btns);
+}
+function sectionHead(s) {
+  const n = s.unseen();
+  return h('li', { class: 'plato-feed-section', dataset: { section: s.id } },
+    h('h3', { id: `sec-${s.id}` }, s.label, n ? h('span', { class: 'plato-muted', text: ` (${n})`, 'aria-label': `, ${n} sin ver` }) : null));
+}
 
 function renderTabs() {
   tabsEl.replaceChildren(...TABS.map((t) => {
@@ -449,6 +490,9 @@ async function renderFeed() {
     chips.replaceChildren(...[['all', 'Todas'], ['progress', 'Progreso'], ['meal', 'Comidas']].map(([k, l]) =>
       h('button', { class: 'plato-chip', type: 'button', 'aria-pressed': String(photoFilter === k), onclick: () => { photoFilter = k; limit = PAGE; renderFeed(); } }, l)));
   }
+  if (current === 'recent') chips.replaceChildren(viewSwitch());
+  cards.classList.toggle('plato-feed--sections', current === 'recent' && recentView === 'sections');
+  if (current === 'recent' && recentView === 'sections') return renderSections(token);
   if (current === 'agenda') { status.textContent = ''; cards.replaceChildren(...agendaCards()); return; }
   if (current === 'catalog') { status.textContent = ''; cards.replaceChildren(...catalogCards()); renderAllSeen(); return; }
   if (current === 'pending') { status.textContent = ''; groupsEl.replaceChildren(...pendingGroups().map(groupCard)); cards.replaceChildren(...pendingCards()); renderAllSeen(); return; }
@@ -460,6 +504,33 @@ async function renderFeed() {
   status.textContent = res.shown.length ? '' : (patients.length ? 'Nada nuevo por aquí todavía.' : 'Aún no tienes pacientes. Agrega el primero en Pacientes.');
   cards.replaceChildren(...byDay(res.shown));
   more.hidden = !res.more;
+  renderAllSeen();
+}
+// "Por secciones": Con foto first, then Sin foto; each newest first with its own day labels and its own "Ver más"
+async function renderSections(token) {
+  const cards = document.getElementById('cards');
+  const status = document.getElementById('feed-status');
+  status.textContent = 'Cargando…';
+  let res;
+  try { res = await Promise.all(SECTIONS.map((s) => visible(s.types, sectionLimit[s.id]))); } catch (e) { status.textContent = e.message; return; }
+  if (token !== renderToken) return;
+  status.textContent = patients.length ? '' : 'Aún no tienes pacientes. Agrega el primero en Pacientes.';
+  shownItems = res.flatMap((r) => r.shown);
+  const out = [];
+  SECTIONS.forEach((s, i) => {
+    const r = res[i];
+    out.push(sectionHead(s));
+    if (!r.shown.length) out.push(h('li', { class: 'plato-feed-none plato-muted', dataset: { section: s.id }, text: s.empty }));
+    for (const el of byDay(r.shown)) {
+      el.dataset.section = s.id;
+      if (s.compact && el.classList.contains('plato-log-card')) el.classList.add('plato-log-card--compact');
+      out.push(el);
+    }
+    if (r.more) out.push(h('li', { class: 'plato-feed-more', dataset: { section: s.id } },
+      h('button', { class: 'btn', type: 'button', dataset: { variant: 'outline' }, 'aria-label': `Ver más: ${s.label}`,
+        onclick: async (ev) => { sectionLimit[s.id] += PAGE; await busy(ev.currentTarget, () => renderFeed()); } }, 'Ver más')));
+  });
+  cards.replaceChildren(...out);
   renderAllSeen();
 }
 document.getElementById('more').addEventListener('click', async (ev) => {

@@ -33,11 +33,11 @@ const made = [
 check('setup: a meal check, a mood and a progress photo are added by the patient', made.every((s) => s === 200), made.join(' '));
 
 const browser = await launch({ port: 9376, profileDir: `${OUT}/chrome-profile` });
-async function open(w, h, mobile = false) {
+async function open(w, h, mobile = false, view = 'list') {
   const p = await browser.newPage({ width: w, height: h, mobile });
   await p.goto(`${BASE}/manifest.webmanifest`);
   await p.eval(`localStorage.setItem('plato.auth', ${JSON.stringify(JSON.stringify({ token: t.nutritionist.token, record: t.nutritionist.record, collection: 'nutritionists' }))})`);
-  await p.goto(`${BASE}/home.html`);
+  await p.goto(`${BASE}/home.html${view ? `?view=${view}` : ''}`);
   await p.waitFor(`document.querySelectorAll('#cards > li.plato-log-card').length >= 6`, 20000);
   await p.eval(`document.querySelectorAll('#cards img').forEach((i) => { i.loading = 'eager'; })`);   // photos below the fold load lazily
   await p.waitFor(`[...document.querySelectorAll('#cards img')].every((i) => i.complete && i.src)`, 20000);
@@ -99,6 +99,61 @@ for (const [w, h, mobile] of [[1366, 900, false], [390, 844, true], [320, 700, t
     check(`A4 ${w}px: no round icon badges in the cards; "lo comió" is plain green text`, ate.icon === 0 && ate.text === 'lo comió' && ate.green, JSON.stringify(ate));
     check(`F ${w}px: no sideways scroll`, await p.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= ${w} + 1`));
     await p.screenshot(`${OUT}/feed-${w}.png`, { full: true });
+  });
+}
+// "Recientes" por secciones (spec "Design: home Recientes by sections", owner 2026-11-25): the default view
+const ids = (p) => p.eval(`[...document.querySelectorAll('#cards > li.plato-log-card')].map((c) => c.dataset.id).sort().join(',')`);
+for (const [w, h, mobile] of [[1366, 900, false], [390, 844, true], [320, 700, true]]) {
+  await step(`S${w}`, async () => {
+    const listIds = await ids(await open(w, h, mobile, 'list'));
+    const p = await open(w, h, mobile, null);   // a fresh device: no ?view, nothing remembered
+    const s = await p.eval(`(() => { const heads = [...document.querySelectorAll('#cards > .plato-feed-section')].map((x) => x.dataset.section);
+      const cs = [...document.querySelectorAll('#cards > li.plato-log-card')].map((c) => { const r = c.getBoundingClientRect(); const pic = !!c.querySelector('img');
+        const act = [...c.querySelectorAll('button')].map((b) => b.getBoundingClientRect()); const ttl = c.querySelector('.plato-log-title').getBoundingClientRect();
+        return { sec: c.dataset.section, pic, compact: c.classList.contains('plato-log-card--compact'), h: Math.round(r.height), w: Math.round(r.width),
+          inside: act.every((b) => b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5 && b.right <= r.right + 0.5), title: ttl.height >= 18 && ttl.bottom <= r.bottom,
+          btnOff: act.length ? Math.round(r.bottom - act[act.length - 1].bottom) : null }; });
+      const radios = [...document.querySelectorAll('#view-switch [role=radio]')].map((b) => b.textContent + ':' + b.getAttribute('aria-checked'));
+      return { heads, cs, radios }; })()`);
+    check(`S1 ${w}px: a fresh device opens "Recientes" por secciones: "Con foto" first, then "Sin foto"; the switch says so`,
+      JSON.stringify(s.heads) === '["photo","plain"]' && JSON.stringify(s.radios) === '["Una lista:false","Por secciones:true"]', JSON.stringify([s.heads, s.radios]));
+    const photo = s.cs.filter((c) => c.sec === 'photo'), plain = s.cs.filter((c) => c.sec === 'plain');
+    check(`S2 ${w}px: "Con foto" holds only photo cards, "Sin foto" only cards without one (compact); every record of "Una lista" is in exactly one section`,
+      photo.length >= 3 && plain.length >= 3 && photo.every((c) => c.pic && !c.compact) && plain.every((c) => !c.pic && c.compact) && (await ids(p)) === listIds && photo.length + plain.length === listIds.split(',').length,
+      JSON.stringify({ photo: photo.length, plain: plain.length, list: listIds.split(',').length }));
+    const same = (xs) => new Set(xs).size === 1;
+    check(`S3 ${w}px: photo cards keep today's size; cards without a photo share one smaller size (≤ 60 %)`,
+      same(photo.map((c) => c.h)) && same(plain.map((c) => c.h)) && plain[0].h <= photo[0].h * 0.6 && Math.max(...s.cs.map((c) => c.w)) - Math.min(...s.cs.map((c) => c.w)) <= 1,
+      JSON.stringify(s.cs.map((c) => [c.sec, c.h, c.w])));
+    check(`S4 ${w}px: compact cards: title, buttons and marks fully inside; buttons at the same place in every card`,
+      plain.every((c) => c.inside && c.title) && same(plain.filter((c) => c.btnOff != null).map((c) => c.btnOff)), JSON.stringify(plain));
+    check(`S5 ${w}px: no sideways scroll`, await p.eval(`document.documentElement.scrollWidth <= innerWidth && innerWidth <= ${w} + 1`));
+    await p.screenshot(`${OUT}/sections-${w}.png`, { full: true });
+    if (w !== 1366) return;
+    // "Marcar vista" on a compact card updates the section count and the tab count
+    const cnt = () => p.eval(`(() => ({ sec: document.querySelector('#sec-plain')?.textContent, tab: document.getElementById('tab-recent').getAttribute('aria-label') }))()`);
+    const before = await cnt();
+    await p.eval(`document.querySelector('#cards > li.plato-log-card--compact.plato-log-card--mood [aria-label^="Marcar vista"]').click()`);
+    await p.waitFor(`document.getElementById('tab-recent').getAttribute('aria-label') !== ${JSON.stringify(before.tab)} && document.querySelector('#sec-plain').textContent !== ${JSON.stringify(before.sec)}`, 10000);
+    const after = await cnt();
+    const num = (x) => Number((String(x).match(/[0-9]+/) || [0])[0]);
+    check(`S6: "Marcar vista" on a card without a photo lowers the "Sin foto" count and the tab count by one`, num(after.sec) === num(before.sec) - 1 && num(after.tab) === num(before.tab) - 1, JSON.stringify([before, after]));
+    // switch to "Una lista": nothing above the cards moves; remembered after a reload; arrow keys switch back
+    const pos = () => p.eval(`JSON.stringify([document.getElementById('tabs').getBoundingClientRect().top, document.getElementById('feed-title').getBoundingClientRect().top, document.getElementById('cards').getBoundingClientRect().top].map(Math.round))`);
+    const p0 = await pos();
+    await p.eval(`document.querySelector('#view-switch [data-view="list"]').click()`);
+    await p.waitFor(`!document.querySelector('#cards > .plato-feed-section') && document.querySelectorAll('#cards > li.plato-log-card').length >= 6`, 10000);
+    const p1 = await pos();
+    check(`S7: switching the view moves nothing above the cards (tabs, title, start of the cards)`, p0 === p1, `${p0} -> ${p1}`);
+    await p.goto(`${BASE}/home.html`);
+    await p.waitFor(`document.querySelectorAll('#cards > li.plato-log-card').length >= 6`, 20000);
+    check(`S8: after a reload the view is still "Una lista" (remembered on this device), with no section titles and no compact cards`,
+      await p.eval(`!document.querySelector('#cards > .plato-feed-section, #cards > .plato-log-card--compact') && document.querySelector('#view-switch [data-view="list"]').getAttribute('aria-checked') === 'true'`));
+    await p.eval(`document.querySelector('#view-switch [data-view="list"]').focus()`);
+    await p.press('ArrowRight');
+    await p.waitFor(`!!document.querySelector('#cards > .plato-feed-section')`, 10000);
+    check(`S9: the switch is a radio group: an arrow key moves to "Por secciones" and keeps the focus on it`,
+      await p.eval(`document.activeElement?.dataset.view === 'sections' && document.querySelector('#view-switch').getAttribute('role') === 'radiogroup'`));
   });
 }
 const ok = results.filter(Boolean).length; console.log(`${ok}/${results.length} passed`);

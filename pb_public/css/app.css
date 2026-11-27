@@ -906,3 +906,15 @@ details.plato-group > .plato-group-list { padding: 0 1rem 0.75rem; }
 .plato-log-actions:empty { display: none; }
 .plato-fb-remove { color: var(--destructive); margin-right: auto; }
 .plato-log-actions > div { display: contents; }
+/* "Recientes" por secciones (spec "Design: home Recientes by sections"): section titles span the grid; cards without a photo are
+   compact (one smaller standard size, note on one line) */
+.plato-view-switch { display: inline-flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+#cards > .plato-feed-section { grid-column: 1 / -1; margin-top: 0.75rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+#cards > .plato-feed-section:first-child { margin-top: 0; }
+#cards > .plato-feed-section h3 { margin: 0; font-family: var(--font-heading); font-size: 1.1rem; }
+#cards > .plato-feed-none { grid-column: 1 / -1; margin: 0; }
+#cards > .plato-feed-more { grid-column: 1 / -1; text-align: center; }
+#cards > li.plato-log-card.plato-log-card--compact { height: 11rem; gap: 0.35rem; }
+#cards > li.plato-log-card--compact > .plato-log-body { gap: 0.2rem; }
+#cards > li.plato-log-card--compact .plato-log-note,
+#cards > li.plato-log-card--compact .plato-log-detail.plato-activity-summary { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: unset; line-clamp: unset; }

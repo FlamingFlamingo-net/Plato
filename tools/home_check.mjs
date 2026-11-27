@@ -148,7 +148,7 @@ await step('H7', async () => {
     headers: { Authorization: ${JSON.stringify(t.ana.token)}, 'Content-Type': 'application/json' },
     body: JSON.stringify({ patient: ${JSON.stringify(t.ana_id)}, date: ${JSON.stringify(at)}, kind: 'walk', minutes: i + 1 }) }).then(r => r.status))).then(s => s.filter(x => x === 200).length)`);
   if (made !== 60) throw new Error(`only ${made}/60 activities created`);
-  await openHome('recent');
+  await openHome('recent&view=list');   // "Cargar más" belongs to "Una lista"; "Por secciones" pages each section (H8)
   const first = await cardCount();
   await nutri.click('#more');
   await nutri.waitFor(`document.querySelectorAll('#cards > li.plato-log-card').length > 50`);
@@ -156,6 +156,17 @@ await step('H7', async () => {
   const ids = await nutri.eval(`[...document.querySelectorAll('#cards > li.plato-log-card')].map(li => li.dataset.id)`);
   const dup = ids.length !== new Set(ids).size;
   check('H7 63 events: first 50, "Cargar más" shows the rest (63), no duplicates', first === 50 && total === 63 && !dup && await nutri.eval(`document.getElementById('more').hidden`), `${first} ${total} dup=${dup}`);
+  // "Por secciones": the 60 activities fill "Sin foto"; its own "Ver más" shows the rest and the photo section stays on top
+  await openHome('recent&view=sections');
+  const sec = () => nutri.eval(`(() => { const c = [...document.querySelectorAll('#cards > li.plato-log-card')]; const ids = c.map(li => li.dataset.id);
+    return { photo: c.filter(li => li.dataset.section === 'photo').length, plain: c.filter(li => li.dataset.section === 'plain').length, dup: ids.length !== new Set(ids).size,
+      more: [...document.querySelectorAll('#cards > .plato-feed-more')].map(li => li.dataset.section).join(','), firstSec: document.querySelector('#cards > .plato-feed-section')?.dataset.section }; })()`);
+  const s0 = await sec();
+  await nutri.click('#cards > .plato-feed-more[data-section="plain"] button');
+  await nutri.waitFor(`document.querySelectorAll('#cards > li.plato-log-card[data-section="plain"]').length > 50`);
+  const s1 = await sec();
+  check('H8 por secciones: "Sin foto" shows 50, its own "Ver más" shows the rest; "Con foto" stays first; no duplicates',
+    s0.plain === 50 && s0.more === 'plain' && s1.plain > 50 && s1.more === '' && s1.photo === s0.photo && s0.firstSec === 'photo' && !s1.dup, JSON.stringify([s0, s1]));
 });
 
 await step('H8', async () => {
